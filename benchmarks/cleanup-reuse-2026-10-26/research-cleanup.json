@@ -1,0 +1,87 @@
+{
+  "removed_public_source_scratch": [
+    {
+      "path": "/tmp/coda-cleanup-research/handy-tree.json",
+      "logical_bytes": 141631,
+      "allocated_bytes": 143360
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__config__prompts.ts",
+      "logical_bytes": 16582,
+      "allocated_bytes": 20480
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__config__prompts__index.ts",
+      "logical_bytes": 3133,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__config__prompts__registry.ts",
+      "logical_bytes": 1669,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__utils__cleanupOutput.ts",
+      "logical_bytes": 2240,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__components__toneStyle__dictationCleanup.ts",
+      "logical_bytes": 534,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/LICENSE",
+      "logical_bytes": 1071,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__helpers__audioManager.js",
+      "logical_bytes": 252555,
+      "allocated_bytes": 253952
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__services__ReasoningService.ts",
+      "logical_bytes": 53538,
+      "allocated_bytes": 57344
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/openwhispr/src__services__BaseReasoningService.ts",
+      "logical_bytes": 3244,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/VoiceInk__Core__Enhancement__AIPrompts.swift",
+      "logical_bytes": 4140,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/VoiceInk__Core__Enhancement__AIEnhancementOutputFilter.swift",
+      "logical_bytes": 762,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/VoiceInk__Features__Enhancement__State__FillerWordManager.swift",
+      "logical_bytes": 1153,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/VoiceInk__Features__Enhancement__Workflows__AIEnhancementService.swift",
+      "logical_bytes": 20981,
+      "allocated_bytes": 24576
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/VoiceInkRefineXPC__VoiceInkRefineInferenceEngine.swift",
+      "logical_bytes": 8026,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "/tmp/coda-cleanup-research/voiceink/LICENSE",
+      "logical_bytes": 1442,
+      "allocated_bytes": 4096
+    }
+  ],
+  "removed_logical_bytes": 512701,
+  "removed_allocated_bytes": 552960,
+  "preexisting_files_removed": false
+}

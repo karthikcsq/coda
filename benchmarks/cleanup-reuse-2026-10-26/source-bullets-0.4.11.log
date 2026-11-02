@@ -1,0 +1,12 @@
+agenda 3 'Agenda:\n- Review the draft\n- Test the build\n- And ship the patch'
+shopping-heading 3 'Shopping list:\n- Milk\n- Eggs\n- And bread'
+named-groups 3 'The groups are:\n- Software\n- Math\n- And business'
+daily-tasks 3 'My tasks for today:\n- Review the budget\n- Call the supplier\n- And send the report'
+bullet-points 3 'Bullet points:\n- Keep the original words\n- Remove speech fillers\n- And add punctuation'
+unpunctuated-count 3 'We need three items:\n- Apples\n- Pears\n- And rice'
+shopping-is 3 'My shopping list is:\n- Milk\n- Eggs\n- And bread'
+groceries-heading 3 'Groceries:\n- Milk\n- Eggs\n- And bread'
+spoken-comma-list 3 'Make a bulleted list:\n- Milk\n- Eggs\n- Bread'
+existing-bullets 3 '- Milk\n- Eggs\n- Bread'
+explicit-markers 3 '- Milk\n- Eggs\n- Bread'
+{"cases": 11, "bullet_checks": 11, "word_checks": 11, "median_ms": 0.16050000000000786}

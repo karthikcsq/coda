@@ -1,0 +1,57 @@
+{
+  "repo": "openbmb/MiniCPM5-1B",
+  "revision": "87179e5c1f455ef22e6223592d2d61351b525bfc",
+  "license": "apache-2.0",
+  "started": 1792976932.706849,
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1519
+    },
+    {
+      "name": "README-cn.md",
+      "size": 22108
+    },
+    {
+      "name": "README.md",
+      "size": 23472
+    },
+    {
+      "name": "chat_template.jinja",
+      "size": 9062
+    },
+    {
+      "name": "config.json",
+      "size": 726
+    },
+    {
+      "name": "generation_config.json",
+      "size": 213
+    },
+    {
+      "name": "model-00000-of-00001.safetensors",
+      "size": 2161290912
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 18004
+    },
+    {
+      "name": "special_tokens_map.json",
+      "size": 551
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 9894271
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 94416
+    }
+  ],
+  "data_only": true,
+  "token": false,
+  "local_path": "/private/tmp/coda-cleanup-benchmark/models/openbmb--MiniCPM5-1B",
+  "download_seconds": 99.64109587669373,
+  "actual_bytes": 2171334151
+}

@@ -1,0 +1,68 @@
+{
+  "revision": "ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1",
+  "files": [
+    {
+      "path": "model/README.md",
+      "bytes": 14142,
+      "allocated_bytes": 16384,
+      "sha256": "4f4ec573102819c5a12ffc86b4ecfbf9706d78cf5587f64d11a6cb6190907a78",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/README.md"
+    },
+    {
+      "path": "model/config.json",
+      "bytes": 2110,
+      "allocated_bytes": 4096,
+      "sha256": "f457c77954f0720ff2c0624b92714fb551bd19c42fba0625ee7af1740df49e05",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/config.json"
+    },
+    {
+      "path": "model/onnx/model_quantized.onnx",
+      "bytes": 268414381,
+      "allocated_bytes": 269484032,
+      "sha256": "5679870be92c7fa47c9be9b2872fac389ef28d43d2c33f35e1315b93a82f4ace",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/onnx/model_quantized.onnx"
+    },
+    {
+      "path": "model/punctuate.py",
+      "bytes": 3740,
+      "allocated_bytes": 4096,
+      "sha256": "3f6fa4de64af82c358d907f833e5a2044dc7ac942724335232c0889a20faadb1",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/punctuate.py"
+    },
+    {
+      "path": "model/special_tokens_map.json",
+      "bytes": 636,
+      "allocated_bytes": 4096,
+      "sha256": "baec30ea10906f16adb8c18af7a34023002c1746542612b8b41c9f09e1351351",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/special_tokens_map.json"
+    },
+    {
+      "path": "model/tokenizer.json",
+      "bytes": 34363286,
+      "allocated_bytes": 34603008,
+      "sha256": "f34b44a6dc8a0eef651bfa10e8325057530152606a69d9c3b6ae02efb1558f0a",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/tokenizer.json"
+    },
+    {
+      "path": "model/tokenizer_config.json",
+      "bytes": 46440,
+      "allocated_bytes": 49152,
+      "sha256": "ea349495764b24570b4560fe2e4a557e5c0a47e6bce782c2409b1d6445cf8633",
+      "url": "https://huggingface.co/Horizon-Labs/punctuation-restoration-small/resolve/ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1/tokenizer_config.json"
+    },
+    {
+      "path": "wheels/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl",
+      "bytes": 20881803,
+      "allocated_bytes": 20971520,
+      "sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505",
+      "url": "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl"
+    },
+    {
+      "path": "model/LICENSE-2.0.txt",
+      "bytes": 11358,
+      "allocated_bytes": 12288,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+    }
+  ]
+}

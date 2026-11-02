@@ -1,0 +1,14 @@
+{
+  "user_requested": true,
+  "bundle_id": "app.coda.notebook",
+  "service": "ScreenCapture",
+  "command": "tccutil reset ScreenCapture app.coda.notebook",
+  "status": "success",
+  "Coda_quit_normally": true,
+  "Microphone_or_Accessibility_reset": false,
+  "other_apps_targeted": false,
+  "Computer_Use_used": false,
+  "private_audio_or_screen_capture_used": false,
+  "privacy_panel_opened": true,
+  "next_step": "User approves current Coda build again, then relaunches and initiates a recording themselves. Live success remains unverified."
+}

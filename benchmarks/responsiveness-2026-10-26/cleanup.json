@@ -1,0 +1,49 @@
+{
+  "removed_task_created_scratch": [
+    {
+      "path": "/tmp/coda-event-taps.c",
+      "logical_bytes": 1197,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-event-taps",
+      "logical_bytes": 33968,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "/tmp/coda-safe-quit.swift",
+      "logical_bytes": 981,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "/tmp/coda-safe-quit",
+      "logical_bytes": 60624,
+      "allocated_bytes": 61440
+    }
+  ],
+  "removed_logical_bytes": 96770,
+  "removed_allocated_bytes": 106496,
+  "retained": {
+    "/Users/karth/Library/Application Support/Coda/SmartCleanup/v1/model": {
+      "logical_bytes": 1079467039,
+      "allocated_bytes": 1079480320
+    },
+    "/Users/karth/Library/Application Support/Coda/SmartCleanup/v1/runtime": {
+      "logical_bytes": 458330764,
+      "allocated_bytes": 483475456
+    },
+    "/Users/karth/CodingFiles/Coda/coda/build/Coda.app": {
+      "logical_bytes": 6603260,
+      "allocated_bytes": 6680576
+    },
+    "/Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.8-build7-rollback.app": {
+      "logical_bytes": 6498715,
+      "allocated_bytes": 6578176
+    },
+    "/Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.7-build6-rollback.app": {
+      "logical_bytes": 6386673,
+      "allocated_bytes": 6463488
+    }
+  },
+  "preexisting_caches_user_history_production_assets_or_Trash_deleted": false
+}

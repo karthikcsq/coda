@@ -1,0 +1,32 @@
+{
+  "installed_version": "0.4.10",
+  "build": "9",
+  "script_sha256": {
+    "smart_cleanup_worker.py": "ccba664ff4c082b777b6fc2e4cdafd1c46a18d235fec6761f2ae23fe68a12978",
+    "cleanup_rules.py": "8c8c9600e6f186e385ca2c5a921af939660a5bd887d198d44a1503667084ec81",
+    "punctuation.py": "d2a67b31c0ffbf1d3beb31bfa4b4868b3c2c052224fedaee90635e1643f9a85a"
+  },
+  "signing_requirement": "Executable=/Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.10-candidate.app/Contents/MacOS/Coda\ndesignated => identifier \"app.coda.notebook\" and certificate leaf = H\"22571b293ddeed6b20db834884a208bfdaddedd7\"",
+  "strict_signature_verified": true,
+  "diagnostic": [
+    "Accessibility trusted: true",
+    "Automatic insertion enabled: true"
+  ],
+  "preferences": {
+    "dictationCleanupMode": "smart",
+    "dictationMode": "hold",
+    "dictationModifierShortcut": "1"
+  },
+  "saved_json_preserved": {
+    "Meetings": 3,
+    "Dictations": 55
+  },
+  "rollback": "build-staged/Coda-0.4.9-build8-rollback.app",
+  "normal_quit": true,
+  "live_audio_clipboard_or_computer_use": false,
+  "canonical_running_instances": 1,
+  "exact_installed_worker_evaluated": true,
+  "signature_reverified_after_worker": true,
+  "signed_bundle_bytecode_absent": true,
+  "saved_json_and_preferences_rechecked_after_reopen": true
+}

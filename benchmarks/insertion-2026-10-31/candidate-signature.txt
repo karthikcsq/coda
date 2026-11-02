@@ -1,0 +1,2 @@
+designated => identifier "app.coda.notebook" and certificate leaf = H"22571b293ddeed6b20db834884a208bfdaddedd7"
+Executable=/Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.12-insertion.app/Contents/MacOS/Coda

@@ -1,0 +1,407 @@
+import SwiftUI
+import AVFoundation
+import AppKit
+@preconcurrency import ApplicationServices
+import KeyboardShortcuts
+import CodaCore
+
+extension KeyboardShortcuts.Name {
+    static let codaDictation = Self("codaDictation")
+    static let codaCancelDictation = Self("codaCancelDictation")
+}
+
+@MainActor @Observable final class DictationController: NSObject, AVAudioRecorderDelegate {
+    let accessibility = AccessibilityAccess(
+        check: { AXIsProcessTrusted() },
+        prompt: {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            _ = AXIsProcessTrustedWithOptions(options)
+        },
+        openSettings: {
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        }
+    )
+    private var awaitingAccessibility = false
+    func refreshAccessibility() {
+        accessibility.refresh()
+        if modifierShortcut, modifierMonitor?.available != true, !visualReview { configureModifierShortcut() }
+        if awaitingAccessibility, accessibility.trusted, !lifecycle.busy {
+            awaitingAccessibility = false
+            message = "Automatic insertion is ready. Focus your destination and dictate again; existing text can still be copied."
+        }
+    }
+    func enableAutomaticInsertion() {
+        guard !visualReview else { return }
+        guard !lifecycle.busy else { return }
+        autoInsert = true
+        awaitingAccessibility = true
+        accessibility.requestFromUserAction()
+        message = accessibility.guidance
+        refreshAccessibility()
+    }
+    var records: [DictationRecord] = []
+    var historyWarning: String?
+    var selectedRecord: UUID?
+    var pendingInsertion: UUID?
+    var workspaceSection = "Dictation"
+    private var history: DictationHistory?
+    private var sessionID: UUID?
+    private var retryGeneration: UUID?
+    private var retryTimeout: Task<Void, Never>?
+    private var dismissal: Task<Void, Never>?
+    private var presentationID = UUID()
+    var overlayIsVisible: Bool { overlay?.isVisible == true }
+    private var retryTask: Task<Void, Never>?
+    func dismissAfterResult(after delay: Duration = .seconds(4)) {
+        dismissal?.cancel()
+        let presentation = presentationID
+        dismissal = Task { [weak self] in
+            do { try await Task.sleep(for: delay) } catch { return }
+            guard !Task.isCancelled, let self, self.presentationID == presentation, !self.lifecycle.busy, self.pendingInsertion == nil else { return }
+            self.overlay?.hide()
+        }
+    }
+    private func saveRecord(_ record: DictationRecord) {
+        if let index = records.firstIndex(where: { $0.id == record.id }) { records[index] = record }
+        else { records.insert(record, at: 0) }
+        selectedRecord = record.id
+        do { guard let history else { throw CodaError.emptyAudio }; try history.save(record) }
+        catch { historyWarning = "Could not save dictation history to disk. Keep this window open and copy any text you need." }
+    }
+    private func saveSession(outcome: DictationRecord.Outcome, detail: String) {
+        guard let sessionID else { return }
+        saveRecord(DictationRecord(id: sessionID, text: text, target: targetName, outcome: outcome, detail: detail, rawText: rawText.isEmpty ? nil : rawText, cleanupMode: cleanupMode))
+    }
+    func copyRecord(_ record: DictationRecord) {
+        guard !visualReview else { message = "Visual review • clipboard unchanged"; return }
+        guard !record.text.isEmpty else { return }
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(record.text, forType: .string)
+        message = "Copied • paste wherever you choose"
+    }
+    func copyOriginal(_ record: DictationRecord) {
+        guard let original = record.rawText else { return }
+        var copy = record; copy.text = original; copyRecord(copy)
+    }
+    func armInsertion(_ record: DictationRecord) {
+        guard !visualReview else { message = "Visual review • insertion disabled"; return }
+        guard !lifecycle.busy, retryTask == nil, model?.isOccupied != true, !record.text.isEmpty else { return }
+        pendingInsertion = record.id; text = record.text; targetName = "Choose a destination"
+        message = "Click your destination field, then press your shortcut or Insert text here. No recording will start."
+        KeyboardShortcuts.enable(.codaCancelDictation)
+        retryTimeout?.cancel()
+        let generation = UUID(); retryGeneration = generation
+        retryTimeout = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(30)) } catch { return }
+            guard !Task.isCancelled, let self, self.retryGeneration == generation else { return }; self.pendingInsertion = nil; self.retryGeneration = nil
+            self.message = "Insertion selection expired. Your text is saved in History."
+            self.overlay?.hide()
+            KeyboardShortcuts.disable(.codaCancelDictation)
+        }
+        show()
+    }
+    private func insertPending() {
+        guard retryTask == nil else { return }
+        guard let id = pendingInsertion, let index = records.firstIndex(where: { $0.id == id }), model?.isOccupied != true else { return }
+        pendingInsertion = nil; retryGeneration = nil; retryTimeout?.cancel(); KeyboardShortcuts.disable(.codaCancelDictation)
+        insertion.captureTarget(); targetName = insertion.targetName
+        var record = records[index]
+        KeyboardShortcuts.enable(.codaCancelDictation)
+        retryTask = Task { [weak self] in
+        guard let self else { return }
+        defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
+        let success = await insertion.insertWithFallback(record.text)
+        record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
+        record.target = targetName
+        record.detail = insertion.reason
+        message = record.detail; saveRecord(record); insertion.clear(); dismissAfterResult()
+        }
+    }
+    func dismissOverlay() {
+        if lifecycle.busy || pendingInsertion != nil || retryTask != nil { cancel() }
+        else { overlay?.hide() }
+    }
+    var lifecycle = DictationLifecycle()
+    var message = "Ready to dictate"
+    var text = ""
+    private var rawText = ""
+    let smartFormatter = SmartFormatter()
+    private var cleanupDetail = ""
+    var cleanupMode: DictationCleanupMode {
+        didSet { if !visualReview {
+            UserDefaults.standard.set(cleanupMode.rawValue, forKey: "dictationCleanupMode")
+            if cleanupMode == .smart { smartFormatter.warm() } else { smartFormatter.stop() }
+        } }
+    }
+    var level: Double = 0
+    var started: Date?
+    var targetName = "Copy result"
+    var mode: DictationMode {
+        didSet { if !visualReview { UserDefaults.standard.set(mode.rawValue, forKey: "dictationMode"); cancel() } }
+    }
+    var modifierShortcut = false {
+        didSet {
+            if !visualReview {
+                UserDefaults.standard.set(modifierShortcut, forKey: "dictationModifierShortcut")
+                cancel(); lifecycle.resetKeys(); configureModifierShortcut()
+            }
+        }
+    }
+    var modifierShortcutStatus: String {
+        if ModifierShortcut.voiceOverConflict { return "Control–Option is reserved while VoiceOver is active. Choose a custom shortcut." }
+        if accessibility.trusted, !visualReview, modifierMonitor?.available != true { return "Shortcut listener unavailable. Refresh Accessibility status in System settings." }
+        return accessibility.trusted ? "Hold Control + Option alone briefly to dictate. Release either to finish. Other keys cancel the chord; events are never intercepted." : "Control–Option needs Coda’s existing Accessibility access."
+    }
+    private var modifierMonitor: ModifierShortcut?
+    private func configureModifierShortcut() {
+        modifierMonitor?.stop()
+        if modifierShortcut {
+            KeyboardShortcuts.disable(.codaDictation)
+            let monitor = ModifierShortcut { [weak self] event in
+                guard let self else { return }
+                switch event {
+                case .down: self.handle(self.lifecycle.keyDown(mode: self.mode))
+                case .up: self.handle(self.lifecycle.keyUp(mode: self.mode))
+                case .cancel: self.cancel(); self.lifecycle.resetKeys()
+                default: break
+                }
+            }
+            modifierMonitor = monitor; monitor.start()
+        } else { KeyboardShortcuts.enable(.codaDictation) }
+    }
+    var autoInsert: Bool {
+        didSet { if !visualReview { UserDefaults.standard.set(autoInsert, forKey: "dictationAutoInsert") } }
+    }
+    var permissionGranted: Bool { AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
+    var shortcutLabel: String { modifierShortcut ? "⌃⌥ Control + Option" : KeyboardShortcuts.getShortcut(for: .codaDictation)?.description ?? "Choose a shortcut" }
+    private var visualReview = false
+    private weak var model: AppModel?
+    private let insertion = DictationInsertion()
+    private var recorder: AVAudioRecorder?
+    private var audioURL: URL?
+    private var task: Task<Void, Never>?
+    private var meterTask: Task<Void, Never>?
+    private var overlay: DictationOverlay?
+    private var observers: [NSObjectProtocol] = []
+
+    override convenience init() { self.init(preview: false) }
+    init(preview: Bool) {
+        cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
+        mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
+        autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
+        super.init()
+        visualReview = preview
+        modifierShortcut = UserDefaults.standard.bool(forKey: "dictationModifierShortcut")
+        do {
+            let base = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
+                ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Preview-" + UUID().uuidString)
+                : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/Dictations")
+            let history = try DictationHistory(root: base); self.history = history
+            let loaded = try history.load(); records = loaded.records; selectedRecord = records.first?.id
+            if loaded.skipped > 0 { historyWarning = "Some history files could not be read. They were preserved on disk." }
+        } catch { historyWarning = "Dictation history is unavailable. New text will remain in memory until you quit." }
+        if preview { return } // Offscreen tests never register shortcuts, observers or permission actions.
+        _ = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshAccessibility() }
+        }
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(screenLocked(_:)), name: NSNotification.Name("com.apple.screenIsLocked"), object: nil)
+        KeyboardShortcuts.onKeyDown(for: .codaDictation) { [weak self] in
+            guard let self, !self.modifierShortcut else { return }; handle(lifecycle.keyDown(mode: mode))
+        }
+        KeyboardShortcuts.onKeyUp(for: .codaDictation) { [weak self] in
+            guard let self, !self.modifierShortcut else { return }; handle(lifecycle.keyUp(mode: mode))
+        }
+        KeyboardShortcuts.setShortcut(.init(.escape, modifiers: []), for: .codaCancelDictation)
+        KeyboardShortcuts.onKeyDown(for: .codaCancelDictation) { [weak self] in self?.cancel() }
+        KeyboardShortcuts.disable(.codaCancelDictation)
+        configureModifierShortcut()
+        if cleanupMode == .smart { smartFormatter.warm() }
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification] {
+            observers.append(NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.cancel(); self?.lifecycle.resetKeys() }
+            })
+        }
+    }
+    // macOS also posts this lock notification when the session locks without system sleep.
+    @objc private func screenLocked(_ notification: Notification) { cancel(); lifecycle.resetKeys() }
+    func attach(_ model: AppModel) { self.model = model }
+    func useSuggestedShortcut() {
+        guard !visualReview else { return }
+        let candidate = KeyboardShortcuts.Shortcut(.d, modifiers: [.control, .option, .command])
+        guard !candidate.isTakenBySystem else { message = "The suggested shortcut is used by macOS. Choose another in the recorder."; return }
+        modifierShortcut = false
+        KeyboardShortcuts.setShortcut(candidate, for: .codaDictation)
+        message = "Shortcut set. Other apps' custom shortcuts cannot all be detected."
+    }
+    func button() {
+        if pendingInsertion != nil { insertPending(); return }
+        if lifecycle.phase == .listening { finish() }
+        else if !lifecycle.busy { begin() }
+    }
+    private func handle(_ intent: DictationIntent) {
+        switch intent { case .begin: if pendingInsertion != nil { insertPending() } else { begin() }; case .finish: finish(); case .cancel: cancel(); case .none: break }
+    }
+    private func show() {
+        presentationID = UUID()
+        dismissal?.cancel()
+        refreshAccessibility()
+        if overlay == nil { overlay = DictationOverlay(controller: self) }
+        overlay?.show(preferredFrame: insertion.targetDisplayFrame)
+    }
+    func previewOverlay() {
+        guard !lifecycle.busy else { return }
+        if text.isEmpty { message = "Ready when you are" }; show()
+    }
+    private func begin() {
+        guard !visualReview else { message = "Visual review only • microphone stays off"; show(); return }
+        guard let model, !lifecycle.busy, retryTask == nil else { return }
+        guard !model.isOccupied else { message = "Finish the meeting operation before dictating."; show(); dismissAfterResult(); return }
+        guard model.modelConsent, model.dictationModelReady else {
+            message = "Prepare Voz in Settings & privacy before dictating. No microphone is running."; show(); dismissAfterResult(); return
+        }
+        guard let id = lifecycle.begin(meetingBusy: false, modelReady: true) else { return }
+        // Overlap a cold formatter start with listening instead of delaying insertion
+        // after the transcript is ready. This never downloads models or captures audio.
+        if cleanupMode == .smart { smartFormatter.warm() }
+        sessionID = id
+        model.dictationBusy = true; text = ""; rawText = ""; level = 0
+        insertion.captureTarget(); targetName = insertion.targetName
+        message = "Preparing microphone…"; show()
+        // Escape is scoped to a live Coda operation, never registered while idle.
+        KeyboardShortcuts.enable(.codaCancelDictation)
+        task = Task { [weak self] in
+            guard let self else { return }
+            let allowed = await AVCaptureDevice.requestAccess(for: .audio)
+            guard lifecycle.accepts(id), !Task.isCancelled else { return }
+            guard allowed else {
+                lifecycle.fail(id); model.dictationBusy = false
+                message = "Microphone access is off. Enable Coda in System Settings → Privacy & Security → Microphone."
+                saveSession(outcome: .failed, detail: message); sessionID = nil
+                insertion.clear(); KeyboardShortcuts.disable(.codaCancelDictation); dismissAfterResult(); return
+            }
+            do {
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Dictation-" + UUID().uuidString)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                let url = directory.appendingPathComponent("speech.m4a")
+                audioURL = url
+                let recorder = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 48_000, AVNumberOfChannelsKey: 1, AVEncoderBitRateKey: 96_000])
+                recorder.delegate = self; recorder.isMeteringEnabled = true
+                guard lifecycle.accepts(id), !Task.isCancelled, recorder.record() else { throw CodaError.emptyAudio }
+                self.recorder = recorder
+                guard lifecycle.listening(id) else { recorder.stop(); cleanupAudio(); return }
+                started = Date(); message = "Listening • Esc to cancel"
+                meterTask = Task { [weak self] in
+                    while !Task.isCancelled {
+                        try? await Task.sleep(for: .milliseconds(90))
+                        guard let self, self.lifecycle.id == id, self.lifecycle.phase == .listening else { return }
+                        self.recorder?.updateMeters()
+                        self.level = min(1, max(0, (Double(self.recorder?.averagePower(forChannel: 0) ?? -60) + 50) / 50))
+                        if Date().timeIntervalSince(self.started ?? .now) > 120 { self.finish(); return }
+                    }
+                }
+            } catch {
+                lifecycle.fail(id); model.dictationBusy = false; recorder?.stop(); recorder = nil; cleanupAudio()
+                message = "Microphone could not start. Check your input device and permission, then retry."
+                saveSession(outcome: .failed, detail: message); sessionID = nil
+                insertion.clear(); KeyboardShortcuts.disable(.codaCancelDictation); dismissAfterResult()
+            }
+        }
+    }
+    private func finish() {
+        guard let id = lifecycle.processing(), let url = audioURL, let model else { return }
+        recorder?.stop(); recorder = nil; meterTask?.cancel(); meterTask = nil; level = 0
+        message = "Transcribing locally… • Esc to cancel"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                cleanupAudio(); insertion.clear(); lifecycle.settled(id); sessionID = nil
+                model.dictationBusy = lifecycle.busy
+                KeyboardShortcuts.disable(.codaCancelDictation)
+            }
+            do {
+                let result = try await model.transcribeDictation(url)
+                try Task.checkCancellation()
+                guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
+                refreshAccessibility()
+                guard acceptTranscription(result, for: id) else { return }
+                if cleanupMode == .smart {
+                    let formatted = await smartFormatter.format(result)
+                    try Task.checkCancellation()
+                    guard acceptSmartFormatting(formatted, for: id) else { return }
+                }
+                if text.isEmpty {
+                    guard lifecycle.complete(id) else { return }
+                    message = "Only speech fillers detected. Nothing inserted. Original saved in History."
+                    saveSession(outcome: .saved, detail: message)
+                    return
+                }
+                let inserted: Bool
+                if autoInsert { inserted = await insertion.insertWithFallback(text) } else { inserted = false }
+                guard lifecycle.complete(id) else { return }
+                message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
+                saveSession(outcome: inserted ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired, detail: message + (cleanupDetail.isEmpty ? "" : " " + cleanupDetail))
+            } catch is CancellationError { message = "Cancelled • nothing inserted"; lifecycle.settled(id) }
+            catch {
+                if lifecycle.phase == .cancelling { message = "Cancelled • nothing inserted" }
+                else { message = "Could not transcribe. Check the local model and microphone, then retry." }
+                lifecycle.fail(id)
+                if sessionID != nil { saveSession(outcome: .failed, detail: message) }
+                dismissAfterResult()
+            }
+        }
+    }
+    // Presentation ends at transcription completion, independently of insertion latency.
+    // Keep the lifecycle busy until delivery settles so insertion remains serialized.
+    @discardableResult
+    func acceptTranscription(_ result: String, for id: UUID) -> Bool {
+        guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
+        cleanupDetail = ""
+        let cleaned = DictationCleanup.apply(result, mode: cleanupMode)
+        rawText = cleaned.raw
+        text = cleaned.text
+        saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
+            detail: cleaned.changed ? "Light cleanup applied. Original preserved in History." : "Saved locally before insertion.",
+            rawText: rawText, cleanupMode: cleanupMode))
+        dismissal?.cancel()
+        presentationID = UUID()
+        overlay?.hide()
+        return true
+    }
+    @discardableResult
+    func acceptSmartFormatting(_ formatted: SmartFormatResult, for id: UUID) -> Bool {
+        guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
+        text = formatted.text; cleanupDetail = formatted.reason
+        saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
+            detail: formatted.reason + ". Original preserved in History.", rawText: rawText, cleanupMode: .smart))
+        return true
+    }
+    func cancel() {
+        if lifecycle.busy { saveSession(outcome: .cancelled, detail: "Cancelled. If insertion had already begun, check the destination before retrying."); sessionID = nil }
+        dismissal?.cancel(); retryTask?.cancel()
+        pendingInsertion = nil; retryGeneration = nil; retryTimeout?.cancel()
+        let wasProcessing = lifecycle.phase == .processing || lifecycle.phase == .cancelling
+        lifecycle.cancel(); task?.cancel(); recorder?.stop(); recorder = nil
+        meterTask?.cancel(); meterTask = nil; level = 0; started = nil; insertion.clear()
+        if !wasProcessing { cleanupAudio(); model?.dictationBusy = false }
+        message = wasProcessing ? "Cancelling local inference…" : "Cancelled • nothing inserted"
+        KeyboardShortcuts.disable(.codaCancelDictation)
+        overlay?.hide()
+    }
+    func copyResult() {
+        guard !visualReview else { return }
+        guard !text.isEmpty, !lifecycle.busy else { return }
+        // An explicit Copy command is the only path that changes the clipboard.
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string)
+        message = "Copied • paste wherever you choose"
+        overlay?.hide()
+    }
+    private func cleanupAudio() {
+        if let audioURL { try? FileManager.default.removeItem(at: audioURL.deletingLastPathComponent()) }
+        audioURL = nil
+    }
+    nonisolated func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {
+        Task { @MainActor [weak self] in guard let self, self.recorder === recorder else { return }; self.cancel() }
+    }
+    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        if !flag { Task { @MainActor [weak self] in guard let self, self.recorder === recorder else { return }; self.cancel() } }
+    }
+}

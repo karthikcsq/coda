@@ -1,0 +1,258 @@
+warning: /Users/karth/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/karth/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/karth/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+warning: 'coda': failed storing manifest for 'coda' in cache: attempt to write a readonly database
+warning: 'keyboardshortcuts': failed storing manifest for 'keyboardshortcuts' in cache: attempt to write a readonly database
+warning: 'desert-ant-core': failed storing manifest for 'desert-ant-core' in cache: attempt to write a readonly database
+warning: 'swift-numerics': failed storing manifest for 'swift-numerics' in cache: attempt to write a readonly database
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 854]
+[Planning deferred tasks]
+[1 / 51] JSON
+[14 / 82] JSHost
+[35 / 102] CStrings
+[57 / 123] CStrings
+[77 / 137] UsagePrivacy
+[83 / 159] TextNormalization
+[92 / 172] Regex
+[111 / 187] JSHost
+[129 / 195] CodaCore
+[145 / 200] CodaCore
+[156 / 210] Usage
+[163 / 227] Usage
+[174 / 229] Usage
+[188 / 231] Usage
+/Users/karth/CodingFiles/Coda/coda/Vendor/KeyboardShortcuts/Package.swift: KeyboardShortcuts: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[199 / 235] CodaCore
+[208 / 239] ModelStore
+[222 / 254] ModelStore
+[230 / 256] Inference
+[248 / 274] CodaCoreTests-product
+[250 / 274] DesertAnt
+[260 / 282] CodaCoreTests-product
+[264 / 286] NativeBindings
+[277 / 297] Who
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaCoreTests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaCoreTests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[296 / 331] Voz
+[305 / 331] Who
+[315 / 333] CodaCoreTests-product
+[319 / 338] Coda
+[321 / 339] Voz
+[321 / 339] Who
+[340 / 367] Who
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/GuardedPaste.swift:6:24: warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 4 | /// A transaction owns only its own changeCount. A newer user copy always wins.
+ 5 | /// Inspired by Handy's MIT paste_tx/macos.rs; see THIRD_PARTY_NOTICES.md.
+ 6 | @MainActor final class GuardedPaste: NSObject, @preconcurrency NSPasteboardItemDataProvider {
+   |                        `- warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 7 |     private let board: NSPasteboard
+ 8 |     private var saved: [[NSPasteboard.PasteboardType: Data]] = []
+[345 / 367] Coda
+[347 / 367] Coda
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:32:26: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+ 30 |         guard writable(focused) || attribute(focused, kAXValueAttribute) is String else { reason = "This field does not expose enough text information for verified insertion. Use Copy text."; return }
+ 31 |         if let windowValue = attribute(focused, kAXWindowAttribute), CFGetTypeID(windowValue) == AXUIElementGetTypeID() {
+ 32 |             let window = unsafeBitCast(windowValue, to: AXUIElement.self)
+    |                          `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+ 33 |             if let position = attribute(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID() {
+ 34 |                 var point = CGPoint.zero
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:35:36: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 33 |             if let position = attribute(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID() {
+ 34 |                 var point = CGPoint.zero
+ 35 |                 if AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &point) {
+    |                                    `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 36 |                     let top = NSScreen.screens.first?.frame.maxY ?? 0
+ 37 |                     let cocoaPoint = CGPoint(x: point.x + 30, y: top - point.y - 30)
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:184:16: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+182 |     private func focusedElement(_ app: AXUIElement) -> AXUIElement? {
+183 |         guard let value = attribute(app, kAXFocusedUIElementAttribute), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+184 |         return unsafeBitCast(value, to: AXUIElement.self)
+    |                `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+185 |     }
+186 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:188:18: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+186 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+187 |         guard let value = attribute(element, kAXSelectedTextRangeAttribute), CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
+188 |         let ax = unsafeBitCast(value, to: AXValue.self)
+    |                  `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+189 |         guard AXValueGetType(ax) == .cfRange else { return nil }
+190 |         var range = CFRange(); guard AXValueGetValue(ax, .cfRange, &range) else { return nil }; return range
+[350 / 367] Voz
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:32:26: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+ 30 |         guard writable(focused) || attribute(focused, kAXValueAttribute) is String else { reason = "This field does not expose enough text information for verified insertion. Use Copy text."; return }
+ 31 |         if let windowValue = attribute(focused, kAXWindowAttribute), CFGetTypeID(windowValue) == AXUIElementGetTypeID() {
+ 32 |             let window = unsafeBitCast(windowValue, to: AXUIElement.self)
+    |                          `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+ 33 |             if let position = attribute(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID() {
+ 34 |                 var point = CGPoint.zero
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:35:36: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 33 |             if let position = attribute(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID() {
+ 34 |                 var point = CGPoint.zero
+ 35 |                 if AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &point) {
+    |                                    `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 36 |                     let top = NSScreen.screens.first?.frame.maxY ?? 0
+ 37 |                     let cocoaPoint = CGPoint(x: point.x + 30, y: top - point.y - 30)
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:184:16: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+182 |     private func focusedElement(_ app: AXUIElement) -> AXUIElement? {
+183 |         guard let value = attribute(app, kAXFocusedUIElementAttribute), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+184 |         return unsafeBitCast(value, to: AXUIElement.self)
+    |                `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+185 |     }
+186 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:188:18: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+186 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+187 |         guard let value = attribute(element, kAXSelectedTextRangeAttribute), CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
+188 |         let ax = unsafeBitCast(value, to: AXValue.self)
+    |                  `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+189 |         guard AXValueGetType(ax) == .cfRange else { return nil }
+190 |         var range = CFRange(); guard AXValueGetValue(ax, .cfRange, &range) else { return nil }; return range
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/GuardedPaste.swift:6:24: warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 4 | /// A transaction owns only its own changeCount. A newer user copy always wins.
+ 5 | /// Inspired by Handy's MIT paste_tx/macos.rs; see THIRD_PARTY_NOTICES.md.
+ 6 | @MainActor final class GuardedPaste: NSObject, @preconcurrency NSPasteboardItemDataProvider {
+   |                        `- warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 7 |     private let board: NSPasteboard
+ 8 |     private var saved: [[NSPasteboard.PasteboardType: Data]] = []
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/GuardedPaste.swift:6:24: warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 4 | /// A transaction owns only its own changeCount. A newer user copy always wins.
+ 5 | /// Inspired by Handy's MIT paste_tx/macos.rs; see THIRD_PARTY_NOTICES.md.
+ 6 | @MainActor final class GuardedPaste: NSObject, @preconcurrency NSPasteboardItemDataProvider {
+   |                        `- warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 7 |     private let board: NSPasteboard
+ 8 |     private var saved: [[NSPasteboard.PasteboardType: Data]] = []
+[353 / 367] Coda
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:134:78: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+129 |         busy = true
+130 |         let id = UUID(); operationID = id
+131 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+132 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+133 |             do {
+134 |                 try await pipeline.prepareVoz(consent: modelConsent) { [weak self] text, value in
+    |                                                                              |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                              `- note: explicitly assign the capture list item to silence
+135 |                     Task { @MainActor in guard self?.operationID == id else { return }; self?.status = text; self?.progress = value }
+136 |                 }
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:187:138: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+182 |         busy = true; progress = nil
+183 |         let id = UUID(); operationID = id
+184 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+185 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+186 |             do {
+187 |                 let segments = try await pipeline.process(root.appendingPathComponent(meeting.audioFile), consent: modelConsent) { [weak self] text, fraction in
+    |                                                                                                                                          |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                                                                                          `- note: explicitly assign the capture list item to silence
+188 |                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
+189 |                 }
+
+[#ImplicitStrongCapture]: <https://docs.swift.org/compiler/documentation/diagnostics/implicit-strong-capture>
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/GuardedPaste.swift:6:24: warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 4 | /// A transaction owns only its own changeCount. A newer user copy always wins.
+ 5 | /// Inspired by Handy's MIT paste_tx/macos.rs; see THIRD_PARTY_NOTICES.md.
+ 6 | @MainActor final class GuardedPaste: NSObject, @preconcurrency NSPasteboardItemDataProvider {
+   |                        `- warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 7 |     private let board: NSPasteboard
+ 8 |     private var saved: [[NSPasteboard.PasteboardType: Data]] = []
+[358 / 371] Coda-product
+[358 / 371] Coda
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:134:78: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+129 |         busy = true
+130 |         let id = UUID(); operationID = id
+131 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+132 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+133 |             do {
+134 |                 try await pipeline.prepareVoz(consent: modelConsent) { [weak self] text, value in
+    |                                                                              |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                              `- note: explicitly assign the capture list item to silence
+135 |                     Task { @MainActor in guard self?.operationID == id else { return }; self?.status = text; self?.progress = value }
+136 |                 }
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:187:138: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+182 |         busy = true; progress = nil
+183 |         let id = UUID(); operationID = id
+184 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+185 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+186 |             do {
+187 |                 let segments = try await pipeline.process(root.appendingPathComponent(meeting.audioFile), consent: modelConsent) { [weak self] text, fraction in
+    |                                                                                                                                          |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                                                                                          `- note: explicitly assign the capture list item to silence
+188 |                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
+189 |                 }
+
+[#ImplicitStrongCapture]: <https://docs.swift.org/compiler/documentation/diagnostics/implicit-strong-capture>
+[358 / 371] Coda-product
+/Users/karth/CodingFiles/Coda/coda/Package.swift: Coda: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[362 / 373] Coda
+[362 / 373] Coda-product/Users/karth/CodingFiles/Coda/coda/Package.swift: Coda-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: Coda-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+
+[366 / 371] CodaUITests-product
+[368 / 381]
+[376 / 381] CodaUITests-product
+/Users/karth/CodingFiles/Coda/coda/Tests/CodaUITests/InsertionIntegrationTests.swift:15:62: warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+13 |         defer { _ = fixture.terminate() }
+14 |         RunLoop.main.run(until: .now.addingTimeInterval(1))
+15 |         _ = fixture.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+   |                                                              `- warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+16 |         RunLoop.main.run(until: .now.addingTimeInterval(0.5))
+17 |         guard let app = NSWorkspace.shared.frontmostApplication,
+
+/Users/karth/CodingFiles/Coda/coda/Tests/CodaUITests/InsertionIntegrationTests.swift:33:47: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+31 |         if AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+32 |            let focused, CFGetTypeID(focused) == AXUIElementGetTypeID() {
+33 |             _ = AXUIElementCopyAttributeValue(unsafeBitCast(focused, to: AXUIElement.self), kAXValueAttribute as CFString, &actual)
+   |                                               `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+34 |         }
+35 |         let value = actual as? String ?? ""
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[380 / 383] CodaUITests-product
+[382 / 386] CodaUITests-product/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaUITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaUITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+
+Build complete! (7.82 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test captureDeviceFailureDoesNotSuggestPermissionOrChangeAudioSource() started.
+◇ Test meetingOpenedFromAnotherWorkspaceRoutesToDetailWithoutChangingInitialPage() started.
+◇ Test deniedSystemAudioOffersExplicitMicrophoneOptionsWithoutStartingCapture() started.
+◇ Test meetingBackKeepsRecordingAndProcessingControlsReachable() started.
+◇ Test renderMeetingDetailWithoutNestedSidebarAtMinimumWorkspaceWidth() started.
+◇ Test meetingSelectionOpensDetailAndBackKeepsSelectionAndTranscript() started.
+✔ Test deniedSystemAudioOffersExplicitMicrophoneOptionsWithoutStartingCapture() passed after 0.008 seconds.
+✔ Test meetingBackKeepsRecordingAndProcessingControlsReachable() passed after 0.009 seconds.
+✔ Test captureDeviceFailureDoesNotSuggestPermissionOrChangeAudioSource() passed after 0.010 seconds.
+✔ Test meetingOpenedFromAnotherWorkspaceRoutesToDetailWithoutChangingInitialPage() passed after 0.425 seconds.
+✔ Test renderMeetingDetailWithoutNestedSidebarAtMinimumWorkspaceWidth() passed after 0.719 seconds.
+✔ Test meetingSelectionOpensDetailAndBackKeepsSelectionAndTranscript() passed after 0.728 seconds.
+✔ Test run with 6 tests in 0 suites passed after 0.728 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test capturePermissionErrorDoesNotBlameMicrophone() started.
+◇ Test captureDeviceAndConfigurationFailuresAreDistinct() started.
+◇ Test unrelatedErrorCodeCannotEnableSystemAudioPermissionRecovery() started.
+◇ Test knownMicrophoneDenialRemainsActionable() started.
+✔ Test unrelatedErrorCodeCannotEnableSystemAudioPermissionRecovery() passed after 0.001 seconds.
+✔ Test capturePermissionErrorDoesNotBlameMicrophone() passed after 0.001 seconds.
+✔ Test knownMicrophoneDenialRemainsActionable() passed after 0.001 seconds.
+✔ Test captureDeviceAndConfigurationFailuresAreDistinct() passed after 0.001 seconds.
+✔ Test run with 4 tests in 0 suites passed after 0.001 seconds.

@@ -1,0 +1,65 @@
+{
+  "before": {
+    "logical_bytes": 20150688164,
+    "allocated_bytes": 20271390720
+  },
+  "after": {
+    "logical_bytes": 565854,
+    "allocated_bytes": 774144
+  },
+  "removed_logical_bytes": 20150122310,
+  "removed_allocated_bytes": 20270616576,
+  "deleted_test_created_scratch": [
+    {
+      "path": "/tmp/coda-cleanup-benchmark/models",
+      "logical_bytes": 15597016322,
+      "allocated_bytes": 15657676800
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/hf",
+      "logical_bytes": 917,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/venv",
+      "logical_bytes": 1005725573,
+      "allocated_bytes": 1065426944
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/Qwen--Qwen3-0.6B",
+      "logical_bytes": 346929206,
+      "allocated_bytes": 346955776
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/Qwen--Qwen3.5-0.8B",
+      "logical_bytes": 444088868,
+      "allocated_bytes": 444104704
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/HuggingFaceTB--SmolLM2-135M-Instruct",
+      "logical_bytes": 79364508,
+      "allocated_bytes": 79388672
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/Qwen--Qwen3-1.7B",
+      "logical_bytes": 979558869,
+      "allocated_bytes": 979582976
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/openbmb--MiniCPM5-1B",
+      "logical_bytes": 617971008,
+      "allocated_bytes": 617992192
+    },
+    {
+      "path": "/tmp/coda-cleanup-benchmark/quantized/Qwen--Qwen3.5-2B",
+      "logical_bytes": 1079467039,
+      "allocated_bytes": 1079480320
+    }
+  ],
+  "retained_candidate": null,
+  "retention_reason": "Implementation uses native Light cleanup; no model qualified for unattended replacement. All disposable model weights removed after implementation decision; pinned manifests and synthetic results retained.",
+  "retained_candidate_size": null,
+  "trash_bytes_added": 0,
+  "preexisting_caches_touched": false,
+  "installed_coda_modified_by_benchmark": false
+}

@@ -1,0 +1,251 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[9 / 85]
+[17 / 91] JSHost
+[21 / 102] FFIBuffer
+[22 / 121] KeyboardShortcuts
+[25 / 213]
+[39 / 213]
+[49 / 213]
+[51 / 213]
+[81 / 231]
+[89 / 227] RealModule
+[92 / 226]
+[99 / 249]
+[100 / 249]
+[105 / 249]
+[112 / 249]
+[113 / 249]
+[114 / 249]
+[133 / 249] TextNormalization
+[151 / 256]
+[162 / 256]
+[167 / 261]
+[173 / 261]
+[177 / 261]
+[183 / 261]
+[191 / 261]
+[193 / 261]
+[198 / 261] Usage
+[207 / 265]
+[211 / 265] ModelCatalog
+[219 / 274] ModelCatalog
+[223 / 275]
+[224 / 275]
+[226 / 275] AudioIO
+[228 / 274]
+[229 / 274]
+[230 / 274]
+[231 / 274]
+[233 / 274] CodaCore
+[235 / 265]
+[236 / 265] Inference
+[241 / 270] DesertAnt
+[248 / 276] NativeBindings
+[256 / 290] Who
+[260 / 292]
+[263 / 287] Voz
+[267 / 278] Coda-product
+[268 / 273] CodaUITests-product
+[276 / 290]
+[281 / 290]
+[282 / 290]
+[283 / 290]
+[285 / 290] CodaUITests-product
+/Users/karth/CodingFiles/Coda/coda/Tests/CodaUITests/InsertionIntegrationTests.swift:15:62: warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+13 |         defer { _ = fixture.terminate() }
+14 |         try await Task.sleep(for: .seconds(1))
+15 |         _ = fixture.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+   |                                                              `- warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+16 |         try await Task.sleep(for: .milliseconds(500))
+17 |         guard let app = NSWorkspace.shared.frontmostApplication,
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[288 / 291] CodaUITests-product
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaUITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaUITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[290 / 294] CodaUITests-product
+Build complete! (28.36 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test errorDismissalExpiresButOldTimerCannotCloseNewPresentation() started.
+◇ Test renderMeetingAndSyntheticCaptureStates() started.
+◇ Test guardedPasteKeepsTheFirstConsumptionReceipt() started.
+◇ Test deniedSystemAudioOffersExplicitMicrophoneOptionsWithoutStartingCapture() started.
+◇ Test notetakerKeepsOperationControlsReachable() started.
+◇ Test smartWorkerRoundTripRepetitionAndNonePreservation() started.
+◇ Test meetingSelectionOpensDetailAndBackKeepsSelectionAndTranscript() started.
+◇ Test settingsOpeningIsIdempotentAndPreservesValuesAndOperations() started.
+◇ Test captureDeviceFailureDoesNotSuggestPermissionOrChangeAudioSource() started.
+◇ Test renderMeetingDetailWithoutNestedSidebarAtMinimumWorkspaceWidth() started.
+◇ Test transcriptionHidesActualPanelBeforeInsertionAndKeepsHistory() started.
+◇ Test guardedPasteRestoresAllRepresentations() started.
+◇ Test fillerOnlyResultNeverDropsSubstantiveInputAndPreservesOriginal() started.
+◇ Test menuMeetingRoutesNeverRestartOccupiedOperation() started.
+◇ Test staleCompletionCannotHideNewSessionOrReplaceSavedText() started.
+◇ Test renderSyntheticDictationWorkspaceAndDismissPreservesResult() started.
+◇ Test renderHistoryAndInsightsReview() started.
+◇ Test cleanupKeepsRawAndDismissesBeforeDelivery() started.
+◇ Test invalidDestinationNeverPostsPaste() started.
+◇ Test smartDefaultBudgetRejectsSlowFormatterAndKeepsExactRaw() started.
+◇ Test smartResultCannotReplaceCancelledOrNewSession() started.
+◇ Test renderMeasuredSettingsReview() started.
+◇ Test renderIntegratedSettingsWhileProcessing() started.
+◇ Test cancelledInsertionNeverPostsPaste() started.
+◇ Test meetingBackKeepsRecordingAndProcessingControlsReachable() started.
+◇ Test pasteChordContainsOnlyCommandVAndReleasesCommand() started.
+◇ Test smartWorkerTimeoutMalformedAndCancellationUseRaw() started.
+◇ Test renderReversibleCleanupHistory() started.
+◇ Test meetingOpenedFromAnotherWorkspaceRoutesToDetailWithoutChangingInitialPage() started.
+◇ Test guardedPasteNeverOverwritesNewCopy() started.
+➜ Test testSyntheticFixtureInsertion() skipped: "Opt-in disposable fixture test; requires existing test-runner trust."
+✔ Test guardedPasteKeepsTheFirstConsumptionReceipt() passed after 0.004 seconds.
+✔ Test renderMeetingAndSyntheticCaptureStates() passed after 1.473 seconds.
+✔ Test captureDeviceFailureDoesNotSuggestPermissionOrChangeAudioSource() passed after 1.517 seconds.
+✔ Test settingsOpeningIsIdempotentAndPreservesValuesAndOperations() passed after 1.518 seconds.
+✔ Test renderMeetingDetailWithoutNestedSidebarAtMinimumWorkspaceWidth() passed after 1.854 seconds.
+✔ Test renderSyntheticDictationWorkspaceAndDismissPreservesResult() passed after 2.230 seconds.
+✔ Test renderHistoryAndInsightsReview() passed after 2.738 seconds.
+✔ Test transcriptionHidesActualPanelBeforeInsertionAndKeepsHistory() passed after 2.765 seconds.
+✔ Test guardedPasteRestoresAllRepresentations() passed after 2.766 seconds.
+✔ Test meetingSelectionOpensDetailAndBackKeepsSelectionAndTranscript() passed after 2.767 seconds.
+✔ Test meetingBackKeepsRecordingAndProcessingControlsReachable() passed after 2.769 seconds.
+✔ Test menuMeetingRoutesNeverRestartOccupiedOperation() passed after 2.769 seconds.
+✔ Test guardedPasteNeverOverwritesNewCopy() passed after 2.771 seconds.
+✔ Test renderReversibleCleanupHistory() passed after 2.890 seconds.
+✔ Test pasteChordContainsOnlyCommandVAndReleasesCommand() passed after 2.899 seconds.
+✔ Test notetakerKeepsOperationControlsReachable() passed after 2.900 seconds.
+✔ Test deniedSystemAudioOffersExplicitMicrophoneOptionsWithoutStartingCapture() passed after 2.901 seconds.
+✔ Test smartResultCannotReplaceCancelledOrNewSession() passed after 2.902 seconds.
+✔ Test staleCompletionCannotHideNewSessionOrReplaceSavedText() passed after 2.912 seconds.
+✔ Test meetingOpenedFromAnotherWorkspaceRoutesToDetailWithoutChangingInitialPage() passed after 3.175 seconds.
+✔ Test cleanupKeepsRawAndDismissesBeforeDelivery() passed after 3.191 seconds.
+✔ Test renderMeasuredSettingsReview() passed after 3.621 seconds.
+✔ Test renderIntegratedSettingsWhileProcessing() passed after 3.976 seconds.
+✔ Test invalidDestinationNeverPostsPaste() passed after 3.985 seconds.
+✔ Test cancelledInsertionNeverPostsPaste() passed after 3.987 seconds.
+✔ Test smartWorkerRoundTripRepetitionAndNonePreservation() passed after 3.988 seconds.
+✔ Test fillerOnlyResultNeverDropsSubstantiveInputAndPreservesOriginal() passed after 3.989 seconds.
+✔ Test smartWorkerTimeoutMalformedAndCancellationUseRaw() passed after 4.108 seconds.
+✔ Test errorDismissalExpiresButOldTimerCannotCloseNewPresentation() passed after 4.122 seconds.
+✔ Test smartDefaultBudgetRejectsSlowFormatterAndKeepsExactRaw() passed after 4.798 seconds.
+✔ Test run with 31 tests in 0 suites passed after 4.799 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test grantedAccessDoesNotRequestAgain() started.
+◇ Test historyRestartPreservesValidMeetingsBesideCorruptFile() started.
+◇ Test overlayPlacementPreservesDragAndClampsAfterDisplayChange() started.
+◇ Test parseStructuredSummaryAndValidateEvidence() started.
+◇ Test unrelatedErrorCodeCannotEnableSystemAudioPermissionRecovery() started.
+◇ Test chordDoesNotActivateForAnotherShortcut() started.
+◇ Test meetingAndMissingModelPreventDictation() started.
+◇ Test strictSummaryRejectsMissingNullableFieldsAndExtraKeys() started.
+◇ Test safeInsertionRequiresEveryGuardAndNeverAcceptsSecureFields() started.
+◇ Test permissionDenialIsRecoverableAndOldFailureCannotCancelNewSession() started.
+◇ Test dictationToggleIgnoresRepeatsAndStopsOnSecondPress() started.
+◇ Test pasteConsumptionSettlesWithoutAccessibilityReadback() started.
+◇ Test chordInterruptionCancelsOnceAndNeedsRelease() started.
+◇ Test captureDeviceAndConfigurationFailuresAreDistinct() started.
+◇ Test cancellingInferenceBlocksRestartAndLateInsertion() started.
+◇ Test settingsFailureProvidesManualFallbackWithoutAssumingTrust() started.
+◇ Test alignmentPreservesSilenceOverlapAndBoundaries() started.
+◇ Test literalFormattingAndExclusionsRemainVerbatim() started.
+◇ Test rawAndCleanHistoryRoundTripAndOldRecordsRemainReadable() started.
+◇ Test retriesRateLimitsAndServerFailuresWithoutUploadingAudio() started.
+◇ Test historyAndExportsRoundTrip() started.
+◇ Test alignmentUsesGreatestOverlapAndRejectsInvalidTimes() started.
+◇ Test lightCleanupHandlesExplicitCorrectionsAndFillers() started.
+◇ Test authenticationFailureDoesNotRetry() started.
+◇ Test holdReleaseFinishesExactlyOnce() started.
+◇ Test chordStartsOnceAndReleasesEitherKey() started.
+◇ Test knownMicrophoneDenialRemainsActionable() started.
+◇ Test timestampsIncludeHours() started.
+◇ Test lightCleanupPreservesMeaningAndNeverTreatsDictationAsCommands() started.
+◇ Test stopFailureStillDetachesAndFinalizesEveryWriter() started.
+◇ Test writerFailureDoesNotLeaveSiblingUnfinished() started.
+◇ Test envIsDataAndHandlesQuotesCommentsAndPrecedence() started.
+◇ Test cloudConsentDefaultsToDeniedBeforeTransport() started.
+◇ Test capturePermissionErrorDoesNotBlameMicrophone() started.
+◇ Test accessibilityRefreshNeverPromptsOrOpensSettings() started.
+◇ Test rawModeAndEmptyInputsDoNothing() started.
+◇ Test plainFieldInsertionPreservesUnicodeAndRejectsInvalidRanges() started.
+◇ Test explicitRequestPromptsOnceAndReopensPaneWithoutSpam() started.
+◇ Test escapeWhileKeyHeldDoesNotRestartFromRepeat() started.
+◇ Test recordingDiagnosticsNeverExposeUnderlyingPrivateDetails() started.
+◇ Test modifierHoldProcessingAndToggleReuseExistingLifecycle() started.
+◇ Test separateCaptureWritersPreserveFormatsAndTimelineOrigins() started.
+◇ Test unconfirmedHistoryRoundTripsWithoutLosingText() started.
+◇ Test lateResponseAfterCancellationIsDiscarded() started.
+◇ Test dismissDuringArmingRejectsLatePermissionAndSleepResetsKeyLatch() started.
+◇ Test cancellationStopsRetries() started.
+◇ Test modifierHoldReleaseDuringStartupInvalidatesOldCapture() started.
+◇ Test displaySleepDuringInferenceDiscardsResultBeforeNextSession() started.
+◇ Test holdReleaseDuringPermissionPromptNeverStartsCapture() started.
+◇ Test nativeCleanupTimingSynthetic() started.
+◇ Test pasteAllowsMissingSelectionButChecksAvailableEvidence() started.
+◇ Test sameSelectionButChangedTextRejectsInsertion() started.
+◇ Test chordQuickReleaseRejectsDelayedActivation() started.
+◇ Test missingKeyNeverTouchesNetwork() started.
+◇ Test dictationHistorySurvivesRestartUpdatesAndCorruption() started.
+◇ Test explicitRestatementCorrectionsRemainReversible() started.
+✔ Test overlayPlacementPreservesDragAndClampsAfterDisplayChange() passed after 0.001 seconds.
+✔ Test safeInsertionRequiresEveryGuardAndNeverAcceptsSecureFields() passed after 0.001 seconds.
+✔ Test pasteConsumptionSettlesWithoutAccessibilityReadback() passed after 0.001 seconds.
+✔ Test chordInterruptionCancelsOnceAndNeedsRelease() passed after 0.001 seconds.
+✔ Test chordDoesNotActivateForAnotherShortcut() passed after 0.002 seconds.
+✔ Test unrelatedErrorCodeCannotEnableSystemAudioPermissionRecovery() passed after 0.002 seconds.
+✔ Test chordStartsOnceAndReleasesEitherKey() passed after 0.001 seconds.
+✔ Test alignmentUsesGreatestOverlapAndRejectsInvalidTimes() passed after 0.001 seconds.
+✔ Test holdReleaseFinishesExactlyOnce() passed after 0.001 seconds.
+✔ Test dictationToggleIgnoresRepeatsAndStopsOnSecondPress() passed after 0.002 seconds.
+✔ Test permissionDenialIsRecoverableAndOldFailureCannotCancelNewSession() passed after 0.002 seconds.
+✔ Test meetingAndMissingModelPreventDictation() passed after 0.002 seconds.
+✔ Test alignmentPreservesSilenceOverlapAndBoundaries() passed after 0.002 seconds.
+✔ Test cancellingInferenceBlocksRestartAndLateInsertion() passed after 0.002 seconds.
+✔ Test knownMicrophoneDenialRemainsActionable() passed after 0.002 seconds.
+✔ Test plainFieldInsertionPreservesUnicodeAndRejectsInvalidRanges() passed after 0.001 seconds.
+✔ Test timestampsIncludeHours() passed after 0.001 seconds.
+✔ Test capturePermissionErrorDoesNotBlameMicrophone() passed after 0.002 seconds.
+✔ Test captureDeviceAndConfigurationFailuresAreDistinct() passed after 0.002 seconds.
+✔ Test escapeWhileKeyHeldDoesNotRestartFromRepeat() passed after 0.001 seconds.
+✔ Test modifierHoldProcessingAndToggleReuseExistingLifecycle() passed after 0.001 seconds.
+✔ Test recordingDiagnosticsNeverExposeUnderlyingPrivateDetails() passed after 0.001 seconds.
+✔ Test dismissDuringArmingRejectsLatePermissionAndSleepResetsKeyLatch() passed after 0.002 seconds.
+✔ Test modifierHoldReleaseDuringStartupInvalidatesOldCapture() passed after 0.001 seconds.
+✔ Test displaySleepDuringInferenceDiscardsResultBeforeNextSession() passed after 0.001 seconds.
+✔ Test pasteAllowsMissingSelectionButChecksAvailableEvidence() passed after 0.001 seconds.
+✔ Test holdReleaseDuringPermissionPromptNeverStartsCapture() passed after 0.001 seconds.
+✔ Test unconfirmedHistoryRoundTripsWithoutLosingText() passed after 0.001 seconds.
+✔ Test chordQuickReleaseRejectsDelayedActivation() passed after 0.001 seconds.
+✔ Test missingKeyNeverTouchesNetwork() passed after 0.002 seconds.
+✔ Test sameSelectionButChangedTextRejectsInsertion() passed after 0.001 seconds.
+✔ Test grantedAccessDoesNotRequestAgain() passed after 0.002 seconds.
+✔ Test settingsFailureProvidesManualFallbackWithoutAssumingTrust() passed after 0.002 seconds.
+✔ Test cloudConsentDefaultsToDeniedBeforeTransport() passed after 0.002 seconds.
+✔ Test envIsDataAndHandlesQuotesCommentsAndPrecedence() passed after 0.002 seconds.
+✔ Test strictSummaryRejectsMissingNullableFieldsAndExtraKeys() passed after 0.002 seconds.
+✔ Test parseStructuredSummaryAndValidateEvidence() passed after 0.002 seconds.
+✔ Test accessibilityRefreshNeverPromptsOrOpensSettings() passed after 0.002 seconds.
+✔ Test explicitRequestPromptsOnceAndReopensPaneWithoutSpam() passed after 0.002 seconds.
+✔ Test rawModeAndEmptyInputsDoNothing() passed after 0.003 seconds.
+✔ Test rawAndCleanHistoryRoundTripAndOldRecordsRemainReadable() passed after 0.003 seconds.
+✔ Test historyRestartPreservesValidMeetingsBesideCorruptFile() passed after 0.004 seconds.
+✔ Test explicitRestatementCorrectionsRemainReversible() passed after 0.003 seconds.
+✔ Test lightCleanupHandlesExplicitCorrectionsAndFillers() passed after 0.004 seconds.
+✔ Test dictationHistorySurvivesRestartUpdatesAndCorruption() passed after 0.003 seconds.
+✔ Test cancellationStopsRetries() passed after 0.004 seconds.
+✔ Test lateResponseAfterCancellationIsDiscarded() passed after 0.004 seconds.
+✔ Test authenticationFailureDoesNotRetry() passed after 0.004 seconds.
+✔ Test retriesRateLimitsAndServerFailuresWithoutUploadingAudio() passed after 0.004 seconds.
+✔ Test lightCleanupPreservesMeaningAndNeverTreatsDictationAsCommands() passed after 0.005 seconds.
+✔ Test literalFormattingAndExclusionsRemainVerbatim() passed after 0.005 seconds.
+✔ Test historyAndExportsRoundTrip() passed after 0.006 seconds.
+Native Light synthetic cleanup p50 ms: 0.09799003601074219, p95 ms: 0.1569986343383789; 200 iterations, no inference
+✔ Test nativeCleanupTimingSynthetic() passed after 0.024 seconds.
+✔ Test stopFailureStillDetachesAndFinalizesEveryWriter() passed after 0.046 seconds.
+✔ Test writerFailureDoesNotLeaveSiblingUnfinished() passed after 0.046 seconds.
+✔ Test separateCaptureWritersPreserveFormatsAndTimelineOrigins() passed after 0.170 seconds.
+✔ Test run with 56 tests in 0 suites passed after 0.171 seconds.

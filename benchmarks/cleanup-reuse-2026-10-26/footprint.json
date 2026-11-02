@@ -1,0 +1,27 @@
+{
+  "production_qwen_model": {
+    "files": 7,
+    "logical_bytes": 1079467039,
+    "allocated_bytes": 1079480320
+  },
+  "production_python_runtime": {
+    "files": 11251,
+    "logical_bytes": 458330764,
+    "allocated_bytes": 483475456
+  },
+  "production_punctuation_package": {
+    "files": 25,
+    "logical_bytes": 377125438,
+    "allocated_bytes": 377188352
+  },
+  "installed_app": {
+    "files": 28,
+    "logical_bytes": 6623056,
+    "allocated_bytes": 6705152
+  },
+  "rollback_0.4.9": {
+    "files": 26,
+    "logical_bytes": 6603260,
+    "allocated_bytes": 6680576
+  }
+}

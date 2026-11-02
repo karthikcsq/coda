@@ -1,0 +1,20 @@
+Another instance of SwiftPM (PID: 41889) is already running using '/Users/karth/CodingFiles/Coda/coda/.build', waiting until that process has finished execution...Building for debugging...
+[Computing dependencies]
+[1 / 1]
+Build complete! (0.69 sec)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test guardedPasteNeverOverwritesNewCopy() started.
+◇ Test guardedPasteKeepsTheFirstConsumptionReceipt() started.
+◇ Test guardedPasteRestoresAllRepresentations() started.
+✔ Test guardedPasteNeverOverwritesNewCopy() passed after 0.004 seconds.
+✔ Test guardedPasteKeepsTheFirstConsumptionReceipt() passed after 0.005 seconds.
+✔ Test guardedPasteRestoresAllRepresentations() passed after 0.006 seconds.
+✔ Test run with 3 tests in 0 suites passed after 0.006 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Test pasteConsumptionSettlesWithoutAccessibilityReadback() started.
+✔ Test pasteConsumptionSettlesWithoutAccessibilityReadback() passed after 0.001 seconds.
+✔ Test run with 1 test in 0 suites passed after 0.001 seconds.

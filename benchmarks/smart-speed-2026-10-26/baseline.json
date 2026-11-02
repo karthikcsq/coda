@@ -1,0 +1,163 @@
+{
+  "summary": {
+    "ready_seconds": 1.2697498339985032,
+    "median_seconds": 0.29418593749869615,
+    "max_seconds": 1.500549290998606
+  },
+  "rows": [
+    {
+      "id": "short-correction",
+      "text": "Send the package on Thursday.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.1394691249988682,
+      "case": "short-correction",
+      "raw": "Send the package on Monday actually Thursday.",
+      "repeat": 0,
+      "wall_seconds": 0.13959350000004633
+    },
+    {
+      "id": "short-layout",
+      "text": "Hello Anika,\n\nPlease review the invoice.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.13361916699795984,
+      "case": "short-layout",
+      "raw": "hello Anika comma new paragraph please review the invoice period",
+      "repeat": 0,
+      "wall_seconds": 0.13370674999896437
+    },
+    {
+      "id": "plain-80",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "accepted": false,
+      "reason": "unexplained deletion",
+      "seconds": 0.14693370899840374,
+      "case": "plain-80",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "repeat": 0,
+      "wall_seconds": 0.14703320799890207
+    },
+    {
+      "id": "correction-80",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "accepted": false,
+      "reason": "unexplained deletion",
+      "seconds": 0.5412200829996436,
+      "case": "correction-80",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "repeat": 0,
+      "wall_seconds": 0.5413148750012624
+    },
+    {
+      "id": "correction-200",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "accepted": false,
+      "reason": "generation limit",
+      "seconds": 1.4885902919995715,
+      "case": "correction-200",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "repeat": 0,
+      "wall_seconds": 1.4886947920022067
+    },
+    {
+      "id": "plain-200",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "accepted": false,
+      "reason": "generation limit",
+      "seconds": 1.492499833999318,
+      "case": "plain-200",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "repeat": 0,
+      "wall_seconds": 1.492595291001635
+    },
+    {
+      "id": "long-list",
+      "text": "shopping list:\n- apples\n- pears\n- rice\n- socks\n- books\n- pens\n- paper\n- soap\n- salt\n- tea\n- bread\n- milk",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.29531320800015237,
+      "case": "long-list",
+      "raw": "shopping list colon apples comma pears comma rice comma socks comma books comma pens comma paper comma soap comma salt comma tea comma bread comma milk",
+      "repeat": 0,
+      "wall_seconds": 0.29540649999762536
+    },
+    {
+      "id": "short-correction",
+      "text": "Send the package on Thursday.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.11043041599987191,
+      "case": "short-correction",
+      "raw": "Send the package on Monday actually Thursday.",
+      "repeat": 1,
+      "wall_seconds": 0.1105107909970684
+    },
+    {
+      "id": "short-layout",
+      "text": "Hello Anika,\n\nPlease review the invoice.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.1327954160005902,
+      "case": "short-layout",
+      "raw": "hello Anika comma new paragraph please review the invoice period",
+      "repeat": 1,
+      "wall_seconds": 0.13290124999912223
+    },
+    {
+      "id": "plain-80",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "accepted": false,
+      "reason": "unexplained deletion",
+      "seconds": 0.1465484580003249,
+      "case": "plain-80",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "repeat": 1,
+      "wall_seconds": 0.14664600000105565
+    },
+    {
+      "id": "correction-80",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "accepted": false,
+      "reason": "unexplained deletion",
+      "seconds": 0.5393440420011757,
+      "case": "correction-80",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "repeat": 1,
+      "wall_seconds": 0.5394398749995162
+    },
+    {
+      "id": "correction-200",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "accepted": false,
+      "reason": "generation limit",
+      "seconds": 1.5004535830012173,
+      "case": "correction-200",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. Send it on Monday actually Thursday.",
+      "repeat": 1,
+      "wall_seconds": 1.500549290998606
+    },
+    {
+      "id": "plain-200",
+      "text": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "accepted": false,
+      "reason": "generation limit",
+      "seconds": 1.482926500000758,
+      "case": "plain-200",
+      "raw": "We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail. We should keep the current plan and every small detail.",
+      "repeat": 1,
+      "wall_seconds": 1.4830184579986962
+    },
+    {
+      "id": "long-list",
+      "text": "shopping list:\n- apples\n- pears\n- rice\n- socks\n- books\n- pens\n- paper\n- soap\n- salt\n- tea\n- bread\n- milk",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.2928817079991859,
+      "case": "long-list",
+      "raw": "shopping list colon apples comma pears comma rice comma socks comma books comma pens comma paper comma soap comma salt comma tea comma bread comma milk",
+      "repeat": 1,
+      "wall_seconds": 0.29296537499976694
+    }
+  ]
+}

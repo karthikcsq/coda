@@ -1,0 +1,46 @@
+test_automatic_paragraphs_preserve_every_word (test_cleanup_rules.CleanupRules) ... ok
+test_clear_discourse_like (test_cleanup_rules.CleanupRules) ... ok
+test_counted_list (test_cleanup_rules.CleanupRules) ... ok
+test_list_followed_by_prose_preserves_tail (test_cleanup_rules.CleanupRules) ... ok
+test_meaningful_words_and_hedges (test_cleanup_rules.CleanupRules) ... ok
+test_named_enumeration_without_colon (test_cleanup_rules.CleanupRules) ... ok
+test_noise_and_punctuation (test_cleanup_rules.CleanupRules) ... ok
+test_ordinals_after_intro (test_cleanup_rules.CleanupRules) ... ok
+test_ordinary_enumeration_is_prose (test_cleanup_rules.CleanupRules) ... ok
+test_protected_content (test_cleanup_rules.CleanupRules) ... ok
+test_punctuated_agenda_and_conjunction (test_cleanup_rules.CleanupRules) ... ok
+test_short_input_not_forced_into_paragraphs (test_cleanup_rules.CleanupRules) ... ok
+test_symbols_and_compounds (test_cleanup_rules.CleanupRules) ... ok
+test_existing_sentences_and_commands_bypass_prediction (test_punctuation.SourcePunctuation) ... ok
+test_existing_symbols_and_numbers_remain_exact (test_punctuation.SourcePunctuation) ... ok
+test_predictions_only_insert_at_complete_word_boundaries (test_punctuation.SourcePunctuation) ... ok
+test_already_punctuated_needs_no_model_or_rewriting (test_validation.Preservation) ... ERROR
+test_automatic_lists_and_paragraphs_integrated (test_validation.Preservation) ... ok
+test_corrected_article_and_same_object (test_validation.Preservation) ... ok
+test_every_ordinary_token_is_required (test_validation.Preservation) ... ok
+test_filler_policy_and_punctuation_integrated (test_validation.Preservation) ... ok
+test_fillers_hedges_negation_repetition (test_validation.Preservation) ... ok
+test_injection_and_known_bad_spanish (test_validation.Preservation) ... ok
+test_literal_ordinals_and_malformed_punctuation (test_validation.Preservation) ... ok
+test_multi_token_names_are_not_partially_corrected (test_validation.Preservation) ... ok
+test_ordinary_cues_and_partial_corrections (test_validation.Preservation) ... ok
+test_paraphrase_and_exclusion (test_validation.Preservation) ... ok
+test_positive_exact_corrections_and_layout (test_validation.Preservation) ... ok
+test_prepositions_and_words_not_part_of_correction_survive (test_validation.Preservation) ... ok
+test_quick_edits_preserve_unaffected_text_and_corrections (test_validation.Preservation) ... ok
+test_quick_layout_requires_explicit_markers (test_validation.Preservation) ... ok
+test_quoted_and_literal_marker_text (test_validation.Preservation) ... ok
+test_raw_allowed (test_validation.Preservation) ... ok
+
+======================================================================
+ERROR: test_already_punctuated_needs_no_model_or_rewriting (test_validation.Preservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/karth/CodingFiles/Coda/coda/scripts/smart-cleanup/test_validation.py", line 74, in test_already_punctuated_needs_no_model_or_rewriting
+    self.assertEqual(quick_format(injected)[0],injected)
+TypeError: 'NoneType' object is not subscriptable
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.017s
+
+FAILED (errors=1)

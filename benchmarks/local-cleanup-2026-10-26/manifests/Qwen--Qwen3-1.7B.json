@@ -1,0 +1,61 @@
+{
+  "repo": "Qwen/Qwen3-1.7B",
+  "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+  "license": "apache-2.0",
+  "started": 1792976997.089371,
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1570
+    },
+    {
+      "name": "LICENSE",
+      "size": 11343
+    },
+    {
+      "name": "README.md",
+      "size": 13963
+    },
+    {
+      "name": "config.json",
+      "size": 726
+    },
+    {
+      "name": "generation_config.json",
+      "size": 239
+    },
+    {
+      "name": "merges.txt",
+      "size": 1671853
+    },
+    {
+      "name": "model-00001-of-00002.safetensors",
+      "size": 3441185608
+    },
+    {
+      "name": "model-00002-of-00002.safetensors",
+      "size": 622329984
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 25605
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 11422654
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 9732
+    },
+    {
+      "name": "vocab.json",
+      "size": 2776833
+    }
+  ],
+  "data_only": true,
+  "token": false,
+  "local_path": "/private/tmp/coda-cleanup-benchmark/models/Qwen--Qwen3-1.7B",
+  "download_seconds": 153.4651370048523,
+  "actual_bytes": 4079451800
+}

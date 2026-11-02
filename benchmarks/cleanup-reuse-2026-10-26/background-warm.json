@@ -1,0 +1,27 @@
+{
+  "source_ready_seconds": 0.035958958,
+  "model_ready_seconds": 1.659565208,
+  "lazy_first_response": {
+    "id": "lazy",
+    "text": "They actually said no.",
+    "accepted": true,
+    "reason": "validated native cleanup \u00b7 model warming",
+    "seconds": 0.0012673329983954318
+  },
+  "rows": [
+    {
+      "id": 0,
+      "text": "They actually said no.",
+      "accepted": true,
+      "reason": "unchanged",
+      "seconds": 0.15005691699843737
+    },
+    {
+      "id": 1,
+      "text": "I am sorry you waited.",
+      "accepted": false,
+      "reason": "unresolved correction",
+      "seconds": 0.10540745800244622
+    }
+  ]
+}

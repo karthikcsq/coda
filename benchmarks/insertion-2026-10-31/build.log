@@ -1,0 +1,168 @@
+Building for production...
+[Computing dependencies]
+[Pre-planning 1 / 767]
+[Planning deferred tasks]
+[27 / 118]
+[37 / 126] _NumericsShims
+[45 / 141]
+[47 / 141] FFIBuffer
+[55 / 161]
+[57 / 180]
+[63 / 190]
+[75 / 297]
+[84 / 402]
+[93 / 402]
+[103 / 402]
+[108 / 402]
+[114 / 402]
+[126 / 402]
+[133 / 402]
+[140 / 402]
+[149 / 402]
+[150 / 402]
+[154 / 402]
+[156 / 402]
+[169 / 402]
+[172 / 402]
+[184 / 402]
+[190 / 402]
+[195 / 402]
+[200 / 402]
+[202 / 402]
+[203 / 402]
+[204 / 402]
+[216 / 402]
+[219 / 402]
+[240 / 401] JSHost
+[242 / 401]
+[250 / 410] RealModule
+[256 / 408]
+[262 / 408] Regex
+[269 / 412]
+[277 / 411]
+[282 / 411] AudioIO
+[285 / 429]
+[288 / 429]
+[290 / 429]
+[308 / 429]
+[314 / 427]
+[315 / 427]
+[322 / 426]
+[326 / 424] PlatformSupport
+[344 / 444]
+[352 / 444]
+[367 / 449]
+[369 / 449]
+[370 / 449]
+[374 / 449]
+[379 / 449]
+[382 / 449]
+[385 / 449]
+[387 / 449]
+[391 / 449]
+[392 / 449]
+[393 / 449] AudioIO
+[395 / 448] Usage
+[399 / 446]
+[400 / 446]
+[401 / 446] ModelStore
+[407 / 450] ModelCatalog
+[413 / 462]
+[417 / 462]
+[419 / 462]
+[426 / 464]
+[427 / 464] CodaCore
+/Users/karth/CodingFiles/Coda/coda/Package.swift: CodaCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[433 / 463]
+[434 / 463] KeyboardShortcuts
+/Users/karth/CodingFiles/Coda/coda/Vendor/KeyboardShortcuts/Package.swift: KeyboardShortcuts: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[438 / 461] Inference
+[446 / 467] DesertAnt
+[456 / 474] NativeBindings
+[458 / 475] NativeBindings
+[464 / 483] Who
+[469 / 486] Who
+[473 / 484] Voz
+[478 / 483] Coda-product
+[488 / 495]
+[489 / 495]
+[490 / 495]
+[491 / 495] Coda-product
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:134:78: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+129 |         busy = true
+130 |         let id = UUID(); operationID = id
+131 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+132 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+133 |             do {
+134 |                 try await pipeline.prepareVoz(consent: modelConsent) { [weak self] text, value in
+    |                                                                              |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                              `- note: explicitly assign the capture list item to silence
+135 |                     Task { @MainActor in guard self?.operationID == id else { return }; self?.status = text; self?.progress = value }
+136 |                 }
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/AppModel.swift:187:138: warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+182 |         busy = true; progress = nil
+183 |         let id = UUID(); operationID = id
+184 |         operation = Task {
+    |                          |- note: 'self' implicitly strongly captured here
+    |                          `- note: add 'self' as a capture list item to silence
+185 |             defer { busy = false; progress = nil; operation = nil; operationID = nil }
+186 |             do {
+187 |                 let segments = try await pipeline.process(root.appendingPathComponent(meeting.audioFile), consent: modelConsent) { [weak self] text, fraction in
+    |                                                                                                                                          |- warning: 'weak' ownership of capture 'self' differs from implicitly-captured strong reference in outer scope [#ImplicitStrongCapture]
+    |                                                                                                                                          `- note: explicitly assign the capture list item to silence
+188 |                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
+189 |                 }
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:46:36: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 44 |             if let position = attribute(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID() {
+ 45 |                 var point = CGPoint.zero
+ 46 |                 if AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &point) {
+    |                                    `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+ 47 |                     let top = NSScreen.screens.first?.frame.maxY ?? 0
+ 48 |                     let cocoaPoint = CGPoint(x: point.x + 30, y: top - point.y - 30)
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:168:16: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+166 |     private func focusedElement(_ app: AXUIElement) -> AXUIElement? {
+167 |         guard let value = attribute(app, kAXFocusedUIElementAttribute), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+168 |         return unsafeBitCast(value, to: AXUIElement.self)
+    |                `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+169 |     }
+170 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:172:18: warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+170 |     private func selectedRange(_ element: AXUIElement) -> CFRange? {
+171 |         guard let value = attribute(element, kAXSelectedTextRangeAttribute), CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
+172 |         let ax = unsafeBitCast(value, to: AXValue.self)
+    |                  `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXValue' can be replaced with 'unsafeDowncast'
+173 |         guard AXValueGetType(ax) == .cfRange else { return nil }
+174 |         var range = CFRange(); guard AXValueGetValue(ax, .cfRange, &range), range.location >= 0, range.location != NSNotFound, range.length >= 0 else { return nil }; return range
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/DictationInsertion.swift:178:16: warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+176 |     private func elementAttribute(_ element: AXUIElement, _ name: String) -> AXUIElement? {
+177 |         guard let value = attribute(element, name), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+178 |         return unsafeBitCast(value, to: AXUIElement.self)
+    |                `- warning: 'unsafeBitCast' from 'AnyObject' to 'AXUIElement' can be replaced with 'unsafeDowncast'
+179 |     }
+180 |     private func secure(_ element: AXUIElement) -> Bool {
+
+/Users/karth/CodingFiles/Coda/coda/Sources/Coda/GuardedPaste.swift:6:24: warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 4 | /// A transaction owns only its own changeCount. A newer user copy always wins.
+ 5 | /// Inspired by Handy's MIT paste_tx/macos.rs; see THIRD_PARTY_NOTICES.md.
+ 6 | @MainActor final class GuardedPaste: NSObject, @preconcurrency NSPasteboardItemDataProvider {
+   |                        `- warning: '@preconcurrency' on conformance to 'NSPasteboardItemDataProvider' has no effect
+ 7 |     private let board: NSPasteboard
+ 8 |     private var saved: [[NSPasteboard.PasteboardType: Data]] = []
+
+[#ImplicitStrongCapture]: <https://docs.swift.org/compiler/documentation/diagnostics/implicit-strong-capture>
+/Users/karth/CodingFiles/Coda/coda/Package.swift: Coda-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/karth/CodingFiles/Coda/coda/Package.swift: Coda-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[493 / 495] Coda-product
+[494 / 495] Coda-product
+Build complete! (49.79 sec)
+File Doesn't Exist, Will Create: /Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.12-insertion.app/Contents/Info.plist
+Initializing Plist...
+/Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.12-insertion.app: replacing existing signature
+Built /Users/karth/CodingFiles/Coda/coda/build-staged/Coda-0.4.12-insertion.app

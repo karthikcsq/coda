@@ -1,0 +1,14 @@
+{
+  "removed_root": "/tmp/coda-cleanup-reuse-2026-10-26",
+  "removed_logical_bytes": 587802079,
+  "removed_allocated_bytes": 597123072,
+  "extra_removed_bytecode": [],
+  "retained_compact_evidence_at_measurement": {
+    "logical_bytes": 94546,
+    "allocated_bytes": 126976,
+    "note": "Compact evidence folder measured before adding cleanup.json; other research reports may be written by sibling agent."
+  },
+  "production_model_runtime_settings_history_app_or_preexisting_cache_touched": false,
+  "Trash_purged": false,
+  "scratch_absent_after_cleanup": true
+}

@@ -1,0 +1,141 @@
+{
+  "summary": {
+    "ready_seconds": 1.2717325830017217,
+    "median_seconds": 0.1365118129997427,
+    "max_seconds": 1.1925060829998984
+  },
+  "rows": [
+    {
+      "id": "plain-unpunctuated",
+      "text": "Please leave the parcel near the smaller entrance tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.1715799169978709,
+      "case": "plain-unpunctuated",
+      "raw": "please leave the parcel near the smaller entrance tomorrow",
+      "repeat": 0,
+      "wall_seconds": 0.17169649999777903
+    },
+    {
+      "id": "grammar-unpunctuated",
+      "text": "we was there and she don't know",
+      "accepted": false,
+      "reason": "new or replaced words",
+      "seconds": 0.1246047919994453,
+      "case": "grammar-unpunctuated",
+      "raw": "we was there and she don't know",
+      "repeat": 0,
+      "wall_seconds": 0.12468745799924363
+    },
+    {
+      "id": "fillers-unpunctuated",
+      "text": "Um I think perhaps we could really really wait until tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.14154224999947473,
+      "case": "fillers-unpunctuated",
+      "raw": "um I think perhaps we could really really wait until tomorrow",
+      "repeat": 0,
+      "wall_seconds": 0.14161929199690348
+    },
+    {
+      "id": "ordinary-cue",
+      "text": "They actually said no",
+      "accepted": false,
+      "reason": "unresolved correction",
+      "seconds": 0.10347091600124259,
+      "case": "ordinary-cue",
+      "raw": "They actually said no",
+      "repeat": 0,
+      "wall_seconds": 0.10354620799989789
+    },
+    {
+      "id": "different-context",
+      "text": "Zarina will visit us after the market closes tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.13552354100102093,
+      "case": "different-context",
+      "raw": "Zarina will visit us after the market closes tomorrow",
+      "repeat": 0,
+      "wall_seconds": 0.1355990420015587
+    },
+    {
+      "id": "long-unpunctuated",
+      "text": "At the morning workshop the team reviews the current schedule and compares several practical options for the coming season everyone brings a notebook and a printed map of the neighborhood the discussion starts with transport then moves toward seating refreshments invitations and volunteer responsibilities after a short break the coordinator checks the supply cabinet while another participant measures the doorway near the entrance a visitor suggests placing the welcome table beside the large window because the afternoon sunlight makes that corner easier to find meanwhile the remaining members arrange chairs around the central display and leave enough space for people carrying bags before leaving they check the weather forecast confirm the delivery address and agree to send a brief update tomorrow nobody needs to change the budget today but the final order should wait until the attendance estimate arrives later this week several people offer to return early on Saturday to help prepare the room and label the storage boxes",
+      "accepted": false,
+      "reason": "new or replaced words",
+      "seconds": 1.187947250000434,
+      "case": "long-unpunctuated",
+      "raw": "At the morning workshop the team reviews the current schedule and compares several practical options for the coming season everyone brings a notebook and a printed map of the neighborhood the discussion starts with transport then moves toward seating refreshments invitations and volunteer responsibilities after a short break the coordinator checks the supply cabinet while another participant measures the doorway near the entrance a visitor suggests placing the welcome table beside the large window because the afternoon sunlight makes that corner easier to find meanwhile the remaining members arrange chairs around the central display and leave enough space for people carrying bags before leaving they check the weather forecast confirm the delivery address and agree to send a brief update tomorrow nobody needs to change the budget today but the final order should wait until the attendance estimate arrives later this week several people offer to return early on Saturday to help prepare the room and label the storage boxes",
+      "repeat": 0,
+      "wall_seconds": 1.1880405830015661
+    },
+    {
+      "id": "plain-unpunctuated",
+      "text": "Please leave the parcel near the smaller entrance tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.13188170800276566,
+      "case": "plain-unpunctuated",
+      "raw": "please leave the parcel near the smaller entrance tomorrow",
+      "repeat": 1,
+      "wall_seconds": 0.1319637500018871
+    },
+    {
+      "id": "grammar-unpunctuated",
+      "text": "we was there and she don't know",
+      "accepted": false,
+      "reason": "new or replaced words",
+      "seconds": 0.12729812500037951,
+      "case": "grammar-unpunctuated",
+      "raw": "we was there and she don't know",
+      "repeat": 1,
+      "wall_seconds": 0.1273852500016801
+    },
+    {
+      "id": "fillers-unpunctuated",
+      "text": "Um I think perhaps we could really really wait until tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.14344483400054742,
+      "case": "fillers-unpunctuated",
+      "raw": "um I think perhaps we could really really wait until tomorrow",
+      "repeat": 1,
+      "wall_seconds": 0.14352437499837833
+    },
+    {
+      "id": "ordinary-cue",
+      "text": "They actually said no",
+      "accepted": false,
+      "reason": "unresolved correction",
+      "seconds": 0.10472554100124398,
+      "case": "ordinary-cue",
+      "raw": "They actually said no",
+      "repeat": 1,
+      "wall_seconds": 0.10480587500205729
+    },
+    {
+      "id": "different-context",
+      "text": "Zarina will visit us after the market closes tomorrow.",
+      "accepted": true,
+      "reason": "validated",
+      "seconds": 0.13734595899950364,
+      "case": "different-context",
+      "raw": "Zarina will visit us after the market closes tomorrow",
+      "repeat": 1,
+      "wall_seconds": 0.13742458399792667
+    },
+    {
+      "id": "long-unpunctuated",
+      "text": "At the morning workshop the team reviews the current schedule and compares several practical options for the coming season everyone brings a notebook and a printed map of the neighborhood the discussion starts with transport then moves toward seating refreshments invitations and volunteer responsibilities after a short break the coordinator checks the supply cabinet while another participant measures the doorway near the entrance a visitor suggests placing the welcome table beside the large window because the afternoon sunlight makes that corner easier to find meanwhile the remaining members arrange chairs around the central display and leave enough space for people carrying bags before leaving they check the weather forecast confirm the delivery address and agree to send a brief update tomorrow nobody needs to change the budget today but the final order should wait until the attendance estimate arrives later this week several people offer to return early on Saturday to help prepare the room and label the storage boxes",
+      "accepted": false,
+      "reason": "new or replaced words",
+      "seconds": 1.1924097500013886,
+      "case": "long-unpunctuated",
+      "raw": "At the morning workshop the team reviews the current schedule and compares several practical options for the coming season everyone brings a notebook and a printed map of the neighborhood the discussion starts with transport then moves toward seating refreshments invitations and volunteer responsibilities after a short break the coordinator checks the supply cabinet while another participant measures the doorway near the entrance a visitor suggests placing the welcome table beside the large window because the afternoon sunlight makes that corner easier to find meanwhile the remaining members arrange chairs around the central display and leave enough space for people carrying bags before leaving they check the weather forecast confirm the delivery address and agree to send a brief update tomorrow nobody needs to change the budget today but the final order should wait until the attendance estimate arrives later this week several people offer to return early on Saturday to help prepare the room and label the storage boxes",
+      "repeat": 1,
+      "wall_seconds": 1.1925060829998984
+    }
+  ]
+}

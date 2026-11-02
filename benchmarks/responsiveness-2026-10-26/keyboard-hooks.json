@@ -1,0 +1,21 @@
+{
+  "symptom": "Every subsequent physical keystroke duplicated after earlier Coda computer-use session",
+  "metadata_only": true,
+  "keystrokes_read": false,
+  "before": {
+    "owner": "SkyComputerUseService",
+    "owner_pid": 1816,
+    "target": "Coda",
+    "target_pid": 3669,
+    "enabled_nonlisten_keyboard_taps": 2
+  },
+  "action": "Verified helper executable basename with proc_pidpath, then SIGTERM only to that PID",
+  "after": {
+    "SkyComputerUseService_keyboard_taps": 0
+  },
+  "Coda_terminated": false,
+  "permissions_changed": false,
+  "limitations": "No live key capture/replay. User confirmation of restored physical typing is pending. This identifies and releases computer-use hooks; it does not prove all possible causes of duplicate typing.",
+  "after_installation_hook_metadata": [],
+  "after_installation_Sky_Coda_taps": 0
+}

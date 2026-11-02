@@ -1,0 +1,16 @@
+test_corrected_article_and_same_object (test_validation.Preservation) ... ok
+test_every_ordinary_token_is_required (test_validation.Preservation) ... ok
+test_fillers_hedges_negation_repetition (test_validation.Preservation) ... ok
+test_injection_and_known_bad_spanish (test_validation.Preservation) ... ok
+test_literal_ordinals_and_malformed_punctuation (test_validation.Preservation) ... ok
+test_ordinary_cues_and_partial_corrections (test_validation.Preservation) ... ok
+test_paraphrase_and_exclusion (test_validation.Preservation) ... ok
+test_positive_exact_corrections_and_layout (test_validation.Preservation) ... ok
+test_prepositions_and_words_not_part_of_correction_survive (test_validation.Preservation) ... ok
+test_quoted_and_literal_marker_text (test_validation.Preservation) ... ok
+test_raw_allowed (test_validation.Preservation) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.002s
+
+OK

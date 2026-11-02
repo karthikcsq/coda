@@ -1,0 +1,2125 @@
+{
+  "timestamp_utc": "2026-10-26T18:11:33.400295+00:00",
+  "root": "/tmp/coda-punctuation-tagger-2026-10-26",
+  "manifest": "inventory.json",
+  "files_removed": 352,
+  "logical_bytes_removed": 477158501,
+  "allocated_bytes_removed": 479338496,
+  "root_absent": true,
+  "leftovers": [],
+  "scope": "Only hash-verified task-created trial/download/runtime scratch; production installation, rollback apps, user history and preexisting caches untouched.",
+  "files": [
+    {
+      "path": "download-manifest.json",
+      "bytes": 3119,
+      "allocated_bytes": 4096,
+      "sha256": "1e8e24375ac97195c8171ffb792e30830a78aca659b2c40e341b3414586e995d"
+    },
+    {
+      "path": "model-meta.json",
+      "bytes": 6435,
+      "allocated_bytes": 8192,
+      "sha256": "b0a3414135e25020afc260bbbb4fe0c2173e37c9da7a1afda89163e3b3112c02"
+    },
+    {
+      "path": "model/LICENSE-2.0.txt",
+      "bytes": 11358,
+      "allocated_bytes": 12288,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "model/README.md",
+      "bytes": 14142,
+      "allocated_bytes": 16384,
+      "sha256": "4f4ec573102819c5a12ffc86b4ecfbf9706d78cf5587f64d11a6cb6190907a78"
+    },
+    {
+      "path": "model/config.json",
+      "bytes": 2110,
+      "allocated_bytes": 4096,
+      "sha256": "f457c77954f0720ff2c0624b92714fb551bd19c42fba0625ee7af1740df49e05"
+    },
+    {
+      "path": "model/onnx/model_quantized.onnx",
+      "bytes": 268414381,
+      "allocated_bytes": 269484032,
+      "sha256": "5679870be92c7fa47c9be9b2872fac389ef28d43d2c33f35e1315b93a82f4ace"
+    },
+    {
+      "path": "model/punctuate.py",
+      "bytes": 3740,
+      "allocated_bytes": 4096,
+      "sha256": "3f6fa4de64af82c358d907f833e5a2044dc7ac942724335232c0889a20faadb1"
+    },
+    {
+      "path": "model/special_tokens_map.json",
+      "bytes": 636,
+      "allocated_bytes": 4096,
+      "sha256": "baec30ea10906f16adb8c18af7a34023002c1746542612b8b41c9f09e1351351"
+    },
+    {
+      "path": "model/tokenizer.json",
+      "bytes": 34363286,
+      "allocated_bytes": 34603008,
+      "sha256": "f34b44a6dc8a0eef651bfa10e8325057530152606a69d9c3b6ae02efb1558f0a"
+    },
+    {
+      "path": "model/tokenizer_config.json",
+      "bytes": 46440,
+      "allocated_bytes": 49152,
+      "sha256": "ea349495764b24570b4560fe2e4a557e5c0a47e6bce782c2409b1d6445cf8633"
+    },
+    {
+      "path": "onnxruntime-meta.json",
+      "bytes": 1082574,
+      "allocated_bytes": 1085440,
+      "sha256": "41c0e4e818f8029758efd42e1ffa898213f10ba9bdd1c527a82c978cbceeaa01"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime-1.31.0.dist-info/METADATA",
+      "bytes": 5745,
+      "allocated_bytes": 8192,
+      "sha256": "49d642d98f88dc138508e87888dea36d54ea9a3cd2865ed0a97ce599a9d39428"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime-1.31.0.dist-info/RECORD",
+      "bytes": 35375,
+      "allocated_bytes": 36864,
+      "sha256": "3f3caa221032e1c5954a85de68f00072ac7e237413ddfaebc08d35f5a3a8df5e"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime-1.31.0.dist-info/WHEEL",
+      "bytes": 136,
+      "allocated_bytes": 4096,
+      "sha256": "a6e6d3127ce88168a4088d10b57d61a906351e5cf4bfbccbda789e5d9613ce77"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime-1.31.0.dist-info/entry_points.txt",
+      "bytes": 77,
+      "allocated_bytes": 4096,
+      "sha256": "eea2d2e056c65f03d98df7695401a99e693d23a9ba1f90b1127c1c0b1d489a3b"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime-1.31.0.dist-info/top_level.txt",
+      "bytes": 12,
+      "allocated_bytes": 4096,
+      "sha256": "ce4fdf2447a4ad39bd0cbc57d8bc067a0a2456a3fa6e5a8f845a0c22e87436ff"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/LICENSE",
+      "bytes": 1073,
+      "allocated_bytes": 4096,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/Privacy.md",
+      "bytes": 6571,
+      "allocated_bytes": 8192,
+      "sha256": "ea592b16d154ff2de759ba5210350c64593c378c1bbd0a2aa4ddef777edbf358"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/ThirdPartyNotices.txt",
+      "bytes": 338088,
+      "allocated_bytes": 339968,
+      "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/__init__.py",
+      "bytes": 21768,
+      "allocated_bytes": 24576,
+      "sha256": "62f7971f8f366e79ce846677f9a54baa25902836fb85c4874bfcaaf65715a2b2"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/__init__.py",
+      "bytes": 247,
+      "allocated_bytes": 4096,
+      "sha256": "592371b77978964580ff4be1c35103e08eca38ed269c0b87c1280562a6ead0b8"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/_ld_preload.py",
+      "bytes": 406,
+      "allocated_bytes": 4096,
+      "sha256": "fcbae721c4dae4e8d3be93414636d282176c786965be9ef116d3c1053e2ad13a"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/_pybind_state.py",
+      "bytes": 1500,
+      "allocated_bytes": 4096,
+      "sha256": "9f0392aee0402506fd8da1b58398aea6a77896743cce8abab0739b9aac9e3c00"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/build_and_package_info.py",
+      "bytes": 52,
+      "allocated_bytes": 4096,
+      "sha256": "502b54b206e5a5994f3fda02dbcee4c16042a94fd246a3e1aa9d8cd19bd1452a"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/convert_npz_to_onnx_adapter.py",
+      "bytes": 1533,
+      "allocated_bytes": 4096,
+      "sha256": "b2008e1314fe424777416aba16e8a25f63c7916024e9ca4f542b33232e207940"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/libonnxruntime.1.31.0.dylib",
+      "bytes": 33037336,
+      "allocated_bytes": 33038336,
+      "sha256": "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/onnxruntime_collect_build_info.py",
+      "bytes": 2062,
+      "allocated_bytes": 4096,
+      "sha256": "8fd2e904489839779f5ff3e422e9ff1355ac6d6d8fcab20d324c1b1a7bea3986"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/onnxruntime_inference_collection.py",
+      "bytes": 85334,
+      "allocated_bytes": 86016,
+      "sha256": "55fa6aacb08799004503b04809edfc2efd23a2c09b74ce344478e7d75a70293b"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/onnxruntime_pybind11_state.so",
+      "bytes": 40771632,
+      "allocated_bytes": 40775680,
+      "sha256": "f470236cc0387e3e5da3e2aff0c5703b0abcd0ff6e761c3c35fd1050bb610b22"
+    },
+    {
+      "path": "runtime-minimal/onnxruntime/capi/onnxruntime_validation.py",
+      "bytes": 6795,
+      "allocated_bytes": 8192,
+      "sha256": "8b841ee5c921a0aebd23dc79514fc34e940ce7bc7902540025e50a1d0cb6e120"
+    },
+    {
+      "path": "runtime/onnxruntime-1.31.0.dist-info/METADATA",
+      "bytes": 5745,
+      "allocated_bytes": 8192,
+      "sha256": "49d642d98f88dc138508e87888dea36d54ea9a3cd2865ed0a97ce599a9d39428"
+    },
+    {
+      "path": "runtime/onnxruntime-1.31.0.dist-info/RECORD",
+      "bytes": 35375,
+      "allocated_bytes": 36864,
+      "sha256": "3f3caa221032e1c5954a85de68f00072ac7e237413ddfaebc08d35f5a3a8df5e"
+    },
+    {
+      "path": "runtime/onnxruntime-1.31.0.dist-info/WHEEL",
+      "bytes": 136,
+      "allocated_bytes": 4096,
+      "sha256": "a6e6d3127ce88168a4088d10b57d61a906351e5cf4bfbccbda789e5d9613ce77"
+    },
+    {
+      "path": "runtime/onnxruntime-1.31.0.dist-info/entry_points.txt",
+      "bytes": 77,
+      "allocated_bytes": 4096,
+      "sha256": "eea2d2e056c65f03d98df7695401a99e693d23a9ba1f90b1127c1c0b1d489a3b"
+    },
+    {
+      "path": "runtime/onnxruntime-1.31.0.dist-info/top_level.txt",
+      "bytes": 12,
+      "allocated_bytes": 4096,
+      "sha256": "ce4fdf2447a4ad39bd0cbc57d8bc067a0a2456a3fa6e5a8f845a0c22e87436ff"
+    },
+    {
+      "path": "runtime/onnxruntime/LICENSE",
+      "bytes": 1073,
+      "allocated_bytes": 4096,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    {
+      "path": "runtime/onnxruntime/Privacy.md",
+      "bytes": 6571,
+      "allocated_bytes": 8192,
+      "sha256": "ea592b16d154ff2de759ba5210350c64593c378c1bbd0a2aa4ddef777edbf358"
+    },
+    {
+      "path": "runtime/onnxruntime/ThirdPartyNotices.txt",
+      "bytes": 338088,
+      "allocated_bytes": 339968,
+      "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3"
+    },
+    {
+      "path": "runtime/onnxruntime/__init__.py",
+      "bytes": 21768,
+      "allocated_bytes": 24576,
+      "sha256": "62f7971f8f366e79ce846677f9a54baa25902836fb85c4874bfcaaf65715a2b2"
+    },
+    {
+      "path": "runtime/onnxruntime/backend/__init__.py",
+      "bytes": 328,
+      "allocated_bytes": 4096,
+      "sha256": "92ad7c59c0743a5dfc0921872fe38dc2991f504d0a726a233aaea4f951ada306"
+    },
+    {
+      "path": "runtime/onnxruntime/backend/backend.py",
+      "bytes": 10233,
+      "allocated_bytes": 12288,
+      "sha256": "525d90c2a39048d52b33d5386a29ea5ad6313eb9248e04641b14a06f02bfcbbb"
+    },
+    {
+      "path": "runtime/onnxruntime/backend/backend_rep.py",
+      "bytes": 2825,
+      "allocated_bytes": 4096,
+      "sha256": "aec649a2316ad08b2cb1f5234f6f3fdf41bd0bd7d05ada8865ff8ed905098c00"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/__init__.py",
+      "bytes": 247,
+      "allocated_bytes": 4096,
+      "sha256": "592371b77978964580ff4be1c35103e08eca38ed269c0b87c1280562a6ead0b8"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/_ld_preload.py",
+      "bytes": 406,
+      "allocated_bytes": 4096,
+      "sha256": "fcbae721c4dae4e8d3be93414636d282176c786965be9ef116d3c1053e2ad13a"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/_pybind_state.py",
+      "bytes": 1500,
+      "allocated_bytes": 4096,
+      "sha256": "9f0392aee0402506fd8da1b58398aea6a77896743cce8abab0739b9aac9e3c00"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/build_and_package_info.py",
+      "bytes": 52,
+      "allocated_bytes": 4096,
+      "sha256": "502b54b206e5a5994f3fda02dbcee4c16042a94fd246a3e1aa9d8cd19bd1452a"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/convert_npz_to_onnx_adapter.py",
+      "bytes": 1533,
+      "allocated_bytes": 4096,
+      "sha256": "b2008e1314fe424777416aba16e8a25f63c7916024e9ca4f542b33232e207940"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/libonnxruntime.1.31.0.dylib",
+      "bytes": 33037336,
+      "allocated_bytes": 33038336,
+      "sha256": "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/onnxruntime_collect_build_info.py",
+      "bytes": 2062,
+      "allocated_bytes": 4096,
+      "sha256": "8fd2e904489839779f5ff3e422e9ff1355ac6d6d8fcab20d324c1b1a7bea3986"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/onnxruntime_inference_collection.py",
+      "bytes": 85334,
+      "allocated_bytes": 86016,
+      "sha256": "55fa6aacb08799004503b04809edfc2efd23a2c09b74ce344478e7d75a70293b"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/onnxruntime_pybind11_state.so",
+      "bytes": 40771632,
+      "allocated_bytes": 40775680,
+      "sha256": "f470236cc0387e3e5da3e2aff0c5703b0abcd0ff6e761c3c35fd1050bb610b22"
+    },
+    {
+      "path": "runtime/onnxruntime/capi/onnxruntime_validation.py",
+      "bytes": 6795,
+      "allocated_bytes": 8192,
+      "sha256": "8b841ee5c921a0aebd23dc79514fc34e940ce7bc7902540025e50a1d0cb6e120"
+    },
+    {
+      "path": "runtime/onnxruntime/datasets/__init__.py",
+      "bytes": 455,
+      "allocated_bytes": 4096,
+      "sha256": "28244c8b55c33ad8aa29e063d5b9ac0e3520ee582fe19d20d8b16c0ad6a4062d"
+    },
+    {
+      "path": "runtime/onnxruntime/datasets/logreg_iris.onnx",
+      "bytes": 670,
+      "allocated_bytes": 4096,
+      "sha256": "8224784c98d73412d9fd99abcd57a38568bd590980d0fbe5916464531c52e8fc"
+    },
+    {
+      "path": "runtime/onnxruntime/datasets/mul_1.onnx",
+      "bytes": 130,
+      "allocated_bytes": 4096,
+      "sha256": "71f431c4e9321ec6fbeb158d02ed240459a7dcc98673fa79a4f439ce42efaf10"
+    },
+    {
+      "path": "runtime/onnxruntime/datasets/sigmoid.onnx",
+      "bytes": 103,
+      "allocated_bytes": 4096,
+      "sha256": "5340aba67a7e3475162ad794378af55f1718f55f9a5d74b4af60ecc7f7a624b6"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/CalTableFlatBuffers/KeyValue.py",
+      "bytes": 2172,
+      "allocated_bytes": 4096,
+      "sha256": "fecc58656ee31b11d336456ad3e6e5fce4e8ab60dd31718e9e968756180dd8cb"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/CalTableFlatBuffers/TrtTable.py",
+      "bytes": 2592,
+      "allocated_bytes": 4096,
+      "sha256": "eeb0e37992385ac644f978f88e601dbcceb10c6c42c256cb88889a87b05f1133"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/CalTableFlatBuffers/__init__.py",
+      "bytes": 0,
+      "allocated_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/__init__.py",
+      "bytes": 763,
+      "allocated_bytes": 4096,
+      "sha256": "e6a397c6f48639307150aa6d495826b3a3f3229220748a095837a592c9beac8c"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/base_quantizer.py",
+      "bytes": 25765,
+      "allocated_bytes": 28672,
+      "sha256": "d0fba38e56f9d0592cf6c4f72ee3a38a13d023a50b8852a5d05d49f6d19c1ca9"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/calibrate.py",
+      "bytes": 56791,
+      "allocated_bytes": 57344,
+      "sha256": "dd84a7663166b2eb013ac51c1184cd36c689786813d49916cd5a7b779b39bea0"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/cuda_quantizer.py",
+      "bytes": 26855,
+      "allocated_bytes": 28672,
+      "sha256": "1e4dbc4f780c06a281054aac00fbbb7e136dfee1c29eee350c3e3dd420310e55"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/__init__.py",
+      "bytes": 118,
+      "allocated_bytes": 4096,
+      "sha256": "99a13e72b8e602904cfac188b98fcfce386542eb10afc0fe140840f5eaa6f758"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/fusion_lpnorm.py",
+      "bytes": 5195,
+      "allocated_bytes": 8192,
+      "sha256": "6767db32ff39da3cc2c9691f4d36acab90883d2bed0fe1161a6507d677c7cf5f"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/fusion_spacetodepth.py",
+      "bytes": 6123,
+      "allocated_bytes": 8192,
+      "sha256": "1fe6bea7151d14dc4e0c9bca81e6b251c65bc9297bb8b6c2c5ba43e5b0650575"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/mixed_precision_overrides_utils.py",
+      "bytes": 18582,
+      "allocated_bytes": 20480,
+      "sha256": "beff0aa9254a724556906333c169615ab64de047b45c09c1f325fee0b334da07"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/preprocess.py",
+      "bytes": 16383,
+      "allocated_bytes": 16384,
+      "sha256": "56997c1fa18cd53a176ca84706f9667c127c8a145b2265490c8177798b249665"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/execution_providers/qnn/quant_config.py",
+      "bytes": 18597,
+      "allocated_bytes": 20480,
+      "sha256": "07a58ddb57eaf0a4a17550bf86bebeee1c8c739a65a92b30368ad4629b9c68d4"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/fusions/__init__.py",
+      "bytes": 242,
+      "allocated_bytes": 4096,
+      "sha256": "f05e55a909e2a9aedaec74ef9451aff14e65b6f059f9215ad936310ab822ab24"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/fusions/fusion.py",
+      "bytes": 11777,
+      "allocated_bytes": 12288,
+      "sha256": "f2f4cb00704942a8143f02b6539c9de94c14b64d4c1cfc8ace52e3fb89574112"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/fusions/fusion_gelu.py",
+      "bytes": 10375,
+      "allocated_bytes": 12288,
+      "sha256": "a2216ab4e51cba690f6601f96dd4aa9ad7a898ce9611a7b0c0cd7cc29bf79b2c"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/fusions/fusion_layernorm.py",
+      "bytes": 6000,
+      "allocated_bytes": 8192,
+      "sha256": "5347c96082498172da1d61742ec120746b3fd7d8a9b27ff397cd1ba9b0806784"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/fusions/replace_upsample_with_resize.py",
+      "bytes": 3331,
+      "allocated_bytes": 4096,
+      "sha256": "21663d11455fde7190b9aa04c334a798f8383059af561527ac309398b7cba3bc"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/matmul_bnb4_quantizer.py",
+      "bytes": 9024,
+      "allocated_bytes": 12288,
+      "sha256": "2afb1460ff720f0fee991f2f12434d4a154059f00847e96853151041735fcff6"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/matmul_nbits_quantizer.py",
+      "bytes": 79753,
+      "allocated_bytes": 81920,
+      "sha256": "04feb252358ee7f20758a732537adff49fb10c7e80e84e358a4eb4c763bc3903"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/neural_compressor/__init__.py",
+      "bytes": 67,
+      "allocated_bytes": 4096,
+      "sha256": "97eb008ba62d7bfb6234540b738dce6914085e0517358f1c091232e9db87f172"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/neural_compressor/onnx_model.py",
+      "bytes": 49600,
+      "allocated_bytes": 53248,
+      "sha256": "0f901eb2ee11bc2ec80a941e4072243ef472143b0e1becd020ad0de72f2d3563"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/neural_compressor/util.py",
+      "bytes": 2682,
+      "allocated_bytes": 4096,
+      "sha256": "20f54aa4817b69e5480e3bb456f460bcc3d53b9b12a8d1fecb038a182b968eaf"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/neural_compressor/weight_only.py",
+      "bytes": 36295,
+      "allocated_bytes": 36864,
+      "sha256": "2f7a7760a7dd7bbbd65a6ea0b46c876e2ce1fda0e34bccf0a54c946f6a676598"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/onnx_model.py",
+      "bytes": 23928,
+      "allocated_bytes": 24576,
+      "sha256": "1695618b252d7457efc5c6eb55d8ad959b1ef36039b364945d1e47f9a490e421"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/onnx_quantizer.py",
+      "bytes": 49827,
+      "allocated_bytes": 53248,
+      "sha256": "1809b37ddeec8ee69cc0a50cf366eeaed83c2c62211d9be01e0cc751d7926800"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/__init__.py",
+      "bytes": 83,
+      "allocated_bytes": 4096,
+      "sha256": "7b531614058e27f1678fbea573c2e71b6dafd8ac22ff236f2a1d1aaa489d10a5"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/activation.py",
+      "bytes": 4426,
+      "allocated_bytes": 8192,
+      "sha256": "63d8004592e07fedc847da426b135e541a06bb465889063c646e0a72dc3829ff"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/argmax.py",
+      "bytes": 571,
+      "allocated_bytes": 4096,
+      "sha256": "86b3b40c8808df3c33956e8c7207d25b3f7b6d4bc7b96193b321f6ba11b540d1"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/attention.py",
+      "bytes": 2564,
+      "allocated_bytes": 4096,
+      "sha256": "45b7d496416d2cfd4ee702e5c2fe47f18a2535e8dfd17cae07845fa8629595e3"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/base_operator.py",
+      "bytes": 1092,
+      "allocated_bytes": 4096,
+      "sha256": "74a29cf70d2a2e7afd1ceb4a4c6f222452993f037077956576efb544998fcaf9"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/binary_op.py",
+      "bytes": 2472,
+      "allocated_bytes": 4096,
+      "sha256": "407cb36bfb9b087e8a2caa7b26d586a0d2d804e2d5c61b8287572b98860bf4ca"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/concat.py",
+      "bytes": 2081,
+      "allocated_bytes": 4096,
+      "sha256": "731ec69fc8e1e1fa016e8a516f824f02836c4b23f500a737fe01969d5c891344"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/conv.py",
+      "bytes": 9943,
+      "allocated_bytes": 12288,
+      "sha256": "be3bc477995318cfd45619453444abb19638e746b6907318cacfe54ec1b34d7e"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/direct_q8.py",
+      "bytes": 3311,
+      "allocated_bytes": 4096,
+      "sha256": "ed3514d7e2409b916efffe11a91c463e05f0aaa0f7ff472e4b44944788aa28d5"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/embed_layernorm.py",
+      "bytes": 3937,
+      "allocated_bytes": 4096,
+      "sha256": "686ab6cb0e19b63be00b9fed78023f7c09f5f14120af54a126b5d3eedd7c2464"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/gather.py",
+      "bytes": 2166,
+      "allocated_bytes": 4096,
+      "sha256": "2cac2de86bcc9bcd327047580cf73bc8e0ecee1a52b832e279289bd7695b9b7a"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/gavgpool.py",
+      "bytes": 2383,
+      "allocated_bytes": 4096,
+      "sha256": "cdb2d953162af78b71f8e553656bfae005becbc32f9a4fb671740d6ca3352896"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/gemm.py",
+      "bytes": 6054,
+      "allocated_bytes": 8192,
+      "sha256": "9077b95a0f33f0eb962ce2bd5f66b411ef268b80fba62a61269b327cfda6d1c4"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/lstm.py",
+      "bytes": 5117,
+      "allocated_bytes": 8192,
+      "sha256": "1cdd3fb3c00ded7503747824a1dbd773ba08e3172f4b63da9c6fe9238c613cec"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/matmul.py",
+      "bytes": 7995,
+      "allocated_bytes": 8192,
+      "sha256": "7d850ddaa686a670848662c50f2338a3e634a859b4b5c6efd6191bc60940d08e"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/maxpool.py",
+      "bytes": 1349,
+      "allocated_bytes": 4096,
+      "sha256": "b7357d17439efe5c35c9d22131ef0cc33f661fb395613cfee54031bc38dc265c"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/norm.py",
+      "bytes": 1609,
+      "allocated_bytes": 4096,
+      "sha256": "0da2c43dc5677e4c1a0fa7a94e0ac2ee1784f838e25814ecda8b0048c613f741"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/pad.py",
+      "bytes": 7779,
+      "allocated_bytes": 8192,
+      "sha256": "92ee11d6df95801111f345685eb132ff8c41754a3dec363d7ac0df999d736b01"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/pooling.py",
+      "bytes": 2218,
+      "allocated_bytes": 4096,
+      "sha256": "65323c1632f093e79aa3bfaa638e5c0ac52da1b95956f27b3c86745bd629404c"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/qdq_base_operator.py",
+      "bytes": 801,
+      "allocated_bytes": 4096,
+      "sha256": "833a553185bda598964606d9107a4a806b96a9c3a232cb18b61f93a7269ddac8"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/resize.py",
+      "bytes": 928,
+      "allocated_bytes": 4096,
+      "sha256": "5caa4667dafb624f433982c041173f98acbe8ef884f375a74f8155eb908b4cb4"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/softmax.py",
+      "bytes": 2640,
+      "allocated_bytes": 4096,
+      "sha256": "377d90c9cf445eb62c4c84fd24e009804662f838740f81551c54ac98e226bd1d"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/split.py",
+      "bytes": 2195,
+      "allocated_bytes": 4096,
+      "sha256": "1d76742cae13f2fb116e1c8723c0e30710a62769c0df321258cf486bdca50212"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/operators/where.py",
+      "bytes": 3040,
+      "allocated_bytes": 4096,
+      "sha256": "b43afc5d219013a56e43653f9a244db0e8b0efee9766478ef7a74cd67697e1e8"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/preprocess.py",
+      "bytes": 4904,
+      "allocated_bytes": 8192,
+      "sha256": "105d56a717cc3a81922596c1d3804bf4ae3e9801d8ef15a3e6d86fcf5b7ae1d7"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/qdq_loss_debug.py",
+      "bytes": 15440,
+      "allocated_bytes": 16384,
+      "sha256": "f8fcf18ea1e0081ba77ecb6664e67650c068bdf206f0d3ff63351833da480629"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/qdq_quantizer.py",
+      "bytes": 72744,
+      "allocated_bytes": 73728,
+      "sha256": "f13c5f14b64ee33168f7ad9bfe8b74f55de014131e532dd84d9c58ec7416c513"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/quant_utils.py",
+      "bytes": 51847,
+      "allocated_bytes": 53248,
+      "sha256": "be27f72fa51182467171faab0d26d3b9e86bb5c980833d8886721a421af92058"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/quantize.py",
+      "bytes": 60301,
+      "allocated_bytes": 61440,
+      "sha256": "b96538a6a4f2311cf9af9ece760170b3d90c527cd7dfc4760ad8cafbbf694324"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/registry.py",
+      "bytes": 3807,
+      "allocated_bytes": 4096,
+      "sha256": "342e55d91f62a64fcd4e4d721a0ac568af69c822a7557312d8bd69a4adc3a5f5"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/shape_inference.py",
+      "bytes": 10546,
+      "allocated_bytes": 12288,
+      "sha256": "f1fc6a69fd829d29963ba6d90a6b81d16b7ef3536a7a0dffacf8e3858ef5c227"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/static_quantize_runner.py",
+      "bytes": 11085,
+      "allocated_bytes": 12288,
+      "sha256": "656546050e54f699780c560b85b19209f9cbfdf6544a6bd046de4ea93d6c3a12"
+    },
+    {
+      "path": "runtime/onnxruntime/quantization/tensor_quant_overrides.py",
+      "bytes": 20784,
+      "allocated_bytes": 24576,
+      "sha256": "6df028cd14bf2919ead19d103aad77331fe4fde186a90f8a74f440384932a0c9"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/__init__.py",
+      "bytes": 518,
+      "allocated_bytes": 4096,
+      "sha256": "8b1e1ecad6d6555f1029e66ef8d54f8dbf2820c5ab484d262b37d5867edc8419"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/check_onnx_model_mobile_usability.py",
+      "bytes": 1670,
+      "allocated_bytes": 4096,
+      "sha256": "f163240311641dad9d34cc033fde11c711b4e314a01bfc11bfe710f88229bb39"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/convert_onnx_models_to_ort.py",
+      "bytes": 17022,
+      "allocated_bytes": 20480,
+      "sha256": "70535e72929e113ef6c60ce2659d818a1338150681e21efd4468f8a6c7c01e1d"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/file_utils.py",
+      "bytes": 1525,
+      "allocated_bytes": 4096,
+      "sha256": "4158f78e261deb4be3ce3b14273c6a79affa3e95ea2f8ce6d160875f894aa16f"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/logger.py",
+      "bytes": 322,
+      "allocated_bytes": 4096,
+      "sha256": "e9d41a866f29808aab807d679569c2546048846e898ed95d2aff5f7676892a67"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/make_dynamic_shape_fixed.py",
+      "bytes": 2569,
+      "allocated_bytes": 4096,
+      "sha256": "c2467ae5ea357592b330e8c5027d1e16b3be5c68bbad9206f3be7477d9ead161"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/mobile_helpers/__init__.py",
+      "bytes": 0,
+      "allocated_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/mobile_helpers/coreml_supported_mlprogram_ops.md",
+      "bytes": 3050,
+      "allocated_bytes": 4096,
+      "sha256": "6490c306b9349c90f1e27028a95b15cf22763dc810b25e11213fd861844d070c"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/mobile_helpers/coreml_supported_neuralnetwork_ops.md",
+      "bytes": 1915,
+      "allocated_bytes": 4096,
+      "sha256": "7c160969aa62d276a3a27a663c39090512d7c835db4d878869128c8527acf376"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/mobile_helpers/nnapi_supported_ops.md",
+      "bytes": 2327,
+      "allocated_bytes": 4096,
+      "sha256": "e4ca3f87eb530f357ccb5cced6a39b8816e7e00ba40bff4bd181260a11543825"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/mobile_helpers/usability_checker.py",
+      "bytes": 31640,
+      "allocated_bytes": 32768,
+      "sha256": "c1260479d702202996fde6d81954d53af24fd86b8f627ad36c753dc451a133cc"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/offline_tuning.py",
+      "bytes": 6199,
+      "allocated_bytes": 8192,
+      "sha256": "25572a4ab56c7a34c7b9d45c5a5ffca36ec480892a5eb79342b3039bca1d67e9"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/onnx_model_utils.py",
+      "bytes": 16402,
+      "allocated_bytes": 20480,
+      "sha256": "c7a8caee575e8a7a51a388900549d77c6cb2e4889bc54c2f9db1261c95c0c14f"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/onnx_randomizer.py",
+      "bytes": 3276,
+      "allocated_bytes": 4096,
+      "sha256": "4eb705a57590426a13551884c325b4e1e37d126d879500997dd3af656f71e78a"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/onnxruntime_test.py",
+      "bytes": 5606,
+      "allocated_bytes": 8192,
+      "sha256": "34a6cc232ea2a1ff5516194e75888eccd31a8df700ab4a9707259728238fb9cb"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/optimize_onnx_model.py",
+      "bytes": 1959,
+      "allocated_bytes": 4096,
+      "sha256": "d331e3ca321a841a2d7e65a03e687841ce8960729e2e0e6a5d45dbcd3b66d805"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/__init__.py",
+      "bytes": 1280,
+      "allocated_bytes": 4096,
+      "sha256": "6ad6e1088a303c660e4a2ad9c18082dfede79ec7a72c787237637cbcc9dc10b8"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/operator_type_usage_processors.py",
+      "bytes": 26379,
+      "allocated_bytes": 28672,
+      "sha256": "9e33e7d1567e9267aad28b4c6599ba85ee878694e9cb95ab2e3435e67ff4ce4e"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/__init__.py",
+      "bytes": 0,
+      "allocated_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/ArgType.py",
+      "bytes": 140,
+      "allocated_bytes": 4096,
+      "sha256": "a88de1f4ce5b7b545d37dc63b4f65f3c0f1fd6760ff5f4e744e3411d565c9cb7"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/ArgTypeAndIndex.py",
+      "bytes": 2026,
+      "allocated_bytes": 4096,
+      "sha256": "be7d76a9d9944741d4d071c4468e5fe542f81d691f5cf5baa317878dcb525319"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Attribute.py",
+      "bytes": 10850,
+      "allocated_bytes": 12288,
+      "sha256": "01152d7eb462c7a492727187602ae4846677db8f3495d3567f179004e17edf94"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/AttributeType.py",
+      "bytes": 328,
+      "allocated_bytes": 4096,
+      "sha256": "9df4a33bcd3e69b0659d03add0bfaf772b82a88494872ad6fd8eb0d6a71ecd16"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Checkpoint.py",
+      "bytes": 4217,
+      "allocated_bytes": 8192,
+      "sha256": "097abb2972ca172eda88de8cc9e42b91db4099ba4ec5fd6ed3c2d7c2f9ead0ec"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DeprecatedKernelCreateInfos.py",
+      "bytes": 4528,
+      "allocated_bytes": 8192,
+      "sha256": "1152d036336b214a86996fde4aa8f26235d24cd41dd0c0d12d2f43c5b90b3351"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DeprecatedNodeIndexAndKernelDefHash.py",
+      "bytes": 2458,
+      "allocated_bytes": 4096,
+      "sha256": "f6f8422df0c69d56830ba601f9b20f6baa4b04cae4701ef172b322b047b3b12e"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DeprecatedSessionState.py",
+      "bytes": 3582,
+      "allocated_bytes": 4096,
+      "sha256": "e799014012fbe7de1511f6ed99caf2f0c263f2950e8b8836026a8e9ea8366a49"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DeprecatedSubGraphSessionState.py",
+      "bytes": 2610,
+      "allocated_bytes": 4096,
+      "sha256": "cf84d32a8e906d07ab9c125baf2d25ffd1bd2a8d458df677437255c2a672bb17"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Dimension.py",
+      "bytes": 2191,
+      "allocated_bytes": 4096,
+      "sha256": "7eb48109664528f7e2ac59450b32a71775ecd8c90eeadebfc9bd11e6afa3d9e3"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DimensionValue.py",
+      "bytes": 2494,
+      "allocated_bytes": 4096,
+      "sha256": "c89d085f6c9f37521af1dc9decde67ac21e568a7f56dcba284c0ea097ded6562"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/DimensionValueType.py",
+      "bytes": 166,
+      "allocated_bytes": 4096,
+      "sha256": "300163a0d73be3ad4f94209adddd4de8cc74fae9ec9bf973c64ddbad0970019f"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/EdgeEnd.py",
+      "bytes": 1105,
+      "allocated_bytes": 4096,
+      "sha256": "716b8c340f58e956d5990864c88143f4decd34f3ac0db32b64fed5b8a819ecb4"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/FloatProperty.py",
+      "bytes": 2008,
+      "allocated_bytes": 4096,
+      "sha256": "3221abf8ef0bc744e840bfe498bbbc768eba6c1f8174d33c20abea77085d827b"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Graph.py",
+      "bytes": 10719,
+      "allocated_bytes": 12288,
+      "sha256": "c1305274847455693a90b9445688c403fd70768fe36e0ffac8277d1f2e8ebc74"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/InferenceSession.py",
+      "bytes": 3037,
+      "allocated_bytes": 4096,
+      "sha256": "eab477f6ef5dfe053845d94b7b7f4bd2ece5fb964099e0a1227f3565df864fe3"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/IntProperty.py",
+      "bytes": 1970,
+      "allocated_bytes": 4096,
+      "sha256": "91f04d09c4fb1d410fb7d4d97c8711860777c9f47f1ab0e3b0597ae851d4f10a"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/KernelTypeStrArgsEntry.py",
+      "bytes": 3102,
+      "allocated_bytes": 4096,
+      "sha256": "91ecddf655af14f6d6323cbd2e3e0e316d6f72ba2d646a382c307ad3ef61180a"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/KernelTypeStrResolver.py",
+      "bytes": 2789,
+      "allocated_bytes": 4096,
+      "sha256": "841d1183dd99668aef5287b6335b2d6a0bbdb4ab47be201458736c92faaa22d0"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/MapType.py",
+      "bytes": 2123,
+      "allocated_bytes": 4096,
+      "sha256": "f919a9b99457326882d85a62576eb480bb506fa261f6a7015f22a5a776c46e88"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Model.py",
+      "bytes": 7440,
+      "allocated_bytes": 8192,
+      "sha256": "dc81559f18e8f3fd4c910e8f58eb305bcf1df8221036637ae8d7e40e4adaf8ec"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/ModuleState.py",
+      "bytes": 4853,
+      "allocated_bytes": 8192,
+      "sha256": "5e6eeb48c5be4893c71162e8601ee0fc59cff799e7d62d41eca4bd55d6c5eb4e"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Node.py",
+      "bytes": 10401,
+      "allocated_bytes": 12288,
+      "sha256": "20a5ddb00fb84a51f23933837adbdef95fed61ed3d2d107a7176f82b5ffb3c48"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/NodeEdge.py",
+      "bytes": 4057,
+      "allocated_bytes": 4096,
+      "sha256": "d982bdedc50faf7172750d51ba50c0a38a893007a9640df341b5e50f9f64e253"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/NodeType.py",
+      "bytes": 144,
+      "allocated_bytes": 4096,
+      "sha256": "f1e340673696bc427d7084bbd63a06f56a3ab9847e1935707d2c3b99f545d79d"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/NodesToOptimizeIndices.py",
+      "bytes": 5984,
+      "allocated_bytes": 8192,
+      "sha256": "912b540e3b76db7a7f6a40fa6ea436843d09138205247b720dbccc948764982b"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/OpIdKernelTypeStrArgsEntry.py",
+      "bytes": 3296,
+      "allocated_bytes": 4096,
+      "sha256": "44e854d35c62987fb0c30265e72e539058c06f94d1c8d29b5840e4038d663381"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/OperatorSetId.py",
+      "bytes": 2032,
+      "allocated_bytes": 4096,
+      "sha256": "074775e23b00f821576ead93262c456ad34f61b68c7cc6bdacddfa73688ef125"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/OptimizerGroup.py",
+      "bytes": 4018,
+      "allocated_bytes": 4096,
+      "sha256": "f6711ed86d69b37e763041096ea27c543082608f2e0f20166c84192e7adf9c43"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/ParameterOptimizerState.py",
+      "bytes": 3127,
+      "allocated_bytes": 4096,
+      "sha256": "8dacfbd095bf019addbc9a3d83f4658b3865283d81c06190528ce596339872b2"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/PropertyBag.py",
+      "bytes": 4947,
+      "allocated_bytes": 8192,
+      "sha256": "1b08c5faadfab986afd3d85641d261e6ea22edc5eb6e5bb82f549e6f1dcd1cef"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/RuntimeOptimizationRecord.py",
+      "bytes": 3962,
+      "allocated_bytes": 4096,
+      "sha256": "9383580a2fc1660fcab29d475909c867d14dda8cfc2a7c7c6111998773f79b41"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/RuntimeOptimizationRecordContainerEntry.py",
+      "bytes": 3741,
+      "allocated_bytes": 4096,
+      "sha256": "d2c0fe10456793f70a19c31c49415464fcd32793703ca08d60cbd02cc1e6d597"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/RuntimeOptimizations.py",
+      "bytes": 2721,
+      "allocated_bytes": 4096,
+      "sha256": "18b9673fa41177169dfe3c8a6c4ff79b85157bd380c07dc6cf744ee36ef02858"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/SequenceType.py",
+      "bytes": 1771,
+      "allocated_bytes": 4096,
+      "sha256": "e02c0cbaa5380d86c349186ba76effad2b964638c30738c3bf47b54bb7f77bb0"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Shape.py",
+      "bytes": 2274,
+      "allocated_bytes": 4096,
+      "sha256": "ea6e0838faf80ceececa1012d616cc570104ac7077442f7981334746174c6f72"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/SparseTensor.py",
+      "bytes": 3692,
+      "allocated_bytes": 4096,
+      "sha256": "78b5695691cfdac8d34497f4dcbe97d3994a273ef92c979d7822205aacf7ba91"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/StringProperty.py",
+      "bytes": 2043,
+      "allocated_bytes": 4096,
+      "sha256": "77d80a24826b57b412875dc2b376699b2e53fdd3ed9aaa6682e9654ff23d7ab7"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/StringStringEntry.py",
+      "bytes": 2080,
+      "allocated_bytes": 4096,
+      "sha256": "e48415976dcc158bfa4f8da7286bc92a54f1e72ef19b4f5a419d92e8b1e3d38c"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/Tensor.py",
+      "bytes": 6599,
+      "allocated_bytes": 8192,
+      "sha256": "1b3d0bf9ac30e0e2ad81a2bafadcf1705443ab9fa0cf035f0536036ccf20e5e2"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/TensorDataType.py",
+      "bytes": 474,
+      "allocated_bytes": 4096,
+      "sha256": "05236aba77882eb2fc32e328023c5c42b2fdbe0f562b8b4ee4dc6e8023863dbf"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/TensorTypeAndShape.py",
+      "bytes": 2255,
+      "allocated_bytes": 4096,
+      "sha256": "94d423a69770d8b7f93b647789cd634b54ea2b5712342a682d37aaf55b992fd2"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/TypeInfo.py",
+      "bytes": 2516,
+      "allocated_bytes": 4096,
+      "sha256": "234ef8b3bf051579fdd8b7b44ba0e47d2ba54b2fc719fbc1bd4a25fd698e9444"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/TypeInfoValue.py",
+      "bytes": 189,
+      "allocated_bytes": 4096,
+      "sha256": "7749eeec4b0bd5db475c6556a2c40801da5463396204e90fd62cb3982766e2ad"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/ValueInfo.py",
+      "bytes": 2571,
+      "allocated_bytes": 4096,
+      "sha256": "efec99056d794421bfdaa80a4c67e6154c640d8431d77eb8182248670eb4af8a"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_flatbuffers_py/fbs/__init__.py",
+      "bytes": 245,
+      "allocated_bytes": 4096,
+      "sha256": "ea499fd8cfe2c9e5dccd3d6855aa78e1d1ee3b7d6c5214bec13f719d02aa2992"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/ort_model_processor.py",
+      "bytes": 4386,
+      "allocated_bytes": 8192,
+      "sha256": "6c9212ac5055e382dbd602d3aacb6032e89420dc737dcf7cb3da3359c11028ff"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/types.py",
+      "bytes": 4383,
+      "allocated_bytes": 8192,
+      "sha256": "65bf1669af8025cf781c95931740f17cdace55559c85b68833090538462d6748"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/ort_format_model/utils.py",
+      "bytes": 2534,
+      "allocated_bytes": 4096,
+      "sha256": "44f1b75689a5c18258486586bd1c281436c444c0c120b3f981ff88e1a8a14fa1"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/pytorch_export_contrib_ops.py",
+      "bytes": 5214,
+      "allocated_bytes": 8192,
+      "sha256": "18b5dbc0952cfc70d95e3e59d3dab69a55263120535536ea222c2e5ab9a9a20d"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/pytorch_export_helpers.py",
+      "bytes": 5876,
+      "allocated_bytes": 8192,
+      "sha256": "f4bf797e5e42e41495e061783e833bb074a556af08c1e3fea672ef3c86e6dadd"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/qdq_helpers/__init__.py",
+      "bytes": 0,
+      "allocated_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/qdq_helpers/optimize_qdq_model.py",
+      "bytes": 1242,
+      "allocated_bytes": 4096,
+      "sha256": "58bb1989f54d570c245fc5229784de03c99fb2ab69c5432d6f47e544dda08f30"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/qnn/add_trans_cast.py",
+      "bytes": 13456,
+      "allocated_bytes": 16384,
+      "sha256": "b08da5d0b41e4475c8ee5c37330d149865cba59235a1c80ac9ba6db815daa1fb"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/qnn/gen_qnn_ctx_onnx_model.py",
+      "bytes": 16198,
+      "allocated_bytes": 16384,
+      "sha256": "9ebee3937e47672d59efa6d727f7a9f18b36f54dd65b5b27c6e378d05d1d66be"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/qnn/preprocess.py",
+      "bytes": 7275,
+      "allocated_bytes": 8192,
+      "sha256": "73c996cd141e0490c31328603fdc5ec3dc1fdb778e211239d3253f4b3aaef158"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/reduced_build_config_parser.py",
+      "bytes": 9958,
+      "allocated_bytes": 12288,
+      "sha256": "7bf7afd69cd4af1958a4c6ea710f632a224850274ea25be2df3c8b9cdf645a58"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/remove_initializer_from_input.py",
+      "bytes": 994,
+      "allocated_bytes": 4096,
+      "sha256": "4acd0cdac966a38237a790ce6c76f0934be74cbe75c18ffecd38361e902f11ad"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/symbolic_shape_infer.py",
+      "bytes": 156999,
+      "allocated_bytes": 159744,
+      "sha256": "5c74f42f724edb58e53c727e8e308c57bcae145542d2a000620fb2e1ce7e1e7b"
+    },
+    {
+      "path": "runtime/onnxruntime/tools/update_onnx_opset.py",
+      "bytes": 1151,
+      "allocated_bytes": 4096,
+      "sha256": "9df145f2cae3a53c8ef120a71d932ddf374c581d10e4707506071d6409dced42"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/__init__.py",
+      "bytes": 313,
+      "allocated_bytes": 4096,
+      "sha256": "452e41e705a7c05287d0a5d9796c9d863b3d5a5f6c3d1aa053f941d7f75460de"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/affinity_helper.py",
+      "bytes": 1402,
+      "allocated_bytes": 4096,
+      "sha256": "374411da3974cfabf800cd797322a7cd67fb4fc4b94f7641c1e390e56135971f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/benchmark.py",
+      "bytes": 32580,
+      "allocated_bytes": 32768,
+      "sha256": "84c78fd88b7721da330e1669642085a01bfcc498c1824bd50564e8bed1348af8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/benchmark_helper.py",
+      "bytes": 22355,
+      "allocated_bytes": 24576,
+      "sha256": "d9a3701e5f548bda8e55bb83922b7249154bd523f1f448d1833700d64af7b274"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/bert_perf_test.py",
+      "bytes": 20163,
+      "allocated_bytes": 20480,
+      "sha256": "b8ef07969b2a96482f51f191f21413ab6e65e9004cc19a60be5ba3d02600eecc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/bert_test_data.py",
+      "bytes": 22805,
+      "allocated_bytes": 24576,
+      "sha256": "53a58a9d092b363d54b91114df6ebe17e9cacc63a0d4bb1a002e00635164feed"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/compare_bert_results.py",
+      "bytes": 8192,
+      "allocated_bytes": 8192,
+      "sha256": "cfae1ba7878704e0e457904137b40e7d688ac74ce488d23a3cebd43da1d42d27"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/constants.py",
+      "bytes": 1080,
+      "allocated_bytes": 4096,
+      "sha256": "d0c8f1e1e103f063a38c6fe9e40f2176e34824288fa9c5aa70958a9d932d5b09"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/convert_generation.py",
+      "bytes": 142285,
+      "allocated_bytes": 143360,
+      "sha256": "620f7f59b30ede35560b33f679cfd8984d23f2a135417788875aa1688caf028f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/convert_tf_models_to_pytorch.py",
+      "bytes": 8993,
+      "allocated_bytes": 12288,
+      "sha256": "6fb0080720230099f4cdcf9e3ddbea48946c1e8504e857c291f32dd8a33a0f70"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/convert_to_packing_mode.py",
+      "bytes": 16419,
+      "allocated_bytes": 20480,
+      "sha256": "b6ada58310a4c99c42d6e12b741e8343429f49698c9aa0b6bf5ebe37980455a4"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/dynamo_onnx_helper.py",
+      "bytes": 7597,
+      "allocated_bytes": 8192,
+      "sha256": "993717e5a1125883ec54be20eab15469933877319b1e2cfce74b67cd2cfc5b25"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/float16.py",
+      "bytes": 25126,
+      "allocated_bytes": 28672,
+      "sha256": "e0b764ce52702efe4766a6d5f4bcb93402658e165c91362f676a3cdaa0e9ba50"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_attention.py",
+      "bytes": 52401,
+      "allocated_bytes": 53248,
+      "sha256": "5bf50b197b3352593a7c5c6fa534ca736ee5a192f4b33434e3c037b86ca90eea"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_attention_clip.py",
+      "bytes": 13756,
+      "allocated_bytes": 16384,
+      "sha256": "8209fe83c942d6a0350fee62eb5bfa3b52da174a1dcc821ab77d8ab684392790"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_attention_sam2.py",
+      "bytes": 20774,
+      "allocated_bytes": 24576,
+      "sha256": "24d7a5ea2b7cd969687cbf1691abaca3ab76ac181f894161a6640c3b2678d89e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_attention_unet.py",
+      "bytes": 55648,
+      "allocated_bytes": 57344,
+      "sha256": "51cf78870a57685cbda57d38593332cdb65c49859420d82abbc2c66d745b80ea"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_attention_vae.py",
+      "bytes": 12079,
+      "allocated_bytes": 12288,
+      "sha256": "de0941ff5f94e96ebb8c7518ccbc916753b83070f82c5810a3c2a7bbe6bf9e28"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_bart_attention.py",
+      "bytes": 23420,
+      "allocated_bytes": 24576,
+      "sha256": "344360443f675caa64dd62d485dc595f8902c7e867565c72f2dadaf372e789e8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_base.py",
+      "bytes": 5825,
+      "allocated_bytes": 8192,
+      "sha256": "66ee182057a50126809797b6d8803fe768cee16233d70f23638a0351587595d8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_bias_add.py",
+      "bytes": 1984,
+      "allocated_bytes": 4096,
+      "sha256": "dc49a0450f61b0cc738c2dfc70247c61455fc55241ec7304198e142459f8ebce"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_biasgelu.py",
+      "bytes": 2234,
+      "allocated_bytes": 4096,
+      "sha256": "f99fd3b1014efbd46c58b7b31977b85366898ee5f88558081b03847256e5240a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_biassplitgelu.py",
+      "bytes": 4381,
+      "allocated_bytes": 8192,
+      "sha256": "d856e1ef7d4f333d7a02080855746307fa881726cabe2ac9dac3cea9eae0cd53"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_conformer_attention.py",
+      "bytes": 11705,
+      "allocated_bytes": 12288,
+      "sha256": "840cfa0b7c43817336bec3dab7f72b1f0187fa7beacb1e3b54b988aff4c8824a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_constant_fold.py",
+      "bytes": 5870,
+      "allocated_bytes": 8192,
+      "sha256": "dcd3d8804c240745947f21566e01d76d602782d90de721801d879ba433ac0a7c"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_embedlayer.py",
+      "bytes": 36086,
+      "allocated_bytes": 36864,
+      "sha256": "0261ff3d0a142bd86ed48b6b775c7b118f5b3de9a6c0a378ffb6f2f7f3282904"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_fastgelu.py",
+      "bytes": 17689,
+      "allocated_bytes": 20480,
+      "sha256": "66c84c9135e487e8caf568ca948d598ed552690ca0399b0a7c534acc80ca4618"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gelu.py",
+      "bytes": 10193,
+      "allocated_bytes": 12288,
+      "sha256": "80a2988228e71698c5b28cc2b07f33e8ccfdc021a4c37a99a69eb95e8af12232"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gelu_approximation.py",
+      "bytes": 1004,
+      "allocated_bytes": 4096,
+      "sha256": "8b6c465bef7397a5dbbabaaad05f0323cec0caab209e18cb7855beac188df72b"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gemmfastgelu.py",
+      "bytes": 4087,
+      "allocated_bytes": 4096,
+      "sha256": "47d580db9e1cb06c0ed242e2fc89899a1232fb12a4341a9f0db47a34bf07092f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gpt_attention.py",
+      "bytes": 21962,
+      "allocated_bytes": 24576,
+      "sha256": "9a4f942888e8bb3aed90c97703e2dd2ee2dceb094eab101d6c4da0462618c293"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gpt_attention_megatron.py",
+      "bytes": 13284,
+      "allocated_bytes": 16384,
+      "sha256": "1db0e80d75d886acb8b0415426f69fe4bcb953abbaba90a0f09500d5defc0901"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_gpt_attention_no_past.py",
+      "bytes": 10573,
+      "allocated_bytes": 12288,
+      "sha256": "ab66f31b2533c233ebe5c15325f8d88541c05edd931d9afe7d5c41b0330222cc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_group_norm.py",
+      "bytes": 7465,
+      "allocated_bytes": 8192,
+      "sha256": "c84deab405cfc829f34a6c4f50c75844a414b2d8f5f5bc242318ba8773e942a7"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_layernorm.py",
+      "bytes": 20356,
+      "allocated_bytes": 20480,
+      "sha256": "7737ed0ba90bea4c5f772a229dccbf55a05e786cc1d5a0d6ce2c624ac8ead7be"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_mha_dit.py",
+      "bytes": 24130,
+      "allocated_bytes": 24576,
+      "sha256": "a68afc7516874e3f207b39cfd0097522b41eaae4284c657f8e26d15ee484fd33"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_mha_mmdit.py",
+      "bytes": 25149,
+      "allocated_bytes": 28672,
+      "sha256": "e039b687f3e89de7fe319f72dea3b7082f95e2df488b29aacc8342ca22d559e7"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_nhwc_conv.py",
+      "bytes": 3849,
+      "allocated_bytes": 4096,
+      "sha256": "416a9a0780ec64f02a3f44f0898a5508daf763c8925a2b23ddf771d7e2d3ad87"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_options.py",
+      "bytes": 12386,
+      "allocated_bytes": 16384,
+      "sha256": "37605e26c7ced39f102d67d95d2aa247b83a5c67039229e46de1f2a7c8661254"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_qordered_attention.py",
+      "bytes": 16717,
+      "allocated_bytes": 20480,
+      "sha256": "11441d152d57a4f4fbe6a9946e28ce473641bb64ebf2c90d901c093a4532c795"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_qordered_gelu.py",
+      "bytes": 4292,
+      "allocated_bytes": 8192,
+      "sha256": "a41b85369be7ca68d26b08943cd4d0806c5cd630469ab7f11c00bf77e6b84374"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_qordered_layernorm.py",
+      "bytes": 4810,
+      "allocated_bytes": 8192,
+      "sha256": "467d5123c319e18e5c6ad7d5cb98b53aa8a80b128f9b3665e8356e3c98d23cce"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_qordered_matmul.py",
+      "bytes": 8325,
+      "allocated_bytes": 12288,
+      "sha256": "7d97f166b6a65e186beb3c14a3582991b787fd947cde41cc81b59833549471fc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_quickgelu.py",
+      "bytes": 2795,
+      "allocated_bytes": 4096,
+      "sha256": "202faeae88d9167d8b5ede588f3d3e887d22ec1064b68cdbb95e3da66b976828"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_reshape.py",
+      "bytes": 6230,
+      "allocated_bytes": 8192,
+      "sha256": "26bc95ae7564eb6dbe31693c11834b973cfc0230354821d6fd397d4ab7270e68"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_rotary_attention.py",
+      "bytes": 77850,
+      "allocated_bytes": 81920,
+      "sha256": "7d0ee5931dda4e9423a632115477a5cf394a916ab05238a24e641480c8800345"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_shape.py",
+      "bytes": 3654,
+      "allocated_bytes": 4096,
+      "sha256": "b816bf775b55763e5493abafa2b51b37133a5ea6e2f0fc635fdae7794a011092"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_simplified_layernorm.py",
+      "bytes": 7666,
+      "allocated_bytes": 8192,
+      "sha256": "b3219d7e57b783b724fdb10a84b12850ccd45d7b84a6ed3e940db3495fbd461d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_skip_group_norm.py",
+      "bytes": 10601,
+      "allocated_bytes": 12288,
+      "sha256": "223d7991f65beb7da8095dca9b7c436502dffcd915e9790bef1310b4b767107e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_skiplayernorm.py",
+      "bytes": 10817,
+      "allocated_bytes": 12288,
+      "sha256": "e720d3fe8136104215b34900bfcad898e8637684df95d51f722422c5bd65e462"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_transpose.py",
+      "bytes": 6837,
+      "allocated_bytes": 8192,
+      "sha256": "a143990f0a381085d2d07e7723a06f7940cf9fa4f1a32ffdc13b3e8d609428bb"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/fusion_utils.py",
+      "bytes": 13003,
+      "allocated_bytes": 16384,
+      "sha256": "b67cc9377ebee4f994c295006a5a67e9b2774cdb5ef8dfec35bb4179365933f9"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/huggingface_models.py",
+      "bytes": 3931,
+      "allocated_bytes": 4096,
+      "sha256": "7f156fea1f63aeae00029521e23df1efecf6a341abec92f5899d813c73f4b022"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/import_utils.py",
+      "bytes": 631,
+      "allocated_bytes": 4096,
+      "sha256": "b08bcfa3c226d2a239dbb909157371a812b8fef8bd5e6a4c3ed2a77dd78f80ad"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/io_binding_helper.py",
+      "bytes": 21307,
+      "allocated_bytes": 24576,
+      "sha256": "0119e71c366de4c42f2f08922c0e855e10288843e7ae380034dd28585b0aa58c"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/large_model_exporter.py",
+      "bytes": 14927,
+      "allocated_bytes": 16384,
+      "sha256": "58a35ff8d0462f66cee864825e4673bca5d7148aded421ee0eaced6cadbb382f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/machine_info.py",
+      "bytes": 7351,
+      "allocated_bytes": 8192,
+      "sha256": "cface8aab9288489001def2e85421097c0e75b891232c5ecde1c142304142569"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/metrics.py",
+      "bytes": 5060,
+      "allocated_bytes": 8192,
+      "sha256": "f96c28503271887115f5a693ff86581c2c362ad3223d41a0fa7bffe17adb8a8e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/bart/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/bart/export.py",
+      "bytes": 4187,
+      "allocated_bytes": 8192,
+      "sha256": "6307027daca8876dc535842b6daa70b294dd2f4a9244d269dbc6c0cab14e984e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/bert/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/bert/eval_squad.py",
+      "bytes": 12026,
+      "allocated_bytes": 12288,
+      "sha256": "cdb422ad7a67828e3a925c89aac7b16ebf69f1f0f953ee1a86c2900b916935b3"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/benchmark_gpt2.py",
+      "bytes": 15517,
+      "allocated_bytes": 16384,
+      "sha256": "2159c8d1969c55b2d009c2c30248db59a86a3e8829300b970b10dcd9489644ab"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/convert_to_onnx.py",
+      "bytes": 20271,
+      "allocated_bytes": 20480,
+      "sha256": "bb305a578c5a08ad074a589a8071383ac2416d63709dc592ac3f88b69b5919bb"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/gpt2_helper.py",
+      "bytes": 40475,
+      "allocated_bytes": 40960,
+      "sha256": "0022591b9af34778c4958826be189fe4cbf5a2a98cce6a6cf0fcdf5bfdb6cd6c"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/gpt2_parity.py",
+      "bytes": 17735,
+      "allocated_bytes": 20480,
+      "sha256": "5a17c2a8f812bed258726af49a2ee09c44c6a57bcf68628bc7e27c6a4e4ae429"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/gpt2_tester.py",
+      "bytes": 19570,
+      "allocated_bytes": 20480,
+      "sha256": "3c882e58ca0749850f40dbfee4c8196afc41ecaa06301bd93f5ff725b721da22"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/gpt2/parity_check_helper.py",
+      "bytes": 5694,
+      "allocated_bytes": 8192,
+      "sha256": "cffc6f3b000d63d92419599bc478fd5510a7c51a1271d84a20b111b30b772cdb"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/__init__.py",
+      "bytes": 478,
+      "allocated_bytes": 4096,
+      "sha256": "c74bfebb1533dfd0926b02c6d5107e26c761f63e57db09614b7289bb0be4dcf8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/benchmark.py",
+      "bytes": 26594,
+      "allocated_bytes": 28672,
+      "sha256": "89b55aea8cfa7340faf116ad1700a023b76c7a73c7bfc70748cba9f8b9609811"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/benchmark_all.py",
+      "bytes": 15305,
+      "allocated_bytes": 16384,
+      "sha256": "dbaee7bbdd8eca327498d4f430c8fb1e27a199e414fe956d43ce26fb6d874b17"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/benchmark_e2e.py",
+      "bytes": 24869,
+      "allocated_bytes": 28672,
+      "sha256": "4da543b764f7a8d7e46d382d9c464b3860e512591468d93a1e38230b45a458dc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/convert_to_onnx.py",
+      "bytes": 42292,
+      "allocated_bytes": 45056,
+      "sha256": "638e027e453fc871acbb6e0dfb65c54c1e58c132910249a9f42cb8163f30df80"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/dist_settings.py",
+      "bytes": 1602,
+      "allocated_bytes": 4096,
+      "sha256": "8a24d5ec2a96c3264763ae9c8cebad54642e6cf233b59d2c5236117e9111c92d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/llama_inputs.py",
+      "bytes": 20502,
+      "allocated_bytes": 24576,
+      "sha256": "dfb2b2262190390eec3e703bb2b0cc3803d88af139f1df0d62dfa22adb376d4d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/llama_parity.py",
+      "bytes": 11642,
+      "allocated_bytes": 12288,
+      "sha256": "5304878d0145750bff96ae3c8c08cabbc6a39c55f192e3f498732ef8dda45168"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/llama_torch.py",
+      "bytes": 1685,
+      "allocated_bytes": 4096,
+      "sha256": "7163fcc7518d07631c9cf0d26c0109ba1b8762e5d99cf97c4ab21c732abf6e4e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/llama/quant_kv_dataloader.py",
+      "bytes": 4851,
+      "allocated_bytes": 8192,
+      "sha256": "b16219e144292dc19d3642bbb3a4600a797c279c1c74c035eda910c6827e5649"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/longformer/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/longformer/benchmark_longformer.py",
+      "bytes": 29409,
+      "allocated_bytes": 32768,
+      "sha256": "6b9e9f7234e020b761334d02b658e31dc4f5f46410860eebf34009f52fca230c"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/longformer/convert_to_onnx.py",
+      "bytes": 14794,
+      "allocated_bytes": 16384,
+      "sha256": "6c7f1dd5b588871fe18f7bc3f08a57b8edc76673711477b43c556c7cdc208f17"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/longformer/generate_test_data.py",
+      "bytes": 9617,
+      "allocated_bytes": 12288,
+      "sha256": "d2e445029cf94720d42abf702a5004ac54f1bf95c73225eb01aff51ed2687a17"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/longformer/longformer_helper.py",
+      "bytes": 3047,
+      "allocated_bytes": 4096,
+      "sha256": "efd948098c7b85a1774ea52daba4f0e98fd6e4033d4b5149e7674744ab922e7f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/phi2/__init__.py",
+      "bytes": 478,
+      "allocated_bytes": 4096,
+      "sha256": "c74bfebb1533dfd0926b02c6d5107e26c761f63e57db09614b7289bb0be4dcf8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/phi2/convert_to_onnx.py",
+      "bytes": 20408,
+      "allocated_bytes": 20480,
+      "sha256": "e6dce0419db05da7407a1a1f042d572a438ec3a17a6075618f0d90bc46550c87"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/phi2/inference_example.py",
+      "bytes": 17273,
+      "allocated_bytes": 20480,
+      "sha256": "fb947bbe0b33ceae87d2edbd983184c40a59260849037b21ff813defeb88921b"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/benchmark_sam2.py",
+      "bytes": 21830,
+      "allocated_bytes": 24576,
+      "sha256": "c1cf83427914ae608f985834db531fc5f308fa782510fbb114a8fcb1d05e5c37"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/convert_to_onnx.py",
+      "bytes": 10399,
+      "allocated_bytes": 12288,
+      "sha256": "6a97706cd7fb5d9dcf1f7c3fa9055dd59be7463b922137df6832f6036cca6256"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/image_decoder.py",
+      "bytes": 10821,
+      "allocated_bytes": 12288,
+      "sha256": "f033fc76a3a8d3f16110847c6b9a4c2d0ac23c4171ca2b11dd848880a82dea6e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/image_encoder.py",
+      "bytes": 9552,
+      "allocated_bytes": 12288,
+      "sha256": "b2afe88df30f0d4f956ed8be0dc854f0621e7156fd1ad57653ed54ca6206402d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/mask_decoder.py",
+      "bytes": 8858,
+      "allocated_bytes": 12288,
+      "sha256": "d380e7195c0991c7fdd43b3daf546bbe79e1d77eeac8feeb62df1ad973f15641"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/nvtx_helper.py",
+      "bytes": 1279,
+      "allocated_bytes": 4096,
+      "sha256": "31d76e7c6599a47f4320c2740deca6b96ee73e623fce9190c434a86234b42a1d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/prompt_encoder.py",
+      "bytes": 8341,
+      "allocated_bytes": 12288,
+      "sha256": "faf0fc4baad1f41f997dd32f9cbc8f611444656f2e8a65e9d375173921dd6ad9"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/sam2_demo.py",
+      "bytes": 10501,
+      "allocated_bytes": 12288,
+      "sha256": "7d7dabf89b34b63711363ddd04b2f22a1f3a112c37e2fb7ed4d4309b070bf000"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/sam2_image_onnx_predictor.py",
+      "bytes": 12423,
+      "allocated_bytes": 16384,
+      "sha256": "7feb0499bf8375ac3f1144fbce6338cdb7f750c36eb35685835db257e66c9687"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/sam2/sam2_utils.py",
+      "bytes": 5520,
+      "allocated_bytes": 8192,
+      "sha256": "0fcd9919c85215e79cdaf848c7cd6e7e19fd326ab594ff63202e8979315ae4d0"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/benchmark.py",
+      "bytes": 49574,
+      "allocated_bytes": 53248,
+      "sha256": "306989ec715d713d6f8362a3faba68cc33f41d98cb3c1fa1e2726a14df3dfcac"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/benchmark_controlnet.py",
+      "bytes": 12929,
+      "allocated_bytes": 16384,
+      "sha256": "1befc6427b4395b01a0af7d1f944a3164cfaf975761753c9b89a95c05ac652de"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/demo_txt2img.py",
+      "bytes": 3312,
+      "allocated_bytes": 4096,
+      "sha256": "c07268b66e9b7d342f0e86b5b1c5384f6d79cbb4b6b1d6eca805192adda92675"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/demo_txt2img_xl.py",
+      "bytes": 9948,
+      "allocated_bytes": 12288,
+      "sha256": "d7e5a3f0e41f839f7369f075434dae1cddc82bbb5ee11f1d4c6641f4fa086032"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/demo_utils.py",
+      "bytes": 28594,
+      "allocated_bytes": 28672,
+      "sha256": "7a03a758d64ae83997a93abb0bc8ce05052d196da7264c767bfc6584b841be86"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/diffusion_models.py",
+      "bytes": 50398,
+      "allocated_bytes": 53248,
+      "sha256": "4aa5af1ae65f4af43fe91924c90739bc12b73b9ae5e05a3a89d21e38a67bc921"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/diffusion_schedulers.py",
+      "bytes": 48289,
+      "allocated_bytes": 49152,
+      "sha256": "267fac61dfcb3ee2510ad17051b50993eca50ca84124b80a609dc6ddfc273745"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/engine_builder.py",
+      "bytes": 11670,
+      "allocated_bytes": 12288,
+      "sha256": "d7bd526576562daffebdce99f6d37d10d256a7b34d118bddbf9c8fec7afd0c2a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/engine_builder_ort_cuda.py",
+      "bytes": 15854,
+      "allocated_bytes": 16384,
+      "sha256": "31a113189c1ee4cd2f37e1075ba4d38c43bf394c683d467713211057fa31eb9d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/engine_builder_ort_trt.py",
+      "bytes": 11163,
+      "allocated_bytes": 12288,
+      "sha256": "4bd404e9842808a3a491823b6b8d1eb26553c780a4ed8d5224fd16657eba8de3"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/engine_builder_tensorrt.py",
+      "bytes": 15621,
+      "allocated_bytes": 16384,
+      "sha256": "b7615f32bbef0847416ee393356e6337cd460bbb71fbc44f343c3df726fca464"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/engine_builder_torch.py",
+      "bytes": 4198,
+      "allocated_bytes": 8192,
+      "sha256": "37f045dfb2366ee36e84da4a551d1e977c457131512b094aa5c594e4474c8237"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/optimize_pipeline.py",
+      "bytes": 21648,
+      "allocated_bytes": 24576,
+      "sha256": "daaa85149f640fb9b36bbdc659a50a2abb3b123b5f5c067df08ef746e2a60d60"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/ort_optimizer.py",
+      "bytes": 5717,
+      "allocated_bytes": 8192,
+      "sha256": "f206d294aa735f7b8abc210ceab30fe240c62cb5db4b7b654caf3e88468bd76d"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/pipeline_stable_diffusion.py",
+      "bytes": 33198,
+      "allocated_bytes": 36864,
+      "sha256": "8c13a911adf833fab7dd41e681ae1eb0fca36c8ee767aac45a64b7b054d3ada8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/stable_diffusion/trt_utilities.py",
+      "bytes": 420,
+      "allocated_bytes": 4096,
+      "sha256": "f021e0208c01ae2ab24748142d53c5235b85d6b6c01f8f7f88c3d4750bce9c02"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/__init__.py",
+      "bytes": 483,
+      "allocated_bytes": 4096,
+      "sha256": "07046f69491f612ac655dcf64fa8c28be707f2047d503deadc6aed32d9092fcc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/convert_to_onnx.py",
+      "bytes": 10192,
+      "allocated_bytes": 12288,
+      "sha256": "5e4137f86b1c1424ea112e7cabff4ef30f59a44067f1ab8bb0ad7920f51b813a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/t5_decoder.py",
+      "bytes": 16781,
+      "allocated_bytes": 20480,
+      "sha256": "ff0a278f71ca1f37e6d0289a9ede958f4b7f6fa43f12aaefe8a3a917ef6d6e5f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/t5_encoder.py",
+      "bytes": 2249,
+      "allocated_bytes": 4096,
+      "sha256": "aa1b2052dd60f47057c9229cb6ece6c2b7395bb206d65a68cd41c1dc48457a4e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/t5_encoder_decoder_init.py",
+      "bytes": 15491,
+      "allocated_bytes": 16384,
+      "sha256": "7bedeea3ac97cfa646fd0708c039401967c56e91e6fddb195ebac7142f285558"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/t5/t5_helper.py",
+      "bytes": 12626,
+      "allocated_bytes": 16384,
+      "sha256": "e32a6ceb87503a8cbe9e0676721371fbb3ea96865c0043bd0093a3adac7b6da3"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/__init__.py",
+      "bytes": 478,
+      "allocated_bytes": 4096,
+      "sha256": "c74bfebb1533dfd0926b02c6d5107e26c761f63e57db09614b7289bb0be4dcf8"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/benchmark.py",
+      "bytes": 21862,
+      "allocated_bytes": 24576,
+      "sha256": "1dab32f75d0c620f3f8c13d899331de001ba9113e8d758f1da944c1103422fe1"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/benchmark_all.py",
+      "bytes": 18842,
+      "allocated_bytes": 20480,
+      "sha256": "92c9f5373fd3f058ce8b49d907027181b047e33ac1cfb0bc6a4161bed5206f6a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/convert_to_onnx.py",
+      "bytes": 25880,
+      "allocated_bytes": 28672,
+      "sha256": "be1bf4c8344207a69be3d4d72daca0a8e1d3ad965dd71433a4c041a056dc36a9"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_chain.py",
+      "bytes": 14904,
+      "allocated_bytes": 16384,
+      "sha256": "39acd2fcd3af084847ab7a0b26cfb9cde0e65fc25ffc7e455394dcbf18fbf513"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_decoder.py",
+      "bytes": 21428,
+      "allocated_bytes": 24576,
+      "sha256": "d36faa818460ab30528814dc4e063a35df6174d16840f67cdf798e74d33b2fd9"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_encoder.py",
+      "bytes": 6208,
+      "allocated_bytes": 8192,
+      "sha256": "0158fcbcae62cfd8a34a5aa003ab9f7eadb0706bc03dc6ee4b5a7bf93040bfe5"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_encoder_decoder_init.py",
+      "bytes": 16461,
+      "allocated_bytes": 20480,
+      "sha256": "d7d3eb2ea5ad43f95981c2b5258c4a8eedf74d3cbb7e98e695a77e7d1847e31f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_helper.py",
+      "bytes": 50551,
+      "allocated_bytes": 53248,
+      "sha256": "7d60cb6871183becc2a2995d609d3f3317d41782c5aaabb5601ff55c64d99c64"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_inputs.py",
+      "bytes": 15661,
+      "allocated_bytes": 16384,
+      "sha256": "4471e3b0fec7ebbc471c442ad9baa7774fcf88fb945261778cc0f26057cc9259"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/models/whisper/whisper_jump_times.py",
+      "bytes": 19560,
+      "allocated_bytes": 20480,
+      "sha256": "6e8047b80d209c950a9d47cb544ee351674961af2181c1e664dc512766d8ed09"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_exporter.py",
+      "bytes": 25577,
+      "allocated_bytes": 28672,
+      "sha256": "8ea248df515cac59e726e0eec06ecd8ee4a45293f233eaacf1464566d100830e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model.py",
+      "bytes": 68593,
+      "allocated_bytes": 69632,
+      "sha256": "39ba61b972b720f8010aec63a258634361e3f54759507cbf8c3ae2fb3c6ff89e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_bart.py",
+      "bytes": 5406,
+      "allocated_bytes": 8192,
+      "sha256": "27a3e965cb9547c24e14429bc88bae29ea6c48b51c355575b3b80bbef45cf1ff"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_bert.py",
+      "bytes": 21425,
+      "allocated_bytes": 24576,
+      "sha256": "34b05c6eed658291cfee831b9ca531643c73041062961145d446a42b4a3a2714"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_bert_keras.py",
+      "bytes": 18536,
+      "allocated_bytes": 20480,
+      "sha256": "8d77db7a7110b6246238df74cd3b6aaa2101ecdecc283442a10011017b755b1c"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_bert_tf.py",
+      "bytes": 24915,
+      "allocated_bytes": 28672,
+      "sha256": "f705bc910c2399d15a84abf8053be718cd4716084bf1cb5c898587d150db5d61"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_clip.py",
+      "bytes": 1352,
+      "allocated_bytes": 4096,
+      "sha256": "515d246319365c25806ff26a55f55ad1dda90c86c5b21413db4ef7bbe08822e6"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_conformer.py",
+      "bytes": 1380,
+      "allocated_bytes": 4096,
+      "sha256": "f46d7e115655579c53d76f04193c87f4351255d8aa490efe5db3223884e0da51"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_gpt2.py",
+      "bytes": 3812,
+      "allocated_bytes": 4096,
+      "sha256": "5c3187b27ebd767670bcfde48c6dea501e1028350b5867815e0fd8789dacb1a7"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_mmdit.py",
+      "bytes": 4459,
+      "allocated_bytes": 8192,
+      "sha256": "a57ca17d82a13328e17d5f6a3f65b4867df5dadd79620475871a8c8efce0eebd"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_phi.py",
+      "bytes": 35410,
+      "allocated_bytes": 36864,
+      "sha256": "71b6a69eca1d56a7ae801baf7e8384c029df66a1c52ae42723804b9953216557"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_sam2.py",
+      "bytes": 4844,
+      "allocated_bytes": 8192,
+      "sha256": "b6a11e10690cc38244c66886c34c81a359a72907eb7e6865f6bd23799c782f87"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_t5.py",
+      "bytes": 37071,
+      "allocated_bytes": 40960,
+      "sha256": "63577a88d297bf38f68b38535028ae90e9a975591d77d225a128b0682304992f"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_tnlr.py",
+      "bytes": 8179,
+      "allocated_bytes": 8192,
+      "sha256": "85f5a0a560e5aaf1284f6a415d58871f052c4318e8d4180705714e79496bd531"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_unet.py",
+      "bytes": 9255,
+      "allocated_bytes": 12288,
+      "sha256": "f01d23adde61b1519b58131cb12d5427eb5b80c4e522a4e897e1688368bee280"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_model_vae.py",
+      "bytes": 1471,
+      "allocated_bytes": 4096,
+      "sha256": "c4b612ec8c2572e0198ee101fdf5bbe7fffa88e79d5ea55820134bea953da000"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/onnx_utils.py",
+      "bytes": 2120,
+      "allocated_bytes": 4096,
+      "sha256": "a6169b72b28fad9719ce8bed5aa0180fcf3e2bdf16a7b16d6646234de9053f8a"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/optimizer.py",
+      "bytes": 25163,
+      "allocated_bytes": 28672,
+      "sha256": "6968664f99de744b4b6d3f77d7d5749d16a912a15828922c4d495466942a69fc"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/past_helper.py",
+      "bytes": 7532,
+      "allocated_bytes": 8192,
+      "sha256": "96622ae07fba1f620bc5c3339ae63bfe1efa55de057528a3f5336d6f06f42183"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/profile_result_processor.py",
+      "bytes": 12582,
+      "allocated_bytes": 16384,
+      "sha256": "c1c37bb949c9cc0e959bee463b2bd3d7e3b8ce8b57f91dc4bcdd98e5e7679fc6"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/profiler.py",
+      "bytes": 13302,
+      "allocated_bytes": 16384,
+      "sha256": "e0f982c312cf0f0efe4a5a29cc0a44a4cc3d992a8400829a853ae241abf29373"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/quantize_helper.py",
+      "bytes": 2931,
+      "allocated_bytes": 4096,
+      "sha256": "4994b8d9f4464964dff48bcfbbdfb79f4b42c0cb6ca589f24fbcaec2d7d91ac9"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/shape_infer_helper.py",
+      "bytes": 5279,
+      "allocated_bytes": 8192,
+      "sha256": "be0b3f83f491b0b80e94dd1ca11f467ca84d3da51859b9307f17628ca15979b0"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/shape_optimizer.py",
+      "bytes": 15068,
+      "allocated_bytes": 16384,
+      "sha256": "036c6165952ddf9bce303818e5250b9662890a6d0d03ae9e09a1eefd87fc062e"
+    },
+    {
+      "path": "runtime/onnxruntime/transformers/torch_onnx_export_helper.py",
+      "bytes": 3001,
+      "allocated_bytes": 4096,
+      "sha256": "118390831174cce9ebab27d611d41e78a21595f1f874c10bab163fabd659ca04"
+    },
+    {
+      "path": "wheels/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl",
+      "bytes": 20881803,
+      "allocated_bytes": 20971520,
+      "sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "model_revision": "4cc2cc3c8e7ea9ee69126becd55be23a3a949899",
+  "GGUF_LFS_metadata": {
+    "rfilename": "quill-0.8b-Q4_K_M.gguf",
+    "blobId": "9771b3e451345e545d915500a55dda74350f7f46",
+    "size": 529296832,
+    "lfs": {
+      "sha256": "aa54d6f6108d66e4b60a57bdc04ecca6e84e073504918a64b41ac4a0f816f16d",
+      "size": 529296832,
+      "pointerSize": 134
+    }
+  },
+  "runner_release": {
+    "tag": "b11901",
+    "target_commitish": "5320c87ff0d994845b44ce7976f10055ec697447",
+    "published_at": "2026-10-26T17:26:52Z",
+    "html_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11901"
+  },
+  "runner_asset": {
+    "name": "llama-b11901-bin-macos-arm64.tar.gz",
+    "size": 16296203,
+    "digest": "sha256:dde35fc01722157f31af2c3a6e859e971427deb8e65b9e038606fcc9c44ce79c",
+    "browser_download_url": "https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-macos-arm64.tar.gz"
+  }
+}

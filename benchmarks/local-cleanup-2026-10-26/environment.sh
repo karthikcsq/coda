@@ -1,0 +1,10 @@
+export HF_HOME=/tmp/coda-cleanup-benchmark/hf
+export HF_HUB_CACHE=/tmp/coda-cleanup-benchmark/hf/hub
+export HF_HUB_DISABLE_IMPLICIT_TOKEN=1
+export HF_HUB_DISABLE_TELEMETRY=1
+export HF_HUB_DISABLE_XET=1
+export XDG_CACHE_HOME=/tmp/coda-cleanup-benchmark/cache
+export MPLCONFIGDIR=/tmp/coda-cleanup-benchmark/matplotlib
+export TOKENIZERS_PARALLELISM=false
+export DO_NOT_TRACK=1
+export PIP_NO_CACHE_DIR=1

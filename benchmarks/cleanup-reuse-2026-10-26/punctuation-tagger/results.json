@@ -1,0 +1,318 @@
+{
+  "summary": {
+    "model": "Horizon-Labs/punctuation-restoration-small",
+    "revision": "ee31fdfc5304f876ea3b0dd72d30eda7e940b2b1",
+    "runtime": "1.31.0",
+    "provider": "CPUExecutionProvider",
+    "threads": 4,
+    "ready_ms": 974.7274580004159,
+    "cases": 10,
+    "outputs": 30,
+    "all_source_words_preserved": true,
+    "median_ms": 3.566082998077036,
+    "max_ms": 11.260292001679773,
+    "warm_median_ms": 3.5345619999134215
+  },
+  "results": [
+    {
+      "name": "greeting",
+      "repeat": 0,
+      "input": "hello how are you today i hope everything is fine",
+      "model_input": "hello how are you today i hope everything is fine",
+      "output": "hello, how are you today? i hope everything is fine.",
+      "wall_ms": 6.623666999075795,
+      "cpu_ms": 11.671000000000099,
+      "source_words_preserved": true
+    },
+    {
+      "name": "greeting",
+      "repeat": 1,
+      "input": "hello how are you today i hope everything is fine",
+      "model_input": "hello how are you today i hope everything is fine",
+      "output": "hello, how are you today? i hope everything is fine.",
+      "wall_ms": 3.727041999809444,
+      "cpu_ms": 21.749000000000017,
+      "source_words_preserved": true
+    },
+    {
+      "name": "greeting",
+      "repeat": 2,
+      "input": "hello how are you today i hope everything is fine",
+      "model_input": "hello how are you today i hope everything is fine",
+      "output": "hello, how are you today? i hope everything is fine.",
+      "wall_ms": 3.3960830005526077,
+      "cpu_ms": 9.611999999999954,
+      "source_words_preserved": true
+    },
+    {
+      "name": "two-sentences",
+      "repeat": 0,
+      "input": "we should review the draft tomorrow the build is ready now",
+      "model_input": "we should review the draft tomorrow the build is ready now",
+      "output": "we should review the draft tomorrow. the build is ready now.",
+      "wall_ms": 3.5174580007151235,
+      "cpu_ms": 14.459999999999917,
+      "source_words_preserved": true
+    },
+    {
+      "name": "two-sentences",
+      "repeat": 1,
+      "input": "we should review the draft tomorrow the build is ready now",
+      "model_input": "we should review the draft tomorrow the build is ready now",
+      "output": "we should review the draft tomorrow. the build is ready now.",
+      "wall_ms": 3.5737079997488763,
+      "cpu_ms": 17.064999999999998,
+      "source_words_preserved": true
+    },
+    {
+      "name": "two-sentences",
+      "repeat": 2,
+      "input": "we should review the draft tomorrow the build is ready now",
+      "model_input": "we should review the draft tomorrow the build is ready now",
+      "output": "we should review the draft tomorrow. the build is ready now.",
+      "wall_ms": 3.4749589976854622,
+      "cpu_ms": 4.81699999999996,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question",
+      "repeat": 0,
+      "input": "when will the next release arrive can we test it today",
+      "model_input": "when will the next release arrive can we test it today",
+      "output": "when will the next release arrive? can we test it today?",
+      "wall_ms": 3.5451670009933878,
+      "cpu_ms": 22.189000000000014,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question",
+      "repeat": 1,
+      "input": "when will the next release arrive can we test it today",
+      "model_input": "when will the next release arrive can we test it today",
+      "output": "when will the next release arrive? can we test it today?",
+      "wall_ms": 3.4886670000560116,
+      "cpu_ms": 7.866999999999957,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question",
+      "repeat": 2,
+      "input": "when will the next release arrive can we test it today",
+      "model_input": "when will the next release arrive can we test it today",
+      "output": "when will the next release arrive? can we test it today?",
+      "wall_ms": 3.4096249983122107,
+      "cpu_ms": 5.962000000000023,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question-in-prose",
+      "repeat": 0,
+      "input": "i wonder when the next release will arrive we can wait until friday",
+      "model_input": "i wonder when the next release will arrive we can wait until friday",
+      "output": "i wonder when the next release will arrive. we can wait until friday.",
+      "wall_ms": 3.715291000844445,
+      "cpu_ms": 19.41500000000007,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question-in-prose",
+      "repeat": 1,
+      "input": "i wonder when the next release will arrive we can wait until friday",
+      "model_input": "i wonder when the next release will arrive we can wait until friday",
+      "output": "i wonder when the next release will arrive. we can wait until friday.",
+      "wall_ms": 3.6864590001641773,
+      "cpu_ms": 24.417000000000023,
+      "source_words_preserved": true
+    },
+    {
+      "name": "question-in-prose",
+      "repeat": 2,
+      "input": "i wonder when the next release will arrive we can wait until friday",
+      "model_input": "i wonder when the next release will arrive we can wait until friday",
+      "output": "i wonder when the next release will arrive. we can wait until friday.",
+      "wall_ms": 3.744875000847969,
+      "cpu_ms": 12.545000000000028,
+      "source_words_preserved": true
+    },
+    {
+      "name": "negation",
+      "repeat": 0,
+      "input": "i do not think we should ship today the tests are not ready",
+      "model_input": "i do not think we should ship today the tests are not ready",
+      "output": "i do not think we should ship today. the tests are not ready.",
+      "wall_ms": 3.70291599756456,
+      "cpu_ms": 17.63199999999998,
+      "source_words_preserved": true
+    },
+    {
+      "name": "negation",
+      "repeat": 1,
+      "input": "i do not think we should ship today the tests are not ready",
+      "model_input": "i do not think we should ship today the tests are not ready",
+      "output": "i do not think we should ship today. the tests are not ready.",
+      "wall_ms": 3.571999997802777,
+      "cpu_ms": 11.198000000000041,
+      "source_words_preserved": true
+    },
+    {
+      "name": "negation",
+      "repeat": 2,
+      "input": "i do not think we should ship today the tests are not ready",
+      "model_input": "i do not think we should ship today the tests are not ready",
+      "output": "i do not think we should ship today. the tests are not ready.",
+      "wall_ms": 3.5601659983512945,
+      "cpu_ms": 15.387999999999957,
+      "source_words_preserved": true
+    },
+    {
+      "name": "enumeration",
+      "repeat": 0,
+      "input": "we need three items apples pears and rice",
+      "model_input": "we need three items apples pears and rice",
+      "output": "we need three items: apples, pears, and rice.",
+      "wall_ms": 3.3037499997590203,
+      "cpu_ms": 8.214000000000055,
+      "source_words_preserved": true
+    },
+    {
+      "name": "enumeration",
+      "repeat": 1,
+      "input": "we need three items apples pears and rice",
+      "model_input": "we need three items apples pears and rice",
+      "output": "we need three items: apples, pears, and rice.",
+      "wall_ms": 3.4030419992632233,
+      "cpu_ms": 18.10899999999993,
+      "source_words_preserved": true
+    },
+    {
+      "name": "enumeration",
+      "repeat": 2,
+      "input": "we need three items apples pears and rice",
+      "model_input": "we need three items apples pears and rice",
+      "output": "we need three items: apples, pears, and rice.",
+      "wall_ms": 3.2721669995225966,
+      "cpu_ms": 11.256999999999962,
+      "source_words_preserved": true
+    },
+    {
+      "name": "punctuated",
+      "repeat": 0,
+      "input": "We can wait, I think. Can you review it tomorrow?",
+      "model_input": "We can wait I think Can you review it tomorrow",
+      "output": "We can wait, I think. Can you review it tomorrow?",
+      "wall_ms": 3.395042000192916,
+      "cpu_ms": 16.294000000000032,
+      "source_words_preserved": true
+    },
+    {
+      "name": "punctuated",
+      "repeat": 1,
+      "input": "We can wait, I think. Can you review it tomorrow?",
+      "model_input": "We can wait I think Can you review it tomorrow",
+      "output": "We can wait, I think. Can you review it tomorrow?",
+      "wall_ms": 3.3180000027641654,
+      "cpu_ms": 7.686999999999999,
+      "source_words_preserved": true
+    },
+    {
+      "name": "punctuated",
+      "repeat": 2,
+      "input": "We can wait, I think. Can you review it tomorrow?",
+      "model_input": "We can wait I think Can you review it tomorrow",
+      "output": "We can wait, I think. Can you review it tomorrow?",
+      "wall_ms": 3.2478749999427237,
+      "cpu_ms": 10.382000000000001,
+      "source_words_preserved": true
+    },
+    {
+      "name": "numbers",
+      "repeat": 0,
+      "input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "model_input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "output": "the price is 3.14 and we have 1,000 units ready at 10:30.",
+      "wall_ms": 4.5461250010703225,
+      "cpu_ms": 23.194999999999965,
+      "source_words_preserved": true
+    },
+    {
+      "name": "numbers",
+      "repeat": 1,
+      "input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "model_input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "output": "the price is 3.14 and we have 1,000 units ready at 10:30.",
+      "wall_ms": 4.449874999409076,
+      "cpu_ms": 20.061000000000107,
+      "source_words_preserved": true
+    },
+    {
+      "name": "numbers",
+      "repeat": 2,
+      "input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "model_input": "the price is 3.14 and we have 1,000 units ready at 10:30",
+      "output": "the price is 3.14 and we have 1,000 units ready at 10:30.",
+      "wall_ms": 4.65533399983542,
+      "cpu_ms": 14.893000000000045,
+      "source_words_preserved": true
+    },
+    {
+      "name": "spanish",
+      "repeat": 0,
+      "input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "model_input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "output": "la reunión es el viernes a las once. podemos esperar hasta entonces.",
+      "wall_ms": 3.6687920000986196,
+      "cpu_ms": 18.186999999999955,
+      "source_words_preserved": true
+    },
+    {
+      "name": "spanish",
+      "repeat": 1,
+      "input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "model_input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "output": "la reunión es el viernes a las once. podemos esperar hasta entonces.",
+      "wall_ms": 3.5089580014755484,
+      "cpu_ms": 12.189999999999923,
+      "source_words_preserved": true
+    },
+    {
+      "name": "spanish",
+      "repeat": 2,
+      "input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "model_input": "la reunión es el viernes a las once podemos esperar hasta entonces",
+      "output": "la reunión es el viernes a las once. podemos esperar hasta entonces.",
+      "wall_ms": 3.438583000388462,
+      "cpu_ms": 5.95699999999999,
+      "source_words_preserved": true
+    },
+    {
+      "name": "long-prose",
+      "repeat": 0,
+      "input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "model_input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "output": "we will divide the volunteers into groups and explain the activity before anyone begins. each group can choose an example that suits the people and the work they do. we should agree on the categories and leave enough time for a short discussion. for example, technical volunteers can explain their reasoning while they solve a problem. they should preserve every important detail and describe the choices they make along the way. each person has ten minutes to explain an approach and discuss the result.",
+      "wall_ms": 11.260292001679773,
+      "cpu_ms": 50.61099999999996,
+      "source_words_preserved": true
+    },
+    {
+      "name": "long-prose",
+      "repeat": 1,
+      "input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "model_input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "output": "we will divide the volunteers into groups and explain the activity before anyone begins. each group can choose an example that suits the people and the work they do. we should agree on the categories and leave enough time for a short discussion. for example, technical volunteers can explain their reasoning while they solve a problem. they should preserve every important detail and describe the choices they make along the way. each person has ten minutes to explain an approach and discuss the result.",
+      "wall_ms": 10.933165998721961,
+      "cpu_ms": 42.50500000000002,
+      "source_words_preserved": true
+    },
+    {
+      "name": "long-prose",
+      "repeat": 2,
+      "input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "model_input": "we will divide the volunteers into groups and explain the activity before anyone begins each group can choose an example that suits the people and the work they do we should agree on the categories and leave enough time for a short discussion for example technical volunteers can explain their reasoning while they solve a problem they should preserve every important detail and describe the choices they make along the way each person has ten minutes to explain an approach and discuss the result",
+      "output": "we will divide the volunteers into groups and explain the activity before anyone begins. each group can choose an example that suits the people and the work they do. we should agree on the categories and leave enough time for a short discussion. for example, technical volunteers can explain their reasoning while they solve a problem. they should preserve every important detail and describe the choices they make along the way. each person has ten minutes to explain an approach and discuss the result.",
+      "wall_ms": 11.026833999494556,
+      "cpu_ms": 38.0339999999999,
+      "source_words_preserved": true
+    }
+  ]
+}

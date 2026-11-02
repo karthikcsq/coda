@@ -1,0 +1,42 @@
+{
+  "model_revision": "4cc2cc3c8e7ea9ee69126becd55be23a3a949899",
+  "model_license": "apache-2.0",
+  "runner_release": "b11901",
+  "runner_release_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11901",
+  "files": [
+    {
+      "path": "quill-0.8b-Q4_K_M.gguf",
+      "url": "https://huggingface.co/Quobi/Quill/resolve/4cc2cc3c8e7ea9ee69126becd55be23a3a949899/quill-0.8b-Q4_K_M.gguf",
+      "sha256": "aa54d6f6108d66e4b60a57bdc04ecca6e84e073504918a64b41ac4a0f816f16d",
+      "logical_bytes": 529296832,
+      "allocated_bytes": 537919488
+    },
+    {
+      "path": "Quill-README.md",
+      "url": "https://huggingface.co/Quobi/Quill/resolve/4cc2cc3c8e7ea9ee69126becd55be23a3a949899/README.md",
+      "sha256": "2c9697a2a57ee78afc7768e0155970ab66cc8468aa42e9682019e75721b232df",
+      "logical_bytes": 4376,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "llama-b11901-bin-macos-arm64.tar.gz",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11901/llama-b11901-bin-macos-arm64.tar.gz",
+      "sha256": "dde35fc01722157f31af2c3a6e859e971427deb8e65b9e038606fcc9c44ce79c",
+      "logical_bytes": 16296203,
+      "allocated_bytes": 16777216
+    },
+    {
+      "path": "llama-LICENSE",
+      "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b11901/LICENSE",
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "logical_bytes": 1078,
+      "allocated_bytes": 4096
+    }
+  ],
+  "model_url": "https://huggingface.co/Quobi/Quill",
+  "runner_license": "MIT",
+  "model_data_only": true,
+  "remote_model_code_executed": false,
+  "runner_global_install": false,
+  "HF_tokens_used": false
+}

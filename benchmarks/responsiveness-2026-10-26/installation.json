@@ -1,0 +1,23 @@
+{
+  "installed_version": "0.4.9",
+  "build": "8",
+  "worker_sha256": "6801f6999f9afb202f7eabb677fbdd078ea512ed6267f409c2bc3be1fc2b1127",
+  "saved_json_preserved": {
+    "Meetings": 1,
+    "Dictations": 53
+  },
+  "rollback": "build-staged/Coda-0.4.8-build7-rollback.app",
+  "prior_rollback_retained": "build-staged/Coda-0.4.7-build6-rollback.app",
+  "preferences": {
+    "dictationCleanupMode": "smart",
+    "dictationMode": "hold",
+    "dictationModifierShortcut": "1"
+  },
+  "signing_requirement": "identifier app.coda.notebook and certificate leaf22571b293ddeed6b20db834884a208bfdaddedd7",
+  "strict_signature_verified": true,
+  "Coda_insertion_diagnostic": {
+    "Accessibility_trusted": true,
+    "automatic_insertion_enabled": true
+  },
+  "live_audio_clipboard_insertion_and_CUA_used": false
+}

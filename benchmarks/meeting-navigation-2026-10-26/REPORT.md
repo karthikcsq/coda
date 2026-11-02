@@ -1,0 +1,11 @@
+# Meeting navigation and capture recovery — October 26, 2026
+
+Fixed the overview row that previously selected a meeting without opening its contents. Clicking a saved meeting now opens its transcript directly; All meetings returns to the library while keeping selection/search. The detail view uses the available width rather than nesting another meeting sidebar inside the workspace. Switching meetings returns to the Transcript tab. File-menu imports route to the selected meeting detail even when another workspace was open.
+
+Start Meeting now opens the normal recording-options sheet. It presents Microphone + meeting audio and Microphone only explicitly; recording begins only after Start recording. Known ScreenCaptureKit system-audio denial (-3801 in its own domain, outside microphone setup) offers an explicit microphone-only options flow or the system audio permissions pane. A device failure or unrelated error with the same numeric code cannot enable permission-specific recovery. No automatic fallback silently drops remote audio. No permission is changed by these code paths.
+
+Six focused native UI/model tests and four focused core error-classification tests passed. They cover navigation/back, File-menu-style source routing, selection/search/transcript preservation, operation controls, alert-dismissal ordering and explicit microphone-only review without starting capture. Offscreen synthetic renders were inspected at the minimum 764 px workspace detail width and for the source picker; no clipping was observed. The PNGs were produced from synthetic NSHostingViews, not screenshots of private app content.
+
+No CUA/computer-use automation, actual recording, private transcript/audio access, system clipboard insertion, model or API call, or permission change was performed. Capture still requires macOS authorization; these changes improve routing and recovery, and do not establish live ASR or system-audio capture success. Root integration owns the final full suite and signed install.
+
+Changed files: Sources/Coda/NotetakerPage.swift, Sources/Coda/CodaApp.swift (meeting sections and Start Meeting route), Sources/Coda/AppModel.swift, Sources/Coda/WorkspaceView.swift, Sources/CodaCore/RecordingStartFailure.swift, Tests/CodaUITests/MeetingNavigationTests.swift, Tests/CodaCoreTests/RecordingStartFailureTests.swift.

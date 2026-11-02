@@ -1,0 +1,109 @@
+{
+  "repo": "prism-ml/Ternary-Bonsai-2-2B-mlx-2bit",
+  "revision": "1c6cbae21f8c38830ce337972b46fdae7b18eaaa",
+  "license": "apache-2.0",
+  "started": 1792976694.956012,
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1570
+    },
+    {
+      "name": "LICENSE",
+      "size": 10174
+    },
+    {
+      "name": "NOTICE.txt",
+      "size": 409
+    },
+    {
+      "name": "PACK-RUNTIME.md",
+      "size": 2165
+    },
+    {
+      "name": "README.md",
+      "size": 4889
+    },
+    {
+      "name": "chat_template.jinja",
+      "size": 7755
+    },
+    {
+      "name": "config.json",
+      "size": 22998
+    },
+    {
+      "name": "files.json",
+      "size": 2863
+    },
+    {
+      "name": "generation_config.json",
+      "size": 201
+    },
+    {
+      "name": "hadamard.json",
+      "size": 87679
+    },
+    {
+      "name": "model.safetensors",
+      "size": 1200284784
+    },
+    {
+      "name": "preprocessor_config.json",
+      "size": 390
+    },
+    {
+      "name": "quickstart.py",
+      "size": 3882
+    },
+    {
+      "name": "reload-validation.json",
+      "size": 86
+    },
+    {
+      "name": "runtime/LICENSE",
+      "size": 1066
+    },
+    {
+      "name": "runtime/artifact.py",
+      "size": 5621
+    },
+    {
+      "name": "runtime/codec.py",
+      "size": 2572
+    },
+    {
+      "name": "runtime/requirements.txt",
+      "size": 259
+    },
+    {
+      "name": "runtime/runtime.py",
+      "size": 12745
+    },
+    {
+      "name": "runtime/vision_artifact.py",
+      "size": 5285
+    },
+    {
+      "name": "tokenizer-validation.json",
+      "size": 63
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 12807982
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 16709
+    },
+    {
+      "name": "video_preprocessor_config.json",
+      "size": 385
+    }
+  ],
+  "data_only": true,
+  "token": false,
+  "local_path": "/private/tmp/coda-cleanup-benchmark/models/prism-ml--Ternary-Bonsai-2-2B-mlx-2bit",
+  "download_seconds": 88.28191304206848,
+  "actual_bytes": 1213252407
+}

@@ -1,0 +1,17 @@
+test_automatic_paragraphs_preserve_every_word (test_cleanup_rules.CleanupRules) ... ok
+test_clear_discourse_like (test_cleanup_rules.CleanupRules) ... ok
+test_counted_list (test_cleanup_rules.CleanupRules) ... ok
+test_list_followed_by_prose_preserves_tail (test_cleanup_rules.CleanupRules) ... ok
+test_meaningful_words_and_hedges (test_cleanup_rules.CleanupRules) ... ok
+test_noise_and_punctuation (test_cleanup_rules.CleanupRules) ... ok
+test_ordinals_after_intro (test_cleanup_rules.CleanupRules) ... ok
+test_ordinary_enumeration_is_prose (test_cleanup_rules.CleanupRules) ... ok
+test_protected_content (test_cleanup_rules.CleanupRules) ... ok
+test_punctuated_agenda_and_conjunction (test_cleanup_rules.CleanupRules) ... ok
+test_short_input_not_forced_into_paragraphs (test_cleanup_rules.CleanupRules) ... ok
+test_symbols_and_compounds (test_cleanup_rules.CleanupRules) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.003s
+
+OK

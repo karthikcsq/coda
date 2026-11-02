@@ -1,0 +1,113 @@
+{
+  "repo": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+  "license": "apache-2.0",
+  "started": 1792976662.3835561,
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1519
+    },
+    {
+      "name": "README.md",
+      "size": 6772
+    },
+    {
+      "name": "all_results.json",
+      "size": 783
+    },
+    {
+      "name": "config.json",
+      "size": 861
+    },
+    {
+      "name": "eval_results.json",
+      "size": 586
+    },
+    {
+      "name": "generation_config.json",
+      "size": 132
+    },
+    {
+      "name": "merges.txt",
+      "size": 466391
+    },
+    {
+      "name": "model.safetensors",
+      "size": 269060552
+    },
+    {
+      "name": "onnx/model.onnx",
+      "size": 540345794
+    },
+    {
+      "name": "onnx/model_bnb4.onnx",
+      "size": 175434623
+    },
+    {
+      "name": "onnx/model_fp16.onnx",
+      "size": 270267067
+    },
+    {
+      "name": "onnx/model_int8.onnx",
+      "size": 137147867
+    },
+    {
+      "name": "onnx/model_q4.onnx",
+      "size": 182068553
+    },
+    {
+      "name": "onnx/model_q4f16.onnx",
+      "size": 117691126
+    },
+    {
+      "name": "onnx/model_quantized.onnx",
+      "size": 137147981
+    },
+    {
+      "name": "onnx/model_uint8.onnx",
+      "size": 137147981
+    },
+    {
+      "name": "runs/Oct31_10-14-22_ip-26-0-174-36/events.out.tfevents.1730370128.ip-26-0-174-36.3239327.0",
+      "size": 78157
+    },
+    {
+      "name": "runs/Oct31_10-14-22_ip-26-0-174-36/events.out.tfevents.1730376056.ip-26-0-174-36.3239327.1",
+      "size": 828
+    },
+    {
+      "name": "special_tokens_map.json",
+      "size": 655
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 2104556
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 3764
+    },
+    {
+      "name": "train_results.json",
+      "size": 232
+    },
+    {
+      "name": "trainer_state.json",
+      "size": 57225
+    },
+    {
+      "name": "training_args.bin",
+      "size": 6520
+    },
+    {
+      "name": "vocab.json",
+      "size": 800662
+    }
+  ],
+  "data_only": true,
+  "token": false,
+  "local_path": "/private/tmp/coda-cleanup-benchmark/models/HuggingFaceTB--SmolLM2-135M-Instruct",
+  "download_seconds": 10.289928913116455,
+  "actual_bytes": 272509838
+}

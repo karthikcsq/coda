@@ -1,0 +1,12 @@
+{
+  "total": 48,
+  "lexical_reference_matches": 26,
+  "structure_successes": 0,
+  "structure_trials": 6,
+  "ready_engine_output_median_seconds": 0.06723000000000001,
+  "ready_engine_output_max_seconds": 0.72678,
+  "fresh_process_wall_median_seconds": 0.3810660205017484,
+  "fresh_process_wall_max_seconds": 1.0370549580002262,
+  "apostrophes_normalized_for_lexical_scoring": true,
+  "repeat_outputs_byte_identical": true
+}

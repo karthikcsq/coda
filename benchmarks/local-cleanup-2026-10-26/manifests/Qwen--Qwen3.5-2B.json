@@ -1,0 +1,65 @@
+{
+  "repo": "Qwen/Qwen3.5-2B",
+  "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "license": "apache-2.0",
+  "started": 1792976771.207391,
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1570
+    },
+    {
+      "name": "LICENSE",
+      "size": 11544
+    },
+    {
+      "name": "README.md",
+      "size": 62814
+    },
+    {
+      "name": "chat_template.jinja",
+      "size": 7755
+    },
+    {
+      "name": "config.json",
+      "size": 2908
+    },
+    {
+      "name": "merges.txt",
+      "size": 3353259
+    },
+    {
+      "name": "model.safetensors-00001-of-00001.safetensors",
+      "size": 4548221488
+    },
+    {
+      "name": "model.safetensors.index.json",
+      "size": 64460
+    },
+    {
+      "name": "preprocessor_config.json",
+      "size": 390
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 12807982
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 16709
+    },
+    {
+      "name": "video_preprocessor_config.json",
+      "size": 385
+    },
+    {
+      "name": "vocab.json",
+      "size": 6722759
+    }
+  ],
+  "data_only": true,
+  "token": false,
+  "local_path": "/private/tmp/coda-cleanup-benchmark/models/Qwen--Qwen3.5-2B",
+  "download_seconds": 175.6800079345703,
+  "actual_bytes": 4571275715
+}

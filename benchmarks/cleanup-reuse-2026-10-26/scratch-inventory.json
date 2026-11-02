@@ -1,0 +1,624 @@
+{
+  "scratch_root": "/tmp/coda-cleanup-reuse-2026-10-26",
+  "scope": "Created only for this task; lstat counts symlinks without following them and includes directory allocations.",
+  "entries": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "logical_bytes": 576,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "Quill-README.md",
+      "kind": "file",
+      "logical_bytes": 4376,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "completion-help.txt",
+      "kind": "file",
+      "logical_bytes": 34533,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "download-manifest.json",
+      "kind": "file",
+      "logical_bytes": 1463,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "download.py",
+      "kind": "file",
+      "logical_bytes": 1992,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "llama-LICENSE",
+      "kind": "file",
+      "logical_bytes": 1078,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "llama-b11901-bin-macos-arm64.tar.gz",
+      "kind": "file",
+      "logical_bytes": 16296203,
+      "allocated_bytes": 16777216
+    },
+    {
+      "path": "llama-release.json",
+      "kind": "file",
+      "logical_bytes": 36313,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "llama-releases.json",
+      "kind": "file",
+      "logical_bytes": 834755,
+      "allocated_bytes": 835584
+    },
+    {
+      "path": "prompt.txt",
+      "kind": "file",
+      "logical_bytes": 199,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts",
+      "kind": "directory",
+      "logical_bytes": 832,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "prompts/ambiguous-groups.txt",
+      "kind": "file",
+      "logical_bytes": 247,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/clean.txt",
+      "kind": "file",
+      "logical_bytes": 166,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/code.txt",
+      "kind": "file",
+      "logical_bytes": 182,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/count-correction.txt",
+      "kind": "file",
+      "logical_bytes": 165,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/day-correction.txt",
+      "kind": "file",
+      "logical_bytes": 170,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/discourse-like.txt",
+      "kind": "file",
+      "logical_bytes": 175,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/domain-hyphen.txt",
+      "kind": "file",
+      "logical_bytes": 200,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/emphasis.txt",
+      "kind": "file",
+      "logical_bytes": 166,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/exclusion.txt",
+      "kind": "file",
+      "logical_bytes": 169,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/explicit-list.txt",
+      "kind": "file",
+      "logical_bytes": 189,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/filler-basic.txt",
+      "kind": "file",
+      "logical_bytes": 157,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/filler-hedges.txt",
+      "kind": "file",
+      "logical_bytes": 165,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/gonna-hedge.txt",
+      "kind": "file",
+      "logical_bytes": 183,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/grammar.txt",
+      "kind": "file",
+      "logical_bytes": 158,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/injection.txt",
+      "kind": "file",
+      "logical_bytes": 214,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/meaningful-like.txt",
+      "kind": "file",
+      "logical_bytes": 173,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/name-correction.txt",
+      "kind": "file",
+      "logical_bytes": 151,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/natural-list.txt",
+      "kind": "file",
+      "logical_bytes": 187,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/negation.txt",
+      "kind": "file",
+      "logical_bytes": 177,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/paragraphs.txt",
+      "kind": "file",
+      "logical_bytes": 911,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/punctuation.txt",
+      "kind": "file",
+      "logical_bytes": 189,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/quoted-filler.txt",
+      "kind": "file",
+      "logical_bytes": 166,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/spanish.txt",
+      "kind": "file",
+      "logical_bytes": 176,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "prompts/spoken-slash.txt",
+      "kind": "file",
+      "logical_bytes": 177,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "quill-0.8b-Q4_K_M.gguf",
+      "kind": "file",
+      "logical_bytes": 529296832,
+      "allocated_bytes": 537919488
+    },
+    {
+      "path": "quill-metadata.json",
+      "kind": "file",
+      "logical_bytes": 10934,
+      "allocated_bytes": 12288
+    },
+    {
+      "path": "runner",
+      "kind": "directory",
+      "logical_bytes": 96,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901",
+      "kind": "directory",
+      "logical_bytes": 2016,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/LICENSE",
+      "kind": "file",
+      "logical_bytes": 1078,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "runner/llama-b11901/ggml-metal-tuning",
+      "kind": "file",
+      "logical_bytes": 87696,
+      "allocated_bytes": 90112
+    },
+    {
+      "path": "runner/llama-b11901/ggml-rpc-server",
+      "kind": "file",
+      "logical_bytes": 133136,
+      "allocated_bytes": 135168
+    },
+    {
+      "path": "runner/llama-b11901/libggml-base.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 751928,
+      "allocated_bytes": 753664
+    },
+    {
+      "path": "runner/llama-b11901/libggml-base.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 25,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-base.dylib",
+      "kind": "symlink",
+      "logical_bytes": 20,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-blas.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 58776,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "runner/llama-b11901/libggml-blas.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 25,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-blas.dylib",
+      "kind": "symlink",
+      "logical_bytes": 20,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-cpu.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 941136,
+      "allocated_bytes": 942080
+    },
+    {
+      "path": "runner/llama-b11901/libggml-cpu.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 24,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-cpu.dylib",
+      "kind": "symlink",
+      "logical_bytes": 19,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-metal.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 5604280,
+      "allocated_bytes": 5607424
+    },
+    {
+      "path": "runner/llama-b11901/libggml-metal.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 26,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-metal.dylib",
+      "kind": "symlink",
+      "logical_bytes": 21,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-rpc.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 242800,
+      "allocated_bytes": 245760
+    },
+    {
+      "path": "runner/llama-b11901/libggml-rpc.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 24,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml-rpc.dylib",
+      "kind": "symlink",
+      "logical_bytes": 19,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml.0.27.0.dylib",
+      "kind": "file",
+      "logical_bytes": 60016,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "runner/llama-b11901/libggml.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 20,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libggml.dylib",
+      "kind": "symlink",
+      "logical_bytes": 15,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libllama-batched-bench-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 56576,
+      "allocated_bytes": 57344
+    },
+    {
+      "path": "runner/llama-b11901/libllama-bench-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 323016,
+      "allocated_bytes": 323584
+    },
+    {
+      "path": "runner/llama-b11901/libllama-cli-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 255144,
+      "allocated_bytes": 258048
+    },
+    {
+      "path": "runner/llama-b11901/libllama-common.0.7.0.dylib",
+      "kind": "file",
+      "logical_bytes": 7978680,
+      "allocated_bytes": 7979008
+    },
+    {
+      "path": "runner/llama-b11901/libllama-common.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 27,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libllama-common.dylib",
+      "kind": "symlink",
+      "logical_bytes": 23,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libllama-completion-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 121680,
+      "allocated_bytes": 122880
+    },
+    {
+      "path": "runner/llama-b11901/libllama-fit-params-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 55264,
+      "allocated_bytes": 57344
+    },
+    {
+      "path": "runner/llama-b11901/libllama-perplexity-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 156384,
+      "allocated_bytes": 159744
+    },
+    {
+      "path": "runner/llama-b11901/libllama-quantize-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 96496,
+      "allocated_bytes": 98304
+    },
+    {
+      "path": "runner/llama-b11901/libllama-server-impl.dylib",
+      "kind": "file",
+      "logical_bytes": 9551384,
+      "allocated_bytes": 9551872
+    },
+    {
+      "path": "runner/llama-b11901/libllama.0.7.0.dylib",
+      "kind": "file",
+      "logical_bytes": 3649872,
+      "allocated_bytes": 3653632
+    },
+    {
+      "path": "runner/llama-b11901/libllama.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 20,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libllama.dylib",
+      "kind": "symlink",
+      "logical_bytes": 16,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libmtmd.0.7.0.dylib",
+      "kind": "file",
+      "logical_bytes": 1518384,
+      "allocated_bytes": 1519616
+    },
+    {
+      "path": "runner/llama-b11901/libmtmd.0.dylib",
+      "kind": "symlink",
+      "logical_bytes": 19,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/libmtmd.dylib",
+      "kind": "symlink",
+      "logical_bytes": 15,
+      "allocated_bytes": 0
+    },
+    {
+      "path": "runner/llama-b11901/llama",
+      "kind": "file",
+      "logical_bytes": 107320,
+      "allocated_bytes": 110592
+    },
+    {
+      "path": "runner/llama-b11901/llama-batched-bench",
+      "kind": "file",
+      "logical_bytes": 33488,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-bench",
+      "kind": "file",
+      "logical_bytes": 33464,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-cli",
+      "kind": "file",
+      "logical_bytes": 49960,
+      "allocated_bytes": 53248
+    },
+    {
+      "path": "runner/llama-b11901/llama-completion",
+      "kind": "file",
+      "logical_bytes": 33472,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-connect",
+      "kind": "file",
+      "logical_bytes": 8251536,
+      "allocated_bytes": 8253440
+    },
+    {
+      "path": "runner/llama-b11901/llama-cvector-generator",
+      "kind": "file",
+      "logical_bytes": 102296,
+      "allocated_bytes": 102400
+    },
+    {
+      "path": "runner/llama-b11901/llama-export-lora",
+      "kind": "file",
+      "logical_bytes": 99856,
+      "allocated_bytes": 102400
+    },
+    {
+      "path": "runner/llama-b11901/llama-fit-params",
+      "kind": "file",
+      "logical_bytes": 33472,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-gemma3-cli",
+      "kind": "file",
+      "logical_bytes": 35344,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-gguf-split",
+      "kind": "file",
+      "logical_bytes": 59952,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "runner/llama-b11901/llama-imatrix",
+      "kind": "file",
+      "logical_bytes": 206320,
+      "allocated_bytes": 208896
+    },
+    {
+      "path": "runner/llama-b11901/llama-llava-cli",
+      "kind": "file",
+      "logical_bytes": 35344,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-minicpmv-cli",
+      "kind": "file",
+      "logical_bytes": 35344,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-mtmd-cli",
+      "kind": "file",
+      "logical_bytes": 103520,
+      "allocated_bytes": 106496
+    },
+    {
+      "path": "runner/llama-b11901/llama-mtmd-debug",
+      "kind": "file",
+      "logical_bytes": 75824,
+      "allocated_bytes": 77824
+    },
+    {
+      "path": "runner/llama-b11901/llama-perplexity",
+      "kind": "file",
+      "logical_bytes": 33472,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-quantize",
+      "kind": "file",
+      "logical_bytes": 33472,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-qwen2vl-cli",
+      "kind": "file",
+      "logical_bytes": 35344,
+      "allocated_bytes": 36864
+    },
+    {
+      "path": "runner/llama-b11901/llama-results",
+      "kind": "file",
+      "logical_bytes": 58912,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "runner/llama-b11901/llama-server",
+      "kind": "file",
+      "logical_bytes": 49984,
+      "allocated_bytes": 53248
+    },
+    {
+      "path": "runner/llama-b11901/llama-tokenize",
+      "kind": "file",
+      "logical_bytes": 58736,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "runner/llama-b11901/llama-tts",
+      "kind": "file",
+      "logical_bytes": 57608,
+      "allocated_bytes": 61440
+    },
+    {
+      "path": "smoke.err",
+      "kind": "file",
+      "logical_bytes": 2052,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "smoke.out",
+      "kind": "file",
+      "logical_bytes": 84,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "trial.log",
+      "kind": "file",
+      "logical_bytes": 4588,
+      "allocated_bytes": 8192
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.4.12",
+  "build": "11",
+  "preserved_history_files": 68,
+  "changed_or_missing_history_files": [],
+  "settings_unchanged": true,
+  "settings": {
+    "dictationCleanupMode": "smart",
+    "dictationMode": "hold",
+    "dictationModifierShortcut": "1",
+    "dictationAutoInsert": "1"
+  },
+  "running_processes": [
+    "78044 /Users/karth/CodingFiles/Coda/coda/build/Coda.app/Contents/MacOS/Coda"
+  ],
+  "diagnostic": [
+    "Accessibility trusted: true",
+    "Automatic insertion enabled: true"
+  ],
+  "signature": "designated => identifier \"app.coda.notebook\" and certificate leaf = H\"22571b293ddeed6b20db834884a208bfdaddedd7\"\nExecutable=/Users/karth/CodingFiles/Coda/coda/build/Coda.app/Contents/MacOS/Coda",
+  "rollback": "build-staged/Coda-0.4.10-build9-before-insertion.app",
+  "claude_live_test": "User chose to test Claude after the update."
+}

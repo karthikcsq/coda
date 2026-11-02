@@ -1,0 +1,8 @@
+{
+  "accepted_outputs_revalidated": 21,
+  "accepted_lexical_reference_mismatches": [],
+  "short_model_outputs_matching_baseline": 10,
+  "short_model_outputs_checked": 10,
+  "long_model_budget_fallbacks": 2,
+  "worker_sha256": "6801f6999f9afb202f7eabb677fbdd078ea512ed6267f409c2bc3be1fc2b1127"
+}
