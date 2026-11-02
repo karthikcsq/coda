@@ -85,6 +85,9 @@ extension KeyboardShortcuts.Name {
     func armInsertion(_ record: DictationRecord) {
         guard !visualReview else { message = "Visual review • insertion disabled"; return }
         guard !lifecycle.busy, retryTask == nil, model?.isOccupied != true, !record.text.isEmpty else { return }
+        corrections.stop()
+        stopCorrectionReview()
+        wordSuggestions.close()
         pendingInsertion = record.id; text = record.text; targetName = "Choose a destination"
         message = "Click your destination field, then press your shortcut or Insert text here. No recording will start."
         KeyboardShortcuts.enable(.codaCancelDictation)
@@ -109,7 +112,7 @@ extension KeyboardShortcuts.Name {
         retryTask = Task { [weak self] in
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
-        let success = await insertion.insertWithFallback(record.text)
+        let success = await insertion.insertWithFallback(record.text, observeCorrections: observeCorrections)
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -124,7 +127,7 @@ extension KeyboardShortcuts.Name {
     var message = "Ready to dictate"
     var text = ""
     private var rawText = ""
-    let smartFormatter = SmartFormatter()
+    let smartFormatter: SmartFormatter
     private var cleanupDetail = ""
     var cleanupMode: DictationCleanupMode {
         didSet { if !visualReview {
@@ -182,13 +185,63 @@ extension KeyboardShortcuts.Name {
     private var meterTask: Task<Void, Never>?
     private var overlay: DictationOverlay?
     private var observers: [NSObjectProtocol] = []
+    let dictionary: CustomDictionary
+    let wordSuggestions: DictionarySuggestions
+    var showDictionaryWindow: (() -> Void)?
+    private let corrections = DictationCorrections()
+    private var correctionReview: Task<Void, Never>?
+    private var correctionReviewGeneration = UUID()
+    private func stopCorrectionReview() {
+        correctionReviewGeneration = UUID(); correctionReview?.cancel(); correctionReview = nil
+    }
+    var learnWords: Bool {
+        get { dictionary.learningEnabled }
+        set {
+            if !newValue { corrections.stop(); stopCorrectionReview(); wordSuggestions.close() }
+            dictionary.learningEnabled = newValue
+        }
+    }
+    private func observeCorrections(_ target: DictationCorrectionTarget) {
+        guard learnWords, !visualReview else { return }
+        wordSuggestions.preferredFrame = insertion.targetDisplayFrame
+        let session = UUID()
+        corrections.start(target) { [weak self] changes, original, edited in
+            self?.reviewCorrections(changes, original: original, edited: edited, session: session)
+        }
+    }
+    func reviewCorrections(_ changes: [WordCorrection], original: String, edited: String, session: UUID) {
+        stopCorrectionReview()
+        // Reconcile undo immediately, before an asynchronous classifier can finish.
+        let strong = changes.filter { CorrectionEvidence.strength($0) == .strong }
+        let ambiguous = changes.filter { CorrectionEvidence.strength($0) == .plausible }
+        dictionary.suggest(strong, session: session)
+        guard learnWords, !ambiguous.isEmpty else { return }
+        let generation = correctionReviewGeneration
+        correctionReview = Task { [weak self] in
+            guard let self else { return }
+            let decisions = await smartFormatter.classifyCorrections(original: original, edited: edited, pairs: ambiguous)
+            guard !Task.isCancelled, correctionReviewGeneration == generation, learnWords else { return }
+            let accepted = strong + CorrectionEvidence.filter(ambiguous, judgments: decisions)
+            dictionary.suggest(accepted, session: session)
+            correctionReview = nil
+        }
+    }
 
     override convenience init() { self.init(preview: false) }
-    init(preview: Bool) {
+    init(preview: Bool, formatter: SmartFormatter? = nil) {
+        let dictionary = CustomDictionary(preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
+        self.dictionary = dictionary
+        smartFormatter = formatter ?? SmartFormatter()
+        wordSuggestions = DictionarySuggestions(dictionary: dictionary, preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
+        wordSuggestions.onReview = { [weak self] in
+            self?.model?.closeSettings()
+            self?.workspaceSection = "Dictionary"
+            self?.showDictionaryWindow?()
+        }
         visualReview = preview
         modifierShortcut = UserDefaults.standard.bool(forKey: "dictationModifierShortcut")
         do {
@@ -259,6 +312,9 @@ extension KeyboardShortcuts.Name {
             message = "Prepare Voz in Settings & privacy before dictating. No microphone is running."; show(); dismissAfterResult(); return
         }
         guard let id = lifecycle.begin(meetingBusy: false, modelReady: true) else { return }
+        corrections.stop()
+        stopCorrectionReview()
+        wordSuggestions.close()
         // Overlap a cold formatter start with listening instead of delaying insertion
         // after the transcript is ready. This never downloads models or captures audio.
         if cleanupMode == .smart { smartFormatter.warm() }
@@ -318,7 +374,8 @@ extension KeyboardShortcuts.Name {
                 KeyboardShortcuts.disable(.codaCancelDictation)
             }
             do {
-                let result = try await model.transcribeDictation(url)
+                let vocabulary = dictionary.vocabulary
+                let result = try await model.transcribeDictation(url, vocabulary: vocabulary)
                 try Task.checkCancellation()
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
                 refreshAccessibility()
@@ -335,7 +392,7 @@ extension KeyboardShortcuts.Name {
                     return
                 }
                 let inserted: Bool
-                if autoInsert { inserted = await insertion.insertWithFallback(text) } else { inserted = false }
+                if autoInsert { inserted = await insertion.insertWithFallback(text, observeCorrections: observeCorrections) } else { inserted = false }
                 guard lifecycle.complete(id) else { return }
                 message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
                 saveSession(outcome: inserted ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired, detail: message + (cleanupDetail.isEmpty ? "" : " " + cleanupDetail))
@@ -375,6 +432,9 @@ extension KeyboardShortcuts.Name {
         return true
     }
     func cancel() {
+        corrections.stop()
+        stopCorrectionReview()
+        wordSuggestions.close()
         if lifecycle.busy { saveSession(outcome: .cancelled, detail: "Cancelled. If insertion had already begun, check the destination before retrying."); sessionID = nil }
         dismissal?.cancel(); retryTask?.cancel()
         pendingInsertion = nil; retryGeneration = nil; retryTimeout?.cancel()

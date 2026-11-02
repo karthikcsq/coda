@@ -1,10 +1,12 @@
 import Foundation
 import Observation
+import CodaCore
 
 struct SmartFormatResult: Sendable {
     var text: String
     var accepted: Bool
     var reason: String
+    var correctionJudgments: [Bool]? = nil
 }
 
 /// One local worker, one request at a time. Stdio only; no HTTP server or transcript logs.
@@ -16,6 +18,7 @@ struct SmartFormatResult: Sendable {
     private struct Request {
         let id: UUID
         let raw: String
+        let correctionPairs: [WordCorrection]?
         let expires: ContinuousClock.Instant
         let continuation: CheckedContinuation<SmartFormatResult, Never>
     }
@@ -58,7 +61,7 @@ struct SmartFormatResult: Sendable {
     }
     // Formatting never holds insertion for several seconds. Slow/cold/long requests
     // retain the already-saved raw transcript; warm-up overlaps dictation recording.
-    func format(_ raw: String, timeout: Duration = .milliseconds(900)) async -> SmartFormatResult {
+    func format(_ raw: String, timeout: Duration = .milliseconds(900), correctionPairs: [WordCorrection]? = nil, edited: String? = nil) async -> SmartFormatResult {
         guard !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .init(text: raw, accepted: false, reason: "Empty text") }
         guard raw.count <= 4000 else { return .init(text: raw, accepted: false, reason: "Long dictation · raw text retained") }
         guard !Task.isCancelled else { return .init(text: raw, accepted: false, reason: "Cancelled") }
@@ -68,14 +71,19 @@ struct SmartFormatResult: Sendable {
         let id = UUID(); idle?.cancel()
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                pending = Request(id: id, raw: raw, expires: .now.advanced(by: timeout), continuation: continuation)
+                pending = Request(id: id, raw: raw, correctionPairs: correctionPairs, expires: .now.advanced(by: timeout), continuation: continuation)
                 deadline = Task { [weak self] in
                     do { try await Task.sleep(for: timeout) } catch { return }
                     guard let self, self.pending?.id == id else { return }
                     self.stop(reason: "Local formatting timed out · raw text retained")
                 }
                 do {
-                    var data = try JSONSerialization.data(withJSONObject: ["id": id.uuidString, "text": raw]); data.append(10)
+                    var request: [String: Any] = ["id": id.uuidString, "text": raw]
+                    if let correctionPairs {
+                        request["kind"] = "corrections"; request["edited"] = edited ?? ""
+                        request["pairs"] = correctionPairs.map { ["original": $0.original, "corrected": $0.corrected] }
+                    }
+                    var data = try JSONSerialization.data(withJSONObject: request); data.append(10)
                     try input.write(contentsOf: data)
                 } catch { stop(reason: "Local formatter failed · raw text retained") }
             }
@@ -85,6 +93,10 @@ struct SmartFormatResult: Sendable {
                 self?.stop(reason: "Cancelled")
             }
         }
+    }
+    func classifyCorrections(original: String, edited: String, pairs: [WordCorrection], timeout: Duration = .milliseconds(1300)) async -> [Bool]? {
+        guard !pairs.isEmpty, pairs.count <= 4, edited.count <= 4000 else { return nil }
+        return await format(original, timeout: timeout, correctionPairs: pairs, edited: edited).correctionJudgments
     }
     private func receive(_ data: Data, generation token: UUID) {
         guard generation == token else { return }
@@ -103,6 +115,14 @@ struct SmartFormatResult: Sendable {
             // A busy UI thread may delay the timer callback. Late model output still
             // must not win the race against the interactive latency deadline.
             guard ContinuousClock.now < active.expires else { stop(reason: "Local formatting timed out · raw text retained"); return }
+            if let pairs = active.correctionPairs {
+                let decisions = object["decisions"] as? [Bool]
+                let valid = object["accepted"] as? Bool == true && decisions?.count == pairs.count
+                pending = nil; deadline?.cancel(); deadline = nil
+                active.continuation.resume(returning: .init(text: active.raw, accepted: false,
+                    reason: valid ? "Corrections checked locally" : "Local correction check unavailable", correctionJudgments: valid ? decisions : nil))
+                scheduleIdle(); continue
+            }
             let accepted = object["accepted"] as? Bool == true
             let fillerOnly = accepted && object["reason"] as? String == "filler-only" &&
                 active.raw.range(of: #"^[\s,.;:!?]*(?:(?:[Uu]m|[Uu]h|[Ee]rm)[\s,.;:!?]*)+$"#, options: .regularExpression) != nil

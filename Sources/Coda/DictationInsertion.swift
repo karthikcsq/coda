@@ -90,13 +90,19 @@ import CodaCore
     }
     /// One paste mechanism for native, browser, Electron and opaque editors.
     /// AX value/selection are optional evidence, never prerequisites for Command-V.
-    func insertWithFallback(_ text: String) async -> Bool {
+    func insertWithFallback(_ text: String, observeCorrections: ((DictationCorrectionTarget) -> Void)? = nil) async -> Bool {
         guard !deliveryAttempted, pid != nil, !text.isEmpty, !Task.isCancelled else { return false }
         checkSnapshot()
         guard !focusChanged, AXIsProcessTrusted(), !IsSecureEventInputEnabled() else { return false }
         let expected = element.flatMap { attribute($0, kAXValueAttribute) as? String }.flatMap { original in
             selection.flatMap { PlainTextInsertion.replacing(original, range: NSRange(location: $0.location, length: $0.length), with: text) }
         }
+        let correctionTarget: DictationCorrectionTarget?
+        if let element, let pid, let window = targetWindow, let selection,
+           let before = attribute(element, kAXValueAttribute) as? String,
+           let passage = CorrectionPassage(before: before, selection: NSRange(location: selection.location, length: selection.length), dictated: text) {
+            correctionTarget = DictationCorrectionTarget(element: element, window: window, pid: pid, passage: passage, dictated: text)
+        } else { correctionTarget = nil }
         let paste = GuardedPaste(board: .general)
         guard paste.publish(text) else { reason = "Clipboard could not be preserved safely. Use Copy text."; return false }
         defer { paste.restore() }
@@ -113,6 +119,7 @@ import CodaCore
             if !focusChanged { reason = "Paste was not sent. Release your shortcut keys and try Insert from History." }
             return false
         }
+        if let correctionTarget { observeCorrections?(correctionTarget) }
         let postedAt = Date()
         while !InsertionEvidence.pasteWaitIsComplete(elapsed: Date().timeIntervalSince(postedAt),
                 firstReadAge: paste.readAt.map { Date().timeIntervalSince($0) }, ownsClipboard: paste.ownsClipboard) {

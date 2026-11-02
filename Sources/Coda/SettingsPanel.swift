@@ -86,7 +86,7 @@ struct SettingsPanel: View {
             row("Shortcut behavior", "Press to start and stop, or hold to talk.") {
                 Picker("Shortcut behavior", selection: $controller.mode) { Text("Toggle").tag(DictationMode.toggle); Text("Hold").tag(DictationMode.hold) }.labelsHidden().frame(width: 170).disabled(locked)
             }
-            row("Automatic cleanup", "Smart removes speech fillers, adds punctuation, paragraphs and clear lists, and applies explicit corrections locally. Substantive wording is preserved; originals remain in History.") {
+            row("Automatic cleanup", "Smart formats numbers and math, removes speech fillers, adds punctuation and clear lists, and applies explicit corrections locally. Originals remain in History.") {
                 Picker("Automatic cleanup", selection: $controller.cleanupMode) {
                     Text("None · raw text").tag(DictationCleanupMode.none)
                     Text("Light · rules").tag(DictationCleanupMode.light)
@@ -97,6 +97,10 @@ struct SettingsPanel: View {
             row("Automatic insertion", "Checks the original field and preserves newer clipboard changes. Never presses Return.") {
                 Toggle("Automatic insertion", isOn: $controller.autoInsert).labelsHidden().toggleStyle(.switch).disabled(locked)
             }
+            row("Learn from corrections", "Suggest names and unfamiliar terms you correct after dictation. Review them in Dictionary before they affect recognition.") {
+                Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
+            }
+            Button("Open dictionary") { model.closeSettings(); controller.workspaceSection = "Dictionary" }
             Text("Fn-only and Caps Lock-only shortcuts are not supported. Dictation ends after two minutes at most. Click inside the destination text field before using the shortcut.").font(.system(size: 11)).foregroundStyle(.secondary)
             Button("Preview overlay") { controller.previewOverlay() }.disabled(locked)
         }
@@ -111,6 +115,9 @@ struct SettingsPanel: View {
             }
             row("System / meeting audio", "macOS requests access when you start a recording with system audio enabled.") {
                 Button("Open macOS settings") { openSystem("Privacy_ScreenCapture") }.disabled(model.isVisualReview || locked)
+            }
+            row("Detect video meetings", "Suggest recording for Meet, Zoom, and Teams using visible meeting controls. Reads participant counts when available; requires Accessibility.") {
+                Toggle("Detect video meetings", isOn: $model.detectMeetings).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
             Divider().opacity(0.4)
             row("Launch at login", "Optional. Coda remains idle until you start dictation or a meeting.") {

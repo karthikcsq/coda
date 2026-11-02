@@ -11,6 +11,53 @@ import CodaCore
     try body.write(to: script, atomically: true, encoding: .utf8)
     return (SmartFormatter(python: URL(fileURLWithPath: "/opt/homebrew/bin/python3.13"), script: script, model: root), root)
 }
+@Test @MainActor func correctionClassifierUsesTypedJudgmentsAndCannotInventWords() async throws {
+    let (worker, root) = try fixture("""
+    import json,sys
+    print(json.dumps({'ready':True}),flush=True)
+    for line in sys.stdin:
+        r=json.loads(line)
+        if r.get('kind') == 'corrections':
+            print(json.dumps({'id':r['id'],'accepted':True,'decisions':[True,False]}),flush=True)
+        else:
+            print(json.dumps({'id':r['id'],'accepted':True,'text':r['text']}),flush=True)
+    """)
+    defer { worker.stop(); try? FileManager.default.removeItem(at: root) }
+    let pairs = [WordCorrection(original: "Cartick", corrected: "Karthik"), WordCorrection(original: "Postgres", corrected: "Supabase")]
+    // This is a stdio protocol test. Native render tests can occupy MainActor
+    // longer than the production background-classification deadline.
+    let decisions = await worker.classifyCorrections(original: "Meet Cartick at Postgres", edited: "Meet Karthik at Supabase", pairs: pairs, timeout: .seconds(10))
+    #expect(decisions == [true, false])
+    #expect(CorrectionEvidence.filter(pairs, judgments: decisions) == [pairs[0]])
+    let malformed = await worker.classifyCorrections(original: "Cartick", edited: "Karthik", pairs: [pairs[0]], timeout: .seconds(10))
+    #expect(malformed == nil) // A mismatched response is not a partial approval.
+    let formatted = await worker.format("Original words", timeout: .seconds(10))
+    #expect(formatted.text == "Original words" && formatted.accepted)
+}
+@Test @MainActor func undoneCorrectionCannotReappearAfterLocalClassifierFinishes() async throws {
+    let (worker, root) = try fixture("""
+    import json,sys,time
+    print(json.dumps({'ready':True}),flush=True)
+    for line in sys.stdin:
+        r=json.loads(line); time.sleep(0.2)
+        print(json.dumps({'id':r['id'],'accepted':True,'decisions':[True]}),flush=True)
+    """)
+    defer { worker.stop(); try? FileManager.default.removeItem(at: root) }
+    let controller = DictationController(preview: true, formatter: worker)
+    let session = UUID(), pair = WordCorrection(original: "Clod", corrected: "Claude")
+    #expect(CorrectionEvidence.strength(pair) == .plausible)
+    controller.reviewCorrections([pair], original: "Ask Clod to review", edited: "Ask Claude to review", session: session)
+    await Task.yield()
+    controller.reviewCorrections([], original: "Ask Clod to review", edited: "Ask Clod to review", session: session)
+    try? await Task.sleep(for: .milliseconds(350))
+    #expect(controller.dictionary.possible.isEmpty && controller.wordSuggestions.current == nil)
+    controller.reviewCorrections([pair], original: "Ask Clod to review", edited: "Ask Claude to review", session: session)
+    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    while controller.dictionary.possible.isEmpty && ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(20)) }
+    #expect(controller.dictionary.possible.first?.word == "Claude")
+    controller.reviewCorrections([], original: "Ask Clod to review", edited: "Ask Clod to review", session: session)
+    #expect(controller.dictionary.possible.isEmpty && controller.wordSuggestions.current == nil)
+}
 @Test @MainActor func smartWorkerRoundTripRepetitionAndNonePreservation() async throws {
     let (worker, root) = try fixture("""
     import json,sys

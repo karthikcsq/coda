@@ -3,6 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import CodaCore
 import Voz
+@preconcurrency import ApplicationServices
 
 @MainActor @Observable final class AppModel {
     private var visualReview = false
@@ -26,6 +27,24 @@ import Voz
     var showingMeetingDetail = false
     private(set) var recordingStartFailure: RecordingStartFailure?
     var includeSystem = true
+    var recordingSpeakerCount = 0
+    var useDetectedSpeakerCount = true
+    var detectedMeeting: DetectedMeeting?
+    var recordingDetectedMeeting: DetectedMeeting?
+    var meetingDetectionAvailable = false
+    var detectMeetings = UserDefaults.standard.object(forKey: "detectMeetings") as? Bool ?? true {
+        didSet { if !visualReview { UserDefaults.standard.set(detectMeetings, forKey: "detectMeetings") } }
+    }
+    var resolvedRecordingSpeakerCount: Int? {
+        SpeakerCountSelection.resolve(manual: recordingSpeakerCount == 0 ? nil : recordingSpeakerCount,
+            detected: recordingDetectedMeeting?.participantCount, useDetected: includeSystem && useDetectedSpeakerCount && detectMeetings)
+    }
+    func requestMeetingDetectionAccess() {
+        guard !visualReview else { return }
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") { NSWorkspace.shared.open(url) }
+    }
     var search = ""
     var modelConsent: Bool {
         didSet { if !visualReview { UserDefaults.standard.set(modelConsent, forKey: "modelConsent-v1.0") } }
@@ -60,6 +79,9 @@ import Voz
     }
     func requestMeetingRecording() {
         guard !isOccupied else { return }
+        recordingSpeakerCount = 0
+        useDetectedSpeakerCount = true
+        recordingDetectedMeeting = detectedMeeting
         showingMeetingDetail = true
         showRecordConsent = true
     }
@@ -123,7 +145,7 @@ import Voz
         selection = meetings.first?.id
     }
     var dictationModelReady: Bool { Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
-    func transcribeDictation(_ audio: URL) async throws -> String { try await pipeline.dictate(audio, consent: modelConsent) }
+    func transcribeDictation(_ audio: URL, vocabulary: [String] = []) async throws -> String { try await pipeline.dictate(audio, consent: modelConsent, vocabulary: vocabulary) }
     func prepareDictation() {
         guard !isOccupied, modelConsent else { return }
         busy = true
@@ -176,6 +198,11 @@ import Voz
         } catch { self.error = "Could not import the audio. Check storage and file access." }
     }
     func processSelected() { if let meeting = selected { process(meeting) } }
+    func setSelectedSpeakerCount(_ count: Int) {
+        guard !isOccupied, var meeting = selected, count == 0 || (1...4).contains(count) else { return }
+        meeting.expectedSpeakerCount = count == 0 ? nil : count
+        do { try save(meeting) } catch { self.error = "Could not save the speaker count." }
+    }
     private func process(_ meeting: Meeting) {
         guard !isOccupied else { return }
         guard modelConsent else { openSettings(); return }
@@ -184,11 +211,11 @@ import Voz
         operation = Task {
             defer { busy = false; progress = nil; operation = nil; operationID = nil }
             do {
-                let segments = try await pipeline.process(root.appendingPathComponent(meeting.audioFile), consent: modelConsent) { [weak self] text, fraction in
+                let segments = try await pipeline.process(root.appendingPathComponent(meeting.audioFile), consent: modelConsent, speakerCount: meeting.expectedSpeakerCount) { [weak self] text, fraction in
                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
                 }
                 try Task.checkCancellation()
-                var updated = meeting; updated.segments = segments; updated.summary = nil
+                var updated = meeting; updated.segments = segments; updated.summary = nil; updated.speakerNames = [:]
                 try save(updated)
                 status = "Transcript saved locally"
                 if autoSummary { try await summarize(updated, consent: autoSummary) }
@@ -227,6 +254,8 @@ import Voz
     func cancel() { operationID = nil; operation?.cancel(); status = "Cancelling • an in-flight model operation may need to finish" }
     func startRecording() {
         guard !isOccupied else { return }
+        let speakerCount = resolvedRecordingSpeakerCount
+        let recordingIncludesSystem = includeSystem
         recordingStartFailure = nil
         showingMeetingDetail = true
         startingCapture = true
@@ -234,10 +263,11 @@ import Voz
         Task {
             defer { startingCapture = false }
             do {
-                let meeting = Meeting(title: "Meeting " + Date().formatted(date: .abbreviated, time: .shortened), audioFile: UUID().uuidString + ".m4a")
+                var meeting = Meeting(title: "Meeting " + Date().formatted(date: .abbreviated, time: .shortened), audioFile: UUID().uuidString + ".m4a")
+                meeting.expectedSpeakerCount = speakerCount
                 let capture = MeetingCapture()
                 capture.onFailure = { [weak self = self] in Task { @MainActor in self?.captureFailed() } }
-                try await capture.start(url: root.appendingPathComponent(meeting.audioFile), includeSystem: includeSystem)
+                try await capture.start(url: root.appendingPathComponent(meeting.audioFile), includeSystem: recordingIncludesSystem)
                 self.capture = capture; activeRecording = meeting
                 recording = true; recordingStarted = Date(); status = includeSystem ? "Recording microphone + system audio" : "Recording microphone"
             } catch { presentRecordingStartFailure(error) }

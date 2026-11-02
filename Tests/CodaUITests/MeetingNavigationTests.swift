@@ -121,7 +121,7 @@ private func stableMeetingData(_ meetings: [Meeting]) throws -> Data {
 
     model.includeSystem = false
     let options = NSHostingView(rootView: RecordingOptionsView(model: model).environment(\.colorScheme, .dark))
-    options.frame = CGRect(x: 0, y: 0, width: 510, height: 330)
+    options.frame = CGRect(origin: .zero, size: options.fittingSize)
     let optionsWindow = NSWindow(contentRect: options.frame, styleMask: [.borderless], backing: .buffered, defer: false)
     optionsWindow.contentView = options; options.appearance = NSAppearance(named: .darkAqua)
     options.layoutSubtreeIfNeeded()
@@ -130,4 +130,23 @@ private func stableMeetingData(_ meetings: [Meeting]) throws -> Data {
     options.cacheDisplay(in: options.bounds, to: optionsBitmap)
     let optionsPNG = try #require(optionsBitmap.representation(using: .png, properties: [:]))
     try optionsPNG.write(to: URL(fileURLWithPath: "/tmp/coda-meeting-microphone-options.png"))
+}
+
+@Test @MainActor func recordingSpeakerCountUsesReviewedSnapshotAndManualMicOverride() {
+    let model = AppModel(preview: true)
+    defer { try? FileManager.default.removeItem(at: model.root) }
+    model.detectMeetings = true
+    model.includeSystem = true
+    model.recordingDetectedMeeting = DetectedMeeting(id: "synthetic-call", service: "Google Meet", participantCount: 2)
+    #expect(model.resolvedRecordingSpeakerCount == 2)
+    model.detectedMeeting = nil // Browser focus changes do not silently change reviewed options.
+    #expect(model.resolvedRecordingSpeakerCount == 2)
+    model.recordingSpeakerCount = 3
+    #expect(model.resolvedRecordingSpeakerCount == 3)
+    model.includeSystem = false
+    #expect(model.resolvedRecordingSpeakerCount == 3)
+    model.recordingSpeakerCount = 0
+    #expect(model.resolvedRecordingSpeakerCount == nil)
+    model.includeSystem = true; model.useDetectedSpeakerCount = false
+    #expect(model.resolvedRecordingSpeakerCount == nil)
 }

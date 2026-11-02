@@ -7,11 +7,18 @@ import CodaCore
 enum MeetingAccessibilityReader {
     static func read(apps: [(pid_t, String)]) -> DetectedMeeting? {
         guard AXIsProcessTrusted() else { return nil }
+        let overallDeadline = Date().addingTimeInterval(3)
         for (pid, bundle) in apps {
+            guard Date() < overallDeadline else { break }
             let application = AXUIElementCreateApplication(pid)
             AXUIElementSetMessagingTimeout(application, 0.08)
+            // Chromium exposes web controls only while an accessibility client is attached.
+            if MeetingDetection.nativeService(bundleID: bundle) == nil {
+                _ = AXUIElementSetAttributeValue(application, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+            }
             guard let windows = attribute(application, kAXWindowsAttribute) as? [AXUIElement] else { continue }
             for window in windows.prefix(8) {
+                guard Date() < overallDeadline else { break }
                 var remaining = 2500
                 let deadline = Date().addingTimeInterval(0.5)
                 let tree = snapshot(window, depth: 0, remaining: &remaining, deadline: deadline)
@@ -59,8 +66,9 @@ enum MeetingAccessibilityReader {
     }
     private func refresh() async {
         guard let model else { return }
+        model.meetingDetectionAvailable = AXIsProcessTrusted()
         guard model.detectMeetings, AXIsProcessTrusted(), !model.isOccupied else {
-            if !model.detectMeetings { model.detectedMeeting = nil }
+            if !model.detectMeetings || !model.meetingDetectionAvailable { model.detectedMeeting = nil }
             panel?.orderOut(nil)
             return
         }

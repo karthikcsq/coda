@@ -15,9 +15,11 @@ def protected(text):
     """Quoted/code/literal syntax stays literal; ordinary 'explain' is not code."""
     if re.search(r'\b(?:ignore|disregard|override)\b[^\n]{0,100}\b(?:instructions|prompt|system)\b', text, re.I):
         return True
-    if re.search(r'''["“”‘`{}]|(?<!\w)'[^'\n]+'(?!\w)|https?://|\b\w+[.@_]\w+''', text):
+    probe = re.sub(r'(?<![\w.])\d+\.\d+(?![\w.])', 'DECIMAL', text)
+    if re.search(r'''["“”‘`{}]|(?<!\w)'[^'\n]+'(?!\w)|https?://|\b\w+[.@_]\w+''', probe):
         return True
     for match in re.finditer(r'\b(\w+)/(\w+)\b', text):
+        if match[1].isdigit() and match[2].isdigit(): continue
         if match[1].casefold() not in LABELS or match[2].casefold() not in LABELS:
             return True
     markers = r'(?:comma|period|colon|slash|question mark|exclamation mark|new paragraph|new line)'
@@ -100,6 +102,8 @@ def capitalize(text):
     """Case and terminal punctuation only; never remove or replace a word."""
     def initial(match):
         prefix = text[:match.start(2)].rstrip()
+        if match[2] in 'xyz' and re.match(r'[xyz]\s+(?:squared|cubed|plus|minus|times|equals|divided|multiplied|to the power)\b', text[match.start(2):], re.I):
+            return match[0]
         return match[1]+(match[2] if ABBREVIATION.search(prefix) else match[2].upper())
     text = re.sub(r'(^[ \t]*|[.!?][ \t\n]+|\n[ \t]*(?:[-*•][ \t]+|\d+[.)][ \t]+)?)([a-z])', initial, text)
     text = re.sub(r'\bi\b', 'I', text)

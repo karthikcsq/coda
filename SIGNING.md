@@ -1,5 +1,18 @@
 # Local Coda signing
 
+## Single current app, November 2, 2026
+
+The current app is **0.4.13 build 15** at `build/Coda.app`, including dictionary
+learning, the word suggestion pop-up, and Smart number/math formatting. Keep this
+single bundle up to date. Superseded bundles and duplicate source/review folders
+have been removed; historical paths below describe prior validation only and are
+no longer retained rollback copies. Git checkpoints now provide source rollback.
+Rebuild a chosen revision with the existing signing identity to restore it.
+
+The new dictionary/cleanup work and existing meeting changes were checkpointed
+locally before the UI overhaul. No remote push or signing/access policy change
+was made. Do not recreate a directory of versioned binary backups.
+
 ## Current installed update — 0.4.12 build 11
 
 October 31, 2026: the insertion repair was staged, strictly verified, installed at `build/Coda.app`, and reopened normally with the existing certificate fingerprint `22571B293DDEED6B20DB834884A208BFDADDEDD7`. The exact installed executable reports Accessibility trusted and automatic insertion enabled. All 68 preexisting history JSON files and the checked dictation preferences were preserved. Rollback: `build-staged/Coda-0.4.10-build9-before-insertion.app`. The preexisting 0.4.11 candidate was preserved. No permission, certificate policy or key access policy changed. Live Claude insertion is for the user to test, as requested. Evidence: `benchmarks/insertion-2026-10-31/REPORT.md` and `installation.json`.

@@ -19,6 +19,7 @@ struct WorkspaceView: View {
                 }.padding(.horizontal, 24).frame(height: 84, alignment: .center)
                 VStack(spacing: 4) {
                     navigation("Dictation", icon: "waveform", section: "Dictation")
+                    navigation("Dictionary", icon: "character.book.closed", section: "Dictionary")
                     navigation("Notetaker", icon: "square.and.pencil", section: "Meetings")
                     navigation("Insights", icon: "chart.bar", section: "Insights")
                     navigation("History", icon: "clock.arrow.circlepath", section: "History")
@@ -39,6 +40,7 @@ struct WorkspaceView: View {
 
             Group {
                 if model.showSettings { SettingsPanel(model: model, controller: controller) }
+                else if controller.workspaceSection == "Dictionary" { DictionaryPage(controller: controller) }
                 else if controller.workspaceSection == "Meetings" { NotetakerPage(model: model, controller: controller) }
                 else if controller.workspaceSection == "Insights" { InsightsPage(controller: controller) }
                 else { DictationPage(model: model, controller: controller, historyOnly: controller.workspaceSection == "History") }
@@ -47,6 +49,7 @@ struct WorkspaceView: View {
         }.background(Color(white: 0.13)).preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.88))
         .onAppear {
             delegate.reopenMain = { delegate.showMain { openWindow(id: "main") } }
+            controller.showDictionaryWindow = { delegate.reopenMain?() }
             controller.refreshAccessibility()
         }
         .onChange(of: model.selection, initial: true) { _, _ in
@@ -60,7 +63,13 @@ struct WorkspaceView: View {
             .buttonStyle(.plain).accessibilityIdentifier("coda.nav.\(section.lowercased())")
     }
     private func navLabel(_ title: String, icon: String) -> some View {
-        HStack(spacing: 12) { Image(systemName: icon).font(.system(size: 15)).frame(width: 16); Text(title).font(.system(size: 14)); Spacer() }
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 15)).frame(width: 16); Text(title).font(.system(size: 14)); Spacer()
+            if title == "Dictionary", !controller.dictionary.possible.isEmpty {
+                Text("\(controller.dictionary.possible.count)").font(.system(size: 11)).padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.white.opacity(0.1), in: Capsule()).accessibilityLabel("\(controller.dictionary.possible.count) possible custom words")
+            }
+        }
             .padding(.horizontal, 12).frame(height: 36).contentShape(Rectangle())
     }
 }

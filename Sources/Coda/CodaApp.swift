@@ -25,7 +25,13 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         Window("Coda", id: "main") {
             WorkspaceView(model: model, controller: dictation, delegate: delegate)
                 .frame(minWidth: 980, minHeight: 680)
-                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model) }
+                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model)
+                    delegate.meetingDetector.start(model: model) {
+                        delegate.reopenMain?()
+                        dictation.workspaceSection = "Meetings"
+                        model.requestMeetingRecording()
+                    }
+                }
         }.defaultSize(width: 1350, height: 850)
         .commands {
             CommandGroup(replacing: .newItem) { Button("Import Audio…") { model.importAudio() }.keyboardShortcut("o").disabled(model.isOccupied) }
@@ -64,6 +70,7 @@ struct RecordingMenu: View {
     }
 }
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+    let meetingDetector = MeetingDetector()
     var reopenMain: (() -> Void)?
     func showMain(open: () -> Void) {
         open() // SwiftUI Window's fixed id reuses the same main window.
@@ -151,7 +158,10 @@ struct ContentView: View {
                                 Label(model.busy ? "Transcribing on this Mac" : "Your audio is ready", systemImage: "waveform")
                             } description: { Text(model.busy ? model.status : "Transcribe and identify speakers locally with Voz + Who.") } actions: {
                                 if model.busy { ProgressView() }
-                                else { Button("Transcribe on this Mac") { model.processSelected() }.buttonStyle(.borderedProminent).tint(accent).disabled(model.isOccupied) }
+                                else {
+                                    SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) }))
+                                    Button("Transcribe on this Mac") { model.processSelected() }.buttonStyle(.borderedProminent).tint(accent).disabled(model.isOccupied)
+                                }
                             }
                         } else if tab == "Transcript" { transcript(meeting) }
                         else { summary(meeting) }
@@ -214,6 +224,12 @@ struct ContentView: View {
     }
     private func transcript(_ meeting: Meeting) -> some View {
         VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) }))
+                Button("Apply & transcribe again") { model.processSelected() }
+                    .help("Reprocess saved audio with this speaker count. Replaces the transcript and clears speaker names and summary.")
+            }.disabled(model.isOccupied)
+            Text("Transcribing again replaces the transcript and clears speaker names and the summary.").font(.caption).foregroundStyle(.secondary)
             DisclosureGroup("Speaker names • edit to identify people") {
                 ForEach(Set(meeting.segments.flatMap(\.speakers)).sorted(), id: \.self) { speaker in
                     HStack { Text("Speaker \(speaker + 1)").foregroundStyle(.secondary).frame(width: 95, alignment: .leading)
@@ -243,7 +259,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 if let summary = meeting.summary {
                     Label("AI-generated • verify the timestamp references", systemImage: "sparkles").font(.callout).foregroundStyle(.secondary)
-                    summarySection("At a glance", icon: "text.alignleft", items: summary.overview, meeting: meeting)
+                    summarySection("Discussion notes", icon: "text.alignleft", items: summary.overview, meeting: meeting)
                     summarySection("Decisions", icon: "checkmark.seal", items: summary.decisions, meeting: meeting)
                     summarySection("Action items", icon: "checklist", items: summary.actions, meeting: meeting)
                 } else {
@@ -274,18 +290,45 @@ struct ContentView: View {
 struct RecordingOptionsView: View {
     @Bindable var model: AppModel
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             Label("Record a conversation", systemImage: "waveform").font(.title2.weight(.semibold))
-            Text("Make sure everyone knows you are recording. Coda shows a red recording indicator until you stop.")
+            Text("Make sure everyone knows you are recording. Coda shows a red recording indicator until you stop.").fixedSize(horizontal: false, vertical: true)
             Picker("Audio source", selection: $model.includeSystem) {
                 Text("Microphone + meeting audio").tag(true)
                 Text("Microphone only").tag(false)
             }.pickerStyle(.segmented).accessibilityIdentifier("coda.recording.source")
-            Text(model.includeSystem ? "Records your microphone and sounds from other apps. Requires Microphone and Screen & System Audio Recording access. Use headphones to reduce echo." : "Records only your microphone. Voices playing through headphones or other apps are not captured. This option uses Microphone access only.").font(.callout).foregroundStyle(.secondary)
+            Text(model.includeSystem ? "Records your microphone and sounds from other apps. Requires Microphone and Screen & System Audio Recording access. Use headphones to reduce echo." : "Records only your microphone. Voices playing through headphones or other apps are not captured. This option uses Microphone access only.").font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            SpeakerCountPicker(selection: $model.recordingSpeakerCount)
+            if model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting {
+                if let count = detected.participantCount, (1...4).contains(count) {
+                    Toggle("Use \(detected.service) count: \(count), including you", isOn: $model.useDetectedSpeakerCount)
+                        .disabled(model.recordingSpeakerCount != 0)
+                    Text("Participants can include silent people or shared devices. Set a count above to override.").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(detected.participantCount.map { "\(detected.service) shows \($0) participants. Coda supports up to 4 speakers; enter a count or use automatic audio detection." } ?? "\(detected.service) detected; participant count unavailable. Enter a count or use automatic audio detection.").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                Text("Include yourself. Choose a count to prevent extra speaker groups, or leave Automatic to detect voices from audio.").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Toggle("Detect Meet, Zoom, and Teams calls", isOn: $model.detectMeetings)
+            if model.detectMeetings && !model.meetingDetectionAvailable {
+                Button("Enable meeting detection access…") { model.requestMeetingDetectionAccess() }
+                Text("Accessibility lets Coda read meeting controls and participant counts. Manual speaker entry works without it.").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             if model.autoSummary { Label("Automatic summaries are ON: the transcript will be sent to OpenAI after processing.", systemImage: "arrow.up.right.circle").foregroundStyle(.orange) }
             HStack { Button("Cancel") { model.showRecordConsent = false }; Spacer(); Button("Start recording") { model.showRecordConsent = false; model.startRecording() }.buttonStyle(.borderedProminent).tint(accent) }
-        }.padding(30).frame(width: 510).background(Color(white: 0.10))
+        }.padding(30).frame(width: 550).background(Color(white: 0.10))
             .preferredColorScheme(.dark).foregroundStyle(Color(white: 0.88))
+    }
+}
+
+struct SpeakerCountPicker: View {
+    @Binding var selection: Int
+    var body: some View {
+        Picker("Speakers", selection: $selection) {
+            Text("Automatic").tag(0)
+            ForEach(1...4, id: \.self) { count in Text("\(count)\(count == 1 ? " speaker" : " speakers")").tag(count) }
+        }.accessibilityIdentifier("coda.meeting.speakerCount")
     }
 }
 

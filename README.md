@@ -6,6 +6,12 @@ Coda's app code is MIT licensed. Its Voz/Who dependencies are **source-available
 
 Version 0.4.10 Smart removes clear speech fillers, normalizes spoken symbols, applies explicit corrections, creates clear lists/numbered steps, and divides long prose into paragraphs. A separately installed Apache-2.0 punctuation classifier adds punctuation to unpunctuated text by inserting marks at original word offsets. Common cleanup avoids text generation; the existing Qwen model loads only for unsupported correction cases. Substantive words remain guarded, None preserves exact text, and originals remain recoverable in History. Meeting transcripts are unchanged. Saved meetings open directly into full-width details. The menu bar provides Open Coda, Start/Stop Meeting and Quit; starting a meeting presents microphone/system-audio choices. See [behavior and measured limits](LOCAL_CLEANUP.md).
 
+Version 0.4.13 adds a speaker count before recording (1–4, including yourself), optional call detection for Google Meet, Zoom, and Teams, and detailed topic-based summary notes. Meeting detection uses existing macOS Accessibility access to read visible call controls and participant counts. It suggests recording; you still start it yourself. Counts are suggestions, since a device can be shared or a participant can be silent. Manual input overrides the suggestion and works with microphone-only audio. If the controls or count are unavailable, enter a count or leave Automatic for audio-based discovery. Other meeting apps can be recorded with manual speaker counts. Detection can be disabled in Settings or recording options.
+
+The chosen count is saved with each recording and used during voice clustering. Saved transcripts also offer a count selector and **Apply & transcribe again**; successful reprocessing replaces the transcript and clears speaker names and the summary. Who still supports at most four prominent voices. A count does not create voices for silent participants. Recordings with too little clear speech for constrained voice clustering ask you to retry Automatic.
+
+Summaries now preserve substantive topics, rationale, examples, progress, open questions and concrete next steps, with the same timestamp evidence validation. Relative deadlines are retained as spoken. Existing summaries stay unchanged until regenerated. Summary requests still send transcript text and speaker labels only, using the configured model.
+
 ## Run locally
 
 Requires Apple Silicon, macOS 15+, and Swift 6.2+ with a matching macOS SDK. Full Xcode is recommended; this project also supports the installed macOS 27 Command Line Tools through a stable SwiftUI state-wrapper alias.
@@ -40,7 +46,31 @@ Dictation uses local Voz, no cloud cleanup or API credits. Temporary audio is de
 
 The shortcut component is MIT KeyboardShortcuts 2.4.0, vendored at an exact upstream revision with documented CLT compatibility changes. See `Vendor/KeyboardShortcuts/CODA-PATCH.md`. Coda does not alter Wispr or its preferences. This is a first native dictation implementation, not a claim of feature/accuracy parity.
 
+### Custom words and learning from corrections
+
+Open **Dictionary** in the sidebar to add, edit, search or remove custom words. Approved words are passed to Voz as vocabulary hints for future dictations, including when cleanup is set to None. These are recognition hints, not guaranteed text replacements or model retraining. Meeting transcription is unchanged.
+
+With **Learn from corrections** enabled (the default), Coda watches only the field it just pasted into for up to 60 seconds. It first needs to observe the exact inserted passage. Small word/phrase corrections resembling the original spelling or pronunciation and containing an unfamiliar word can appear under **Possible custom words**, with the original spelling and Add, Edit and Dismiss actions. Add approves a word; Edit lets you adjust its spelling before adding it. A sidebar badge shows pending suggestions. Dismissed, removed and superseded spellings are remembered so they do not keep returning; manually adding a spelling restores it.
+
+New suggestions also appear in a floating pop-up on the dictation display. **Add word** approves the spelling and shows a short confirmation; **Dismiss** suppresses it. The close button or the ten-second timeout leaves all unreviewed words in Dictionary. Hovering pauses dismissal. Batches queue quietly, repeated corrections do not replay a word during the same app session, and launch never replays existing suggestions. **Open dictionary** brings the main window to the review list. The pop-up never takes keyboard focus, uses no system notification permission, and respects Reduce Motion.
+
+An unfamiliar replacement alone is insufficient. Unrelated substitutions, changed quantities, rewrites and common-word edits are filtered before suggestion. Strong spelling/pronunciation repairs can be suggested immediately. Ambiguous pairs require a positive contextual judgment from the existing local Qwen cleanup model, when it is available; no new model is downloaded or trained. Its response is restricted to booleans for the supplied pairs and cannot invent dictionary entries or override an unrelated-pair rejection. If the model is cold, busy, unavailable or uncertain, ambiguous pairs are skipped. Undo, new dictation and cancellation invalidate pending judgments. This favors missed suggestions over noisy ones; text alone cannot establish a speaker's intent with certainty.
+
+### Spoken numbers and math
+
+**Smart** cleanup formats clear English cardinal numbers as digits, including compound numbers and decimals. Arithmetic can use `+`, `−`, `×`, `÷`, `/`, `=`, comparison signs, percentages and simple powers (`x²`, `x³`, `2^5`). Clock context or AM/PM permits time formatting such as `three thirty pm` → `3:30 PM`. Ordinary phrases such as `three times today` keep the word “times.” Quotes, code, identifiers, literal-word requests, malformed numbers, ambiguous digit strings and familiar idioms remain conservative.
+
+Notation is formatted after source-preserving cleanup and validation, without evaluating or fixing equations: `two plus two equals five` remains `2 + 2 = 5`. The None and Light modes retain their existing behavior. Raw dictation stays available in History. This is a bounded English grammar, not general mathematical or LaTeX transcription.
+
+Tracking stops on a change of app, window or field, a new dictation/insertion attempt, cancellation, field clearing, secure input, lost Accessibility access, sleep or screen lock. Whole-field context is held only in memory for this bounded observation and then released. Only suggested/approved words, their correction pairs, dismissal state and opaque observation IDs are stored in `~/Library/Application Support/Coda/Dictionary/words.json`, with owner-only permissions. Surrounding field text is never written or sent to a service by this feature. Turning learning off stops observation and keeps approved vocabulary active.
+
+Learning requires readable Accessibility text and a selection range. Editors with opaque or cached Accessibility values can still receive paste but may produce no suggestions. Case-only changes, punctuation, appended prose, deletions, broad rewrites, everyday words recognized by the Mac's spell checker, and identifiable paths, addresses, numbers or code syntax are excluded. Suggestions are a heuristic and require review; a correction cannot establish whether the speech model knows a word. Entries allow up to 60 characters and four words, including letters, apostrophes and hyphens.
+
 ## Privacy and behavior
+
+The current application lives at `build/Coda.app`. Updates replace that single
+bundle; local Git checkpoints provide rollback. Rebuild a chosen source revision
+with `scripts/build-app.sh` rather than keeping stale app or source copies.
 
 - Local inference: Voz transcribes and Who diarizes the **same finalized audio timeline**. Who supports up to four prominent speakers. Words use greatest temporal overlap; near ties show multiple candidate speakers and silence remains unknown.
 - Raw recordings, imported copies, JSON transcripts, speaker names, and summaries live in `~/Library/Application Support/Coda/Meetings`. Models live in the sibling `Models` directory. Files are local, not encrypted by Coda. Protect your account/disk. Original imported files are not deleted when deleting a meeting.

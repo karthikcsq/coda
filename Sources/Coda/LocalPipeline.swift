@@ -14,13 +14,13 @@ actor LocalPipeline {
         if voz == nil { voz = try await Voz(cacheRoot: cache) { progress("Preparing Voz", $0.fraction) } }
         try Task.checkCancellation()
     }
-    func dictate(_ audio: URL, consent: Bool) async throws -> String {
+    func dictate(_ audio: URL, consent: Bool, vocabulary: [String] = []) async throws -> String {
         guard consent, Voz.isDownloaded(cacheRoot: cache) else { throw CodaError.message("Prepare the local model first.") }
         try Task.checkCancellation()
         // The prepared cache is required: no first-use downloads during a dictation session.
         if voz == nil { voz = try await Voz(cacheRoot: cache) }
         guard let voz else { throw CodaError.emptyAudio }
-        let result = try await voz.transcribe(audio)
+        let result = try await voz.transcribe(audio, vocabulary: vocabulary)
         try Task.checkCancellation()
         guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw CodaError.emptyAudio }
         return result.text
