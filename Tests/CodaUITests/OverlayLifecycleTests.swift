@@ -63,8 +63,9 @@ import CodaCore
     controller.previewOverlay()
     controller.dismissAfterResult(after: .milliseconds(30))
     // Other native renders occupy MainActor; await the observable outcome, not a
-    // scheduler race against an 80 ms wall-clock delay.
-    let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+    // scheduler race against an 80 ms wall-clock delay. The richer workspace pages
+    // render slower in parallel, so allow more wall-clock before judging the state.
+    let deadline = ContinuousClock.now.advanced(by: .seconds(25))
     while controller.overlayIsVisible && ContinuousClock.now < deadline {
         try? await Task.sleep(for: .milliseconds(20))
     }

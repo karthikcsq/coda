@@ -52,34 +52,48 @@ private final class FloatingDictationPanel: NSPanel {
 }
 struct DictationHUD: View {
     @Bindable var controller: DictationController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var listening: Bool { controller.lifecycle.phase == .listening }
     var body: some View {
         HStack(spacing: 12) {
             if listening {
+                // Reduce Motion keeps the level meter readable without the continuous animation.
                 HStack(spacing: 3) { ForEach(0..<7) { index in
-                    Capsule().fill(Color.white.opacity(0.88)).frame(width: 3, height: 5 + controller.level * (index.isMultiple(of: 3) ? 22 : 14))
-                } }.frame(width: 39, height: 28).animation(.easeOut(duration: 0.1), value: controller.level)
+                    Capsule().fill(CodaStyle.mint.opacity(0.9)).frame(width: 3, height: 5 + controller.level * (index.isMultiple(of: 3) ? 22 : 14))
+                } }.frame(width: 39, height: 28)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: controller.level)
+                    .accessibilityHidden(true)
             } else if controller.lifecycle.busy {
                 ProgressView().controlSize(.small).frame(width: 28)
             } else { Image(systemName: "waveform").font(.system(size: 19, weight: .light)).frame(width: 28) }
             VStack(alignment: .leading, spacing: 3) {
                 Text(listening ? "Listening" : controller.lifecycle.busy ? "Transcribing" : controller.pendingInsertion != nil ? "Choose a text field" : controller.text.isEmpty ? "Ready to dictate" : "Text saved")
-                    .font(.system(size: 13, weight: .medium)).lineLimit(1)
+                    .font(CodaStyle.rowTitleFont).lineLimit(1)
                 Text(listening ? "Esc to cancel" : controller.lifecycle.busy ? "On your Mac" : controller.text.isEmpty ? controller.shortcutLabel : controller.message)
-                    .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                    .font(.system(size: 10)).foregroundStyle(CodaStyle.muted).lineLimit(1)
             }.frame(maxWidth: .infinity, alignment: .leading).help(controller.message)
             if !controller.lifecycle.busy && !controller.text.isEmpty {
-                Button { controller.copyResult() } label: { Image(systemName: "doc.on.doc").font(.system(size: 13)) }.buttonStyle(.plain).help("Copy saved text")
+                Button { controller.copyResult() } label: { Image(systemName: "doc.on.doc") }
+                    .buttonStyle(CodaIconButtonStyle()).help("Copy saved text").accessibilityLabel("Copy saved text")
             }
             if !controller.lifecycle.busy || listening {
                 Button { controller.button() } label: {
-                    Image(systemName: listening ? "stop.fill" : controller.pendingInsertion != nil ? "arrow.up.doc" : "mic.fill").font(.system(size: 12)).frame(width: 30, height: 30).background(Color.white.opacity(0.12), in: Circle())
-                }.buttonStyle(.plain).help(listening ? "Stop dictation" : controller.pendingInsertion != nil ? "Insert text here" : "Start dictation")
+                    Image(systemName: listening ? "stop.fill" : controller.pendingInsertion != nil ? "arrow.up.doc" : "mic.fill")
+                        .font(.system(size: 12)).frame(width: 30, height: 30)
+                        .background(listening ? CodaStyle.mint.opacity(0.22) : Color.white.opacity(0.12), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .help(listening ? "Stop dictation" : controller.pendingInsertion != nil ? "Insert text here" : "Start dictation")
+                .accessibilityLabel(listening ? "Stop dictation" : controller.pendingInsertion != nil ? "Insert text here" : "Start dictation")
             }
-            Button { controller.dismissOverlay() } label: { Image(systemName: "xmark").font(.system(size: 10)).frame(width: 20, height: 30) }.buttonStyle(.plain).help(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss; text stays in History")
-        }.padding(.horizontal, 17).frame(width: 320, height: 64)
+            // Same 30pt target as the control beside it.
+            Button { controller.dismissOverlay() } label: { Image(systemName: "xmark").font(.system(size: 11)) }
+                .buttonStyle(CodaIconButtonStyle())
+                .help(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss; text stays in History")
+                .accessibilityLabel(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss dictation; text stays in History")
+        }.padding(.horizontal, 15).frame(width: 320, height: 64)
         .background(Color(white: 0.075), in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.14)))
+        .overlay(Capsule().strokeBorder(CodaStyle.strongEdge))
         .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.9))
         .accessibilityElement(children: .contain).accessibilityLabel("Coda dictation")
     }

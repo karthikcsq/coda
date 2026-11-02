@@ -99,7 +99,8 @@ struct RecordingMenu: View {
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
-private let accent = Color(red: 0.55, green: 0.78, blue: 0.72)
+// One accent for the whole app; the dictionary page's mint is the anchor.
+private let accent = CodaStyle.mint
 
 struct ContentView: View {
     @Bindable var model: AppModel
@@ -116,28 +117,28 @@ struct ContentView: View {
         HStack(spacing: 0) {
             if showsMeetingSidebar {
             VStack(alignment: .leading, spacing: 18) {
-                Text("YOUR MEETINGS").font(.system(size: 11, weight: .medium)).tracking(1).foregroundStyle(.secondary).padding(.top, 8)
-                HStack(spacing: 7) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search meetings", text: $model.search).textFieldStyle(.plain)
-                }.font(.system(size: 12)).padding(10).background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 8))
+                CodaEyebrow(text: "Your meetings").padding(.top, 8)
+                CodaSearchField(prompt: "Search meetings", text: $model.search)
                 ScrollView {
-                    LazyVStack(spacing: 5) {
+                    LazyVStack(spacing: 4) {
                         ForEach(model.filteredMeetings) { meeting in
                             Button { model.openMeeting(meeting.id) } label: {
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 6) {
                                     Text(meeting.title).font(.system(size: 13, weight: .medium)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
-                                    Text(meeting.created.formatted(date: .abbreviated, time: .omitted)).font(.system(size: 11)).foregroundStyle(.secondary)
-                                    Label(meeting.segments.isEmpty ? "Ready to transcribe" : "\(Set(meeting.segments.flatMap(\.speakers)).count) speakers", systemImage: meeting.segments.isEmpty ? "waveform" : "person.2").font(.system(size: 11)).foregroundStyle(accent)
-                                }.padding(12).background(model.selection == meeting.id ? Color.white.opacity(0.065) : .clear, in: RoundedRectangle(cornerRadius: 10))
-                            }.buttonStyle(.plain)
+                                    Text(meeting.created.formatted(date: .abbreviated, time: .omitted)).font(CodaStyle.captionFont).foregroundStyle(.secondary)
+                                    Label(meeting.segments.isEmpty ? "Ready to transcribe" : "\(Set(meeting.segments.flatMap(\.speakers)).count) speakers", systemImage: meeting.segments.isEmpty ? "waveform" : "person.2").font(CodaStyle.captionFont).foregroundStyle(accent)
+                                }.padding(12).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                            }
+                            .buttonStyle(CodaListRowStyle(selected: model.selection == meeting.id))
+                            .accessibilityLabel("Open " + meeting.title)
                         }
                     }
                 }
-                Button { model.importAudio() } label: { Label("Import audio", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity) }.buttonStyle(.bordered).controlSize(.large).disabled(model.isOccupied)
-                Label("Saved on this Mac", systemImage: "internaldrive").font(.system(size: 11)).foregroundStyle(.secondary)
-            }.padding(18).frame(width: 220).background(Color(white: 0.115))
-            Rectangle().fill(Color.white.opacity(0.08)).frame(width: 1)
+                Button { model.importAudio() } label: { Label("Import audio", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity) }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
+                Label("Saved on this Mac", systemImage: "internaldrive").font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+            }.padding(18).frame(width: 224).background(CodaStyle.chrome)
+            Rectangle().fill(CodaStyle.hairline).frame(width: 1)
             }
             VStack(spacing: 0) {
                 topBar
@@ -145,7 +146,8 @@ struct ContentView: View {
                 if let meeting = model.selected {
                     VStack(alignment: .leading, spacing: 18) {
                         TextField("Meeting title", text: Binding(get: { model.selected?.title ?? "" }, set: model.renameMeeting))
-                            .font(.system(size: 24, weight: .semibold)).textFieldStyle(.plain).disabled(model.isOccupied)
+                            .font(.system(size: 24, weight: .medium, design: .rounded)).textFieldStyle(.plain).disabled(model.isOccupied)
+                            .accessibilityLabel("Meeting title")
                         HStack {
                             Label(meeting.created.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                             if let end = meeting.segments.last?.end { Label(timestamp(end), systemImage: "clock") }
@@ -154,14 +156,18 @@ struct ContentView: View {
                         }.font(.callout).foregroundStyle(.secondary)
                         Picker("View", selection: $tab) { Text("Transcript").tag("Transcript"); Text("Summary").tag("Summary") }.pickerStyle(.segmented).frame(width: 260)
                         if meeting.segments.isEmpty {
-                            ContentUnavailableView {
-                                Label(model.busy ? "Transcribing on this Mac" : "Your audio is ready", systemImage: "waveform")
-                            } description: { Text(model.busy ? model.status : "Transcribe and identify speakers locally with Voz + Who.") } actions: {
-                                if model.busy { ProgressView() }
-                                else {
-                                    SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) }))
-                                    Button("Transcribe on this Mac") { model.processSelected() }.buttonStyle(.borderedProminent).tint(accent).disabled(model.isOccupied)
-                                }
+                            CodaEmptyState(icon: "waveform",
+                                           title: model.busy ? "Transcribing on this Mac" : "Your audio is ready",
+                                           message: model.busy ? model.status : "Transcribe and label up to four speakers locally with Voz and Who.",
+                                           tint: CodaStyle.mint) {
+                                HStack(spacing: 12) {
+                                    if model.busy { ProgressView().controlSize(.small) }
+                                    else {
+                                        SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) })).frame(width: 190)
+                                        Button("Transcribe on this Mac") { model.processSelected() }
+                                            .buttonStyle(CodaPrimaryButtonStyle()).disabled(model.isOccupied)
+                                    }
+                                }.padding(.top, 8)
                             }
                         } else if tab == "Transcript" { transcript(meeting) }
                         else { summary(meeting) }
@@ -169,27 +175,30 @@ struct ContentView: View {
                 } else {
                     Spacer()
                     Image(systemName: "waveform.path").font(.system(size: 64, weight: .light)).foregroundStyle(accent).padding(.bottom, 12)
-                    Text("Be present. Keep the important parts.").font(.system(size: 28, weight: .semibold))
+                    Text("Be present. Keep the important parts.").font(.system(size: 27, weight: .medium, design: .rounded))
                     Text("Record a conversation or bring your own audio.\nCoda turns it into a speaker-labeled transcript and clear next steps.")
-                        .font(.title3).foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(5).padding(.top, 8)
+                        .font(.system(size: 15)).foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(5).padding(.top, 8)
                     HStack(spacing: 12) {
-                        Button("Start a recording") { model.requestMeetingRecording() }.buttonStyle(.borderedProminent).tint(accent)
-                        Button("Import audio…") { model.importAudio() }.buttonStyle(.bordered)
-                    }.controlSize(.large).padding(.top, 24).disabled(model.isOccupied)
-                    HStack(spacing: 24) { Label("Local transcription", systemImage: "laptopcomputer"); Label("Up to 4 speakers", systemImage: "person.2"); Label("Optional AI summary", systemImage: "sparkles") }
-                        .font(.caption).foregroundStyle(.secondary).padding(.top, 32)
+                        Button("Start a recording") { model.requestMeetingRecording() }.buttonStyle(CodaPrimaryButtonStyle())
+                        Button("Import audio…") { model.importAudio() }.buttonStyle(CodaSecondaryButtonStyle())
+                    }.padding(.top, 22).disabled(model.isOccupied)
+                    HStack(spacing: 22) { Label("Local transcription", systemImage: "laptopcomputer"); Label("Up to 4 speakers", systemImage: "person.2"); Label("Optional AI summary", systemImage: "sparkles") }
+                        .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).padding(.top, 30)
                     Spacer()
                 }
                 Divider()
                 HStack(spacing: 10) {
-                    if model.busy || model.startingCapture { ProgressView().controlSize(.small) }
-                    else { Circle().fill(model.recording ? .red : accent).frame(width: 7, height: 7) }
-                    Text(model.status).font(.caption).lineLimit(2)
+                    if model.busy || model.startingCapture { ProgressView().controlSize(.small).frame(width: 14) }
+                    else if !model.recording { Circle().fill(accent).frame(width: 7, height: 7).frame(width: 14) }
+                    Text(model.status).font(CodaStyle.secondaryFont).foregroundStyle(.secondary).lineLimit(2)
                     Spacer()
-                    if let progress = model.progress, model.busy { ProgressView(value: progress).frame(width: 110) }
-                    if model.busy { Button("Cancel") { model.cancel() }.disabled(model.status == "Finalizing recording") }
-                }.padding(14).background(Color(white: 0.13))
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(white: 0.10))
+                    if let progress = model.progress, model.busy { ProgressView(value: progress).frame(width: 120) }
+                    if model.busy {
+                        Button("Cancel") { model.cancel() }.buttonStyle(CodaSecondaryButtonStyle())
+                            .disabled(model.status == "Finalizing recording")
+                    }
+                }.padding(.horizontal, 20).padding(.vertical, 12).background(CodaStyle.chrome)
+            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(CodaStyle.canvas)
         }.tint(accent)
         .sheet(isPresented: $model.showRecordConsent) { RecordingOptionsView(model: model) }
         .alert("Send transcript to OpenAI?", isPresented: $model.showSummaryConsent) {
@@ -209,35 +218,56 @@ struct ContentView: View {
     private var topBar: some View {
         HStack {
             if model.recording {
-                Label("REC", systemImage: "record.circle.fill").foregroundStyle(.red).font(.headline)
-                TimelineView(.periodic(from: .now, by: 1)) { context in Text(timestamp(context.date.timeIntervalSince(model.recordingStarted ?? context.date))).monospacedDigit() }
-                Text("Microphone\(model.includeSystem ? " + system audio" : "")").foregroundStyle(.secondary)
+                Label("REC", systemImage: "record.circle.fill").foregroundStyle(.red)
+                    .font(.system(size: 13, weight: .semibold))
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(timestamp(context.date.timeIntervalSince(model.recordingStarted ?? context.date)))
+                        .font(.system(size: 13)).monospacedDigit()
+                }
+                Text("Microphone\(model.includeSystem ? " + system audio" : "")")
+                    .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
                 Spacer()
-                Button("Stop & save", systemImage: "stop.fill") { model.stopRecording() }.buttonStyle(.borderedProminent).tint(.red)
+                Button("Stop & save") { model.stopRecording() }.buttonStyle(CodaPrimaryButtonStyle(tint: .red))
             } else {
-                Text("MEETING NOTEBOOK").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                CodaEyebrow(text: "Meeting notebook")
                 Spacer()
-                Button("New recording", systemImage: "record.circle") { model.requestMeetingRecording() }.disabled(model.isOccupied)
-                if model.selected != nil { Button { deleteConfirmation = true } label: { Image(systemName: "trash") }.help("Delete selected meeting").disabled(model.isOccupied) }
+                Button("New recording") { model.requestMeetingRecording() }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
+                if model.selected != nil {
+                    Button { deleteConfirmation = true } label: { Image(systemName: "trash") }
+                        .buttonStyle(CodaIconButtonStyle()).help("Delete selected meeting")
+                        .accessibilityLabel("Delete selected meeting").disabled(model.isOccupied)
+                }
             }
-        }.padding(.horizontal, 30).padding(.vertical, 18)
+        }.padding(.horizontal, 28).padding(.vertical, 14)
     }
     private func transcript(_ meeting: Meeting) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) }))
-                Button("Apply & transcribe again") { model.processSelected() }
-                    .help("Reprocess saved audio with this speaker count. Replaces the transcript and clears speaker names and summary.")
-            }.disabled(model.isOccupied)
-            Text("Transcribing again replaces the transcript and clears speaker names and the summary.").font(.caption).foregroundStyle(.secondary)
-            DisclosureGroup("Speaker names • edit to identify people") {
-                ForEach(Set(meeting.segments.flatMap(\.speakers)).sorted(), id: \.self) { speaker in
-                    HStack { Text("Speaker \(speaker + 1)").foregroundStyle(.secondary).frame(width: 95, alignment: .leading)
-                        TextField("Name", text: Binding(get: { model.selected?.speakerNames[String(speaker)] ?? "" }, set: { model.renameSpeaker(speaker, name: $0) })).textFieldStyle(.roundedBorder).frame(maxWidth: 260)
+        VStack(alignment: .leading, spacing: 14) {
+            // One collapsible group owns speaker count, names and their shared warning.
+            DisclosureGroup("Speakers and re-transcription") {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(spacing: 12) {
+                        SpeakerCountPicker(selection: Binding(get: { model.selected?.expectedSpeakerCount ?? 0 }, set: { model.setSelectedSpeakerCount($0) }))
+                            .frame(width: 190)
+                        Button("Apply & transcribe again") { model.processSelected() }
+                            .buttonStyle(CodaSecondaryButtonStyle())
+                            .help("Reprocess saved audio with this speaker count. Replaces the transcript and clears speaker names and summary.")
+                        Spacer(minLength: 0)
                     }
-                }
-                Text("Renaming a speaker clears any previous summary to avoid stale attribution.").font(.caption).foregroundStyle(.secondary)
-            }.disabled(model.isOccupied)
+                    ForEach(Set(meeting.segments.flatMap(\.speakers)).sorted(), id: \.self) { speaker in
+                        HStack(spacing: 12) {
+                            Text("Speaker \(speaker + 1)").font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+                                .frame(width: 84, alignment: .leading)
+                            TextField("Name", text: Binding(get: { model.selected?.speakerNames[String(speaker)] ?? "" }, set: { model.renameSpeaker(speaker, name: $0) }))
+                                .textFieldStyle(.roundedBorder).frame(maxWidth: 250)
+                                .accessibilityLabel("Name for speaker \(speaker + 1)")
+                        }
+                    }
+                    CodaNotice(kind: .caution, text: "Transcribing again replaces the transcript and clears speaker names and the summary. Renaming a speaker clears the summary.")
+                }.padding(.top, 12)
+            }
+            .font(CodaStyle.rowTitleFont).disabled(model.isOccupied)
+            .codaCard(padding: 16, radius: CodaStyle.radius)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     ForEach(meeting.segments) { segment in
@@ -249,32 +279,34 @@ struct ContentView: View {
                             }
                         }.id(segment.id)
                     }
-                }.padding(18).background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 14))
+                }.padding(18).background(CodaStyle.chrome, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
             }
-            Text("Machine-generated transcript. Overlapping voices and unsupported languages can reduce accuracy. Review before sharing.").font(.caption).foregroundStyle(.secondary)
+            Text("Machine-generated transcript. Overlapping voices and unsupported languages can reduce accuracy. Review before sharing.")
+                .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
         }
     }
     private func summary(_ meeting: Meeting) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 if let summary = meeting.summary {
-                    Label("AI-generated • verify the timestamp references", systemImage: "sparkles").font(.callout).foregroundStyle(.secondary)
+                    CodaNotice(kind: .info, text: "AI-generated. Check the timestamp references against the transcript before sharing.")
                     summarySection("Discussion notes", icon: "text.alignleft", items: summary.overview, meeting: meeting)
                     summarySection("Decisions", icon: "checkmark.seal", items: summary.decisions, meeting: meeting)
                     summarySection("Action items", icon: "checklist", items: summary.actions, meeting: meeting)
                 } else {
-                    Image(systemName: "sparkles").font(.largeTitle).foregroundStyle(accent).padding(.top, 30)
-                    Text("Turn the conversation into clarity.").font(.title2.weight(.semibold))
-                    Text("Summaries, decisions, and action items cite the transcript. Only transcript text and speaker names go to OpenAI; audio stays here.").foregroundStyle(.secondary)
+                    CodaEmptyState(icon: "sparkles", title: "No summary yet",
+                                   message: "Summaries, decisions and action items cite the transcript. Only transcript text and speaker names go to OpenAI; your audio stays on this Mac.",
+                                   tint: CodaStyle.mint)
                 }
-                Button(meeting.summary == nil ? "Summarize with OpenAI…" : "Generate again…") { model.showSummaryConsent = true }.buttonStyle(.borderedProminent).tint(accent).disabled(model.isOccupied)
+                Button(meeting.summary == nil ? "Summarize with OpenAI…" : "Generate again…") { model.showSummaryConsent = true }
+                    .buttonStyle(CodaPrimaryButtonStyle()).disabled(model.isOccupied)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     private func summarySection(_ title: String, icon: String, items: [SummaryItem], meeting: Meeting) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(title, systemImage: icon).font(.title3.weight(.semibold))
-            if items.isEmpty { Text("None explicitly stated.").foregroundStyle(.secondary) }
+            Label(title, systemImage: icon).font(.system(size: 16, weight: .medium))
+            if items.isEmpty { Text("None explicitly stated.").font(CodaStyle.secondaryFont).foregroundStyle(.secondary) }
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 VStack(alignment: .leading, spacing: 7) {
                     Text(item.text).textSelection(.enabled)
@@ -283,7 +315,7 @@ struct ContentView: View {
                     Text(item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }.map { "[" + timestamp($0.start) + "]" }.joined(separator: " ")).font(.caption.monospaced()).foregroundStyle(accent)
                 }
             }
-        }.padding(20).frame(maxWidth: .infinity, alignment: .leading).background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.06)))
+        }.codaCard(padding: 20, fill: CodaStyle.chrome)
     }
 }
 
@@ -291,8 +323,8 @@ struct RecordingOptionsView: View {
     @Bindable var model: AppModel
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("Record a conversation", systemImage: "waveform").font(.title2.weight(.semibold))
-            Text("Make sure everyone knows you are recording. Coda shows a red recording indicator until you stop.").fixedSize(horizontal: false, vertical: true)
+            CodaPageHeader(icon: "waveform", title: "Record a conversation",
+                           subtitle: "Make sure everyone knows you are recording. Coda shows a red indicator until you stop.")
             Picker("Audio source", selection: $model.includeSystem) {
                 Text("Microphone + meeting audio").tag(true)
                 Text("Microphone only").tag(false)
@@ -315,9 +347,14 @@ struct RecordingOptionsView: View {
                 Button("Enable meeting detection access…") { model.requestMeetingDetectionAccess() }
                 Text("Accessibility lets Coda read meeting controls and participant counts. Manual speaker entry works without it.").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if model.autoSummary { Label("Automatic summaries are ON: the transcript will be sent to OpenAI after processing.", systemImage: "arrow.up.right.circle").foregroundStyle(.orange) }
-            HStack { Button("Cancel") { model.showRecordConsent = false }; Spacer(); Button("Start recording") { model.showRecordConsent = false; model.startRecording() }.buttonStyle(.borderedProminent).tint(accent) }
-        }.padding(30).frame(width: 550).background(Color(white: 0.10))
+            if model.autoSummary { CodaNotice(kind: .caution, text: "Automatic summaries are ON: this transcript will be sent to OpenAI after processing.") }
+            HStack {
+                Button("Cancel") { model.showRecordConsent = false }.buttonStyle(CodaSecondaryButtonStyle())
+                Spacer()
+                Button("Start recording") { model.showRecordConsent = false; model.startRecording() }
+                    .buttonStyle(CodaPrimaryButtonStyle())
+            }.padding(.top, 4)
+        }.padding(30).frame(width: 550).background(CodaStyle.canvas)
             .preferredColorScheme(.dark).foregroundStyle(Color(white: 0.88))
     }
 }

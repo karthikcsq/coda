@@ -9,7 +9,7 @@ struct DictionaryPage: View {
     @DictionaryState private var adding = false
     @DictionaryState private var editing: CustomWord?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private let mint = Color(red: 0.62, green: 0.86, blue: 0.76)
+    private let mint = CodaStyle.mint
     private var dictionary: CustomDictionary { controller.dictionary }
     private func matches(_ word: CustomWord) -> Bool {
         query.isEmpty || word.word.localizedCaseInsensitiveContains(query) || word.original?.localizedCaseInsensitiveContains(query) == true
@@ -17,18 +17,10 @@ struct DictionaryPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                HStack(spacing: 14) {
-                    Image(systemName: "character.book.closed").font(.system(size: 24, weight: .light)).foregroundStyle(mint)
-                        .frame(width: 50, height: 50).background(mint.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Dictionary").font(.system(size: 28, weight: .medium, design: .rounded))
-                        Text("\(dictionary.approved.count) custom \(dictionary.approved.count == 1 ? "word" : "words")").font(.system(size: 12)).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button { adding = true } label: {
-                        Label("Add word", systemImage: "plus").font(.system(size: 12, weight: .semibold))
-                            .padding(.horizontal, 15).frame(height: 36).background(mint, in: Capsule()).foregroundStyle(Color(white: 0.1))
-                    }.buttonStyle(.plain).accessibilityIdentifier("coda.dictionary.add")
+                CodaPageHeader(icon: "character.book.closed", title: "Dictionary",
+                               subtitle: "\(dictionary.approved.count) custom \(dictionary.approved.count == 1 ? "word" : "words") guiding recognition on this Mac.") {
+                    Button { adding = true } label: { Label("Add word", systemImage: "plus") }
+                        .buttonStyle(CodaPrimaryButtonStyle()).accessibilityIdentifier("coda.dictionary.add")
                 }
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 13) {
@@ -45,22 +37,13 @@ struct DictionaryPage: View {
                         Text("Coda watches the field it just dictated into for up to 60 seconds. Small spelling corrections become suggestions. Add a word to guide future dictations, or dismiss it to stop seeing that spelling. Some editors do not expose text changes through Accessibility.")
                             .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true).padding(.top, 8)
                     }.font(.system(size: 11)).foregroundStyle(.secondary)
-                }.padding(20).background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.06)))
-                HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search your dictionary", text: $query).textFieldStyle(.plain).font(.system(size: 13))
-                    if !query.isEmpty {
-                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                            .buttonStyle(.plain).accessibilityLabel("Clear dictionary search")
-                    }
-                }.padding(.horizontal, 14).frame(height: 42).background(Color.white.opacity(0.025), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.white.opacity(0.09)))
-                if let error = dictionary.error { Label(error, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.orange) }
+                }.codaCard(padding: 20)
+                CodaSearchField(prompt: "Search your dictionary", text: $query)
+                if let error = dictionary.error { CodaNotice(kind: .caution, text: error) }
                 section("Possible custom words", words: dictionary.possible.filter(matches), possible: true)
                 section("Custom words", words: dictionary.approved.filter(matches), possible: false)
-            }.padding(36).frame(maxWidth: .infinity, alignment: .leading)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: dictionary.words)
+            }.codaPageInsets()
+                .animation(CodaStyle.motion(reduceMotion, duration: 0.22), value: dictionary.words)
         }.accessibilityIdentifier("coda.dictionary.page")
             .sheet(isPresented: $adding) { DictionaryWordEditor(dictionary: dictionary, word: nil) }
             .sheet(item: $editing) { word in DictionaryWordEditor(dictionary: dictionary, word: word) }
@@ -68,22 +51,15 @@ struct DictionaryPage: View {
     private func section(_ title: String, words: [CustomWord], possible: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 9) {
-                Text(title).font(.system(size: 15, weight: .semibold))
-                Text("\(words.count)").font(.system(size: 11, weight: .medium)).foregroundStyle(possible ? mint : Color.secondary)
-                    .padding(.horizontal, 7).padding(.vertical, 3).background((possible ? mint : Color.white).opacity(0.08), in: Capsule())
+                Text(title).font(CodaStyle.sectionFont)
+                CodaCountBadge(count: words.count, tint: possible ? mint : CodaStyle.muted)
             }
             if words.isEmpty {
-                HStack(spacing: 13) {
-                    Image(systemName: query.isEmpty ? (possible ? "checkmark.circle" : "textformat.abc") : "magnifyingglass")
-                        .font(.system(size: 23, weight: .light)).foregroundStyle(possible ? mint : Color.secondary)
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(query.isEmpty ? (possible ? "No words to review" : "No custom words yet") : "No matching words").font(.system(size: 13, weight: .medium))
-                        Text(query.isEmpty ? (possible ? (controller.learnWords ? "Correct a name or unfamiliar term after dictating to suggest it here." : "Turn learning on to suggest words from your corrections.") : "Add names, technical terms and phrases you use often.") : "Try another spelling.")
-                            .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer()
-                }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.07)))
+                CodaEmptyState(
+                    icon: query.isEmpty ? (possible ? "checkmark.circle" : "textformat.abc") : "magnifyingglass",
+                    title: query.isEmpty ? (possible ? "No words to review" : "No custom words yet") : "No matching words",
+                    message: query.isEmpty ? (possible ? (controller.learnWords ? "Correct a name or unfamiliar term after dictating to suggest it here." : "Turn learning on to suggest words from your corrections.") : "Add names, technical terms and phrases you use often.") : "Try another spelling.",
+                    tint: possible ? mint : CodaStyle.muted)
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(words) { word in
@@ -114,8 +90,8 @@ struct DictionaryPage: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         if word.id != words.last?.id { Divider().opacity(0.3).padding(.horizontal, 18) }
                     }
-                }.background(Color.white.opacity(0.02), in: RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.08)))
+                }.background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+                    .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
             }
         }
     }

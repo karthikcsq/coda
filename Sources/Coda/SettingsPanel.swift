@@ -15,18 +15,23 @@ struct SettingsPanel: View {
     @PanelState private var loginEnabled = SMAppService.mainApp.status == .enabled
     @PanelState private var loginMessage = ""
     @PanelState private var microphoneStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var locked: Bool { model.settingsChangesLocked || controller.lifecycle.busy }
+    private var microphoneReadiness: CodaStatusChip.Readiness {
+        switch microphoneStatus { case .authorized: .ready; case .denied, .restricted: .blocked; default: .pending }
+    }
+    private var microphoneState: String {
+        switch microphoneStatus { case .authorized: "Enabled"; case .denied: "Off"; case .restricted: "Restricted"; default: "Not requested" }
+    }
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("Settings").font(.system(size: 28, design: .serif))
-                    Text("Your voice, your workflow. Everything in one place.").font(.system(size: 13)).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button { closePanel() } label: { Image(systemName: "xmark").frame(width: 28, height: 28) }.buttonStyle(.plain).help("Close settings").accessibilityLabel("Close settings")
-            }.padding(.horizontal, 38).padding(.top, 32).padding(.bottom, 24)
-            Rectangle().fill(Color.white.opacity(0.07)).frame(height: 1)
+            CodaPageHeader(icon: "gearshape", title: "Settings",
+                           subtitle: "Dictation, permissions, local models and optional summaries.") {
+                Button { closePanel() } label: { Image(systemName: "xmark") }
+                    .buttonStyle(CodaIconButtonStyle()).help("Close settings").accessibilityLabel("Close settings")
+            }
+            .padding(.horizontal, 34).padding(.top, 28).padding(.bottom, 22)
+            Rectangle().fill(CodaStyle.hairline).frame(height: 1)
             ScrollViewReader { proxy in
                 VStack(spacing: 0) {
                     HStack(spacing: 18) {
@@ -35,28 +40,35 @@ struct SettingsPanel: View {
                         jump("Models", "models", proxy)
                         jump("Summaries", "summaries", proxy)
                         Spacer()
-                    }.padding(.horizontal, 38).padding(.vertical, 16)
+                    }.padding(.horizontal, 34).padding(.vertical, 14)
                     ScrollView {
                         VStack(alignment: .leading, spacing: 26) {
                             if locked {
                                 HStack(spacing: 12) {
-                                    Image(systemName: model.recording ? "record.circle.fill" : "hourglass").foregroundStyle(model.recording ? .red : .secondary)
-                                    VStack(alignment: .leading, spacing: 4) { Text("An operation is in progress").font(.system(size: 13, weight: .medium)); Text("Setting changes are paused. Your recording or processing continues.").font(.system(size: 12)).foregroundStyle(.secondary) }
-                                    Spacer()
-                                    Button("Return to workspace") { closePanel() }
-                                }.padding(16).background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 10))
+                                    Image(systemName: model.recording ? "record.circle.fill" : "hourglass")
+                                        .foregroundStyle(model.recording ? .red : CodaStyle.muted).accessibilityHidden(true)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("An operation is in progress").font(CodaStyle.rowTitleFont)
+                                        Text("Setting changes are paused. Your recording or processing continues.")
+                                            .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+                                    }
+                                    Spacer(minLength: 12)
+                                    Button("Return to workspace") { closePanel() }.buttonStyle(CodaSecondaryButtonStyle())
+                                }
+                                .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                                .background(CodaStyle.caution.opacity(0.075), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
                             }
                             dictation.id("dictation")
                             system.id("system")
                             models.id("models")
                             summaries.id("summaries")
-                            Text("Coda app code: MIT. Third-party SDK/model terms apply separately. History and recordings are local and unencrypted; protect your Mac account and disk.").font(.system(size: 11)).foregroundStyle(.secondary)
-                            if model.isVisualReview { Text("Synthetic UI preview · recording, downloads, clipboard and system changes are disabled.").font(.system(size: 11)).foregroundStyle(.secondary) }
-                        }.padding(.horizontal, 38).padding(.top, 8).padding(.bottom, 32).frame(maxWidth: 1000).frame(maxWidth: .infinity, alignment: .leading)
+                            Text("Coda app code: MIT. Third-party SDK/model terms apply separately. History and recordings are local and unencrypted; protect your Mac account and disk.").font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+                            if model.isVisualReview { Text("Synthetic UI preview · recording, downloads, clipboard and system changes are disabled.").font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted) }
+                        }.padding(.horizontal, 34).padding(.top, 8).padding(.bottom, 32).frame(maxWidth: 1000).frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("coda.settings.scroll")
                 }
             }
-        }.background(Color(white: 0.10)).preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.88))
+        }.background(CodaStyle.canvas).preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.88))
         .accessibilityIdentifier("coda.settings.panel")
         .onAppear { refreshStatus() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refreshStatus() }
@@ -81,7 +93,12 @@ struct SettingsPanel: View {
                 KeyboardShortcuts.Recorder("", name: .codaDictation).frame(width: 170).disabled(locked || model.isVisualReview)
             }
             if controller.modifierShortcut { Text(controller.modifierShortcutStatus).font(.system(size: 11)).foregroundStyle(.secondary) }
-            HStack { Button("Use ⌃⌥⌘D suggestion") { controller.useSuggestedShortcut() }.disabled(locked || model.isVisualReview); Text("Checks enabled macOS shortcuts; other apps’ custom bindings cannot all be detected.").font(.system(size: 11)).foregroundStyle(.secondary) }
+            HStack(spacing: 12) {
+                Button("Use ⌃⌥⌘D suggestion") { controller.useSuggestedShortcut() }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked || model.isVisualReview)
+                Text("Checks enabled macOS shortcuts; other apps’ custom bindings cannot all be detected.")
+                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
+            }
             Divider().opacity(0.4)
             row("Shortcut behavior", "Press to start and stop, or hold to talk.") {
                 Picker("Shortcut behavior", selection: $controller.mode) { Text("Toggle").tag(DictationMode.toggle); Text("Hold").tag(DictationMode.hold) }.labelsHidden().frame(width: 170).disabled(locked)
@@ -100,21 +117,28 @@ struct SettingsPanel: View {
             row("Learn from corrections", "Suggest names and unfamiliar terms you correct after dictation. Review them in Dictionary before they affect recognition.") {
                 Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
-            Button("Open dictionary") { model.closeSettings(); controller.workspaceSection = "Dictionary" }
-            Text("Fn-only and Caps Lock-only shortcuts are not supported. Dictation ends after two minutes at most. Click inside the destination text field before using the shortcut.").font(.system(size: 11)).foregroundStyle(.secondary)
-            Button("Preview overlay") { controller.previewOverlay() }.disabled(locked)
+            HStack(spacing: 10) {
+                Button("Open dictionary") { model.closeSettings(); controller.workspaceSection = "Dictionary" }
+                    .buttonStyle(CodaSecondaryButtonStyle())
+                Button("Preview overlay") { controller.previewOverlay() }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked)
+            }
+            Text("Fn-only and Caps Lock-only shortcuts are not supported. Dictation ends after two minutes at most. Click inside the destination text field before using the shortcut.").font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
         }
     }
     private var system: some View {
         group("System & permissions", "Coda checks access here. macOS approval stays in System Settings.", icon: "laptopcomputer") {
-            if model.isVisualReview { Text("Preview-process status only; this does not verify the installed Coda app’s access.").font(.system(size: 11)).foregroundStyle(.secondary) }
+            if model.isVisualReview { Text("Preview-process status only; this does not verify the installed Coda app’s access.").font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted) }
             AccessibilitySetupView(controller: controller).disabled(locked)
             Divider().opacity(0.4)
-            row("Microphone", microphoneDescription) {
-                Button("Open macOS settings") { openSystem("Privacy_Microphone") }.disabled(model.isVisualReview || locked)
+            row("Microphone", microphoneDescription, status: CodaStatusChip(readiness: microphoneReadiness, text: microphoneState)) {
+                Button("Open macOS settings") { openSystem("Privacy_Microphone") }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isVisualReview || locked)
             }
-            row("System / meeting audio", "macOS requests access when you start a recording with system audio enabled.") {
-                Button("Open macOS settings") { openSystem("Privacy_ScreenCapture") }.disabled(model.isVisualReview || locked)
+            row("System / meeting audio", "macOS requests access when you start a recording with system audio enabled. Coda cannot read this state in advance.",
+                status: CodaStatusChip(readiness: .pending, text: "Asked when needed")) {
+                Button("Open macOS settings") { openSystem("Privacy_ScreenCapture") }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isVisualReview || locked)
             }
             row("Detect video meetings", "Suggest recording for Meet, Zoom, and Teams using visible meeting controls. Reads participant counts when available; requires Accessibility.") {
                 Toggle("Detect video meetings", isOn: $model.detectMeetings).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
@@ -123,16 +147,22 @@ struct SettingsPanel: View {
             row("Launch at login", "Optional. Coda remains idle until you start dictation or a meeting.") {
                 Toggle("Launch at login", isOn: Binding(get: { loginEnabled }, set: setLogin)).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
-            if !loginMessage.isEmpty { Text(loginMessage).font(.system(size: 12)).foregroundStyle(.secondary) }
+            if !loginMessage.isEmpty { CodaNotice(kind: .caution, text: loginMessage) }
         }
     }
     private var models: some View {
         group("Local models", "Powered by Desert Ant Labs · Voz transcription and Who speaker labels", icon: "internaldrive") {
-            Text("Voz transcribes speech; Who labels up to four speakers. The SDK and weights are source-available, not open source. First use downloads and compiles models locally, requiring time and disk space.").font(.system(size: 13))
-            Text("The SDK sends licensing metadata in the background, including installation/device and app/model information. Audio and transcripts are not included in that licensing report.").font(.system(size: 12)).foregroundStyle(.secondary)
+            Text("Voz transcribes speech; Who labels up to four speakers. The SDK and weights are source-available, not open source. First use downloads and compiles models locally, requiring time and disk space.").font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
+            Text("The SDK sends licensing metadata in the background, including installation/device and app/model information. Audio and transcripts are not included in that licensing report.").font(CodaStyle.secondaryFont).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             HStack { Link("License v1.0", destination: URL(string: "https://license.desertant.com/1.0")!); Link("Privacy policy", destination: URL(string: "https://desertant.com/privacy/")!) }
             Toggle("Allow model downloads and use under these terms", isOn: Binding(get: { model.modelConsent }, set: { if $0 { approveModels = true } else { model.modelConsent = false } })).disabled(locked || model.isVisualReview)
-            HStack { Label(model.dictationModelReady ? "Voz is ready" : "Voz needs preparation", systemImage: model.dictationModelReady ? "checkmark.circle" : "arrow.down.circle"); Spacer(); Button("Prepare local dictation") { model.prepareDictation() }.disabled(!model.modelConsent || model.isOccupied || locked) }.font(.system(size: 13))
+            HStack(spacing: 12) {
+                CodaStatusChip(readiness: model.dictationModelReady ? .ready : .pending,
+                               text: model.dictationModelReady ? "Voz is ready" : "Voz needs preparation")
+                Spacer(minLength: 12)
+                Button("Prepare local dictation") { model.prepareDictation() }
+                    .buttonStyle(CodaPrimaryButtonStyle()).disabled(!model.modelConsent || model.isOccupied || locked)
+            }
             DisclosureGroup("Supported languages and storage") {
                 Text("Bulgarian, Czech, Danish, German, Greek, English, Spanish, Estonian, Finnish, French, Croatian, Hungarian, Italian, Lithuanian, Latvian, Maltese, Dutch, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Swedish, Ukrainian. Unsupported languages can produce incorrect text.").font(.system(size: 12))
                 Text("History: ~/Library/Application Support/Coda/Meetings\nDictations: ~/Library/Application Support/Coda/Dictations\nModels: ~/Library/Application Support/Coda/Models").font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
@@ -141,11 +171,12 @@ struct SettingsPanel: View {
     }
     private var summaries: some View {
         group("Meeting summaries", "Optional OpenAI processing · local dictation never uses OpenAI", icon: "sparkles") {
-            Text("Your full transcript and speaker names leave this Mac for OpenAI. Raw audio stays local. API charges apply. Review sensitive conversations before sending; OpenAI data policies apply even with response storage disabled.").font(.system(size: 13))
+            CodaNotice(kind: .caution, text: "Your full transcript and speaker names leave this Mac for OpenAI. Raw audio stays local. API charges apply. Review sensitive conversations before sending; OpenAI data policies apply even with response storage disabled.")
             row("API configuration", "Add OPENAI_API_KEY and optionally OPENAI_MODEL to your .env. Keys are never displayed or logged.") {
-                Button("Choose .env…") { model.chooseEnv() }.disabled(locked || model.isVisualReview)
+                Button("Choose .env…") { model.chooseEnv() }
+                    .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked || model.isVisualReview)
             }
-            Text(model.envPath).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary).textSelection(.enabled).lineLimit(2)
+            Text(model.envPath).font(.system(size: 11, design: .monospaced)).foregroundStyle(CodaStyle.muted).textSelection(.enabled).lineLimit(2)
             Toggle("Automatically send future transcripts to OpenAI", isOn: Binding(get: { model.autoSummary }, set: { if $0 { approveAuto = true } else { model.autoSummary = false } })).disabled(locked || model.isVisualReview)
             Link("OpenAI API data policies", destination: URL(string: "https://platform.openai.com/docs/guides/your-data")!)
         }
@@ -164,15 +195,29 @@ struct SettingsPanel: View {
         do { if desired { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }; loginEnabled = SMAppService.mainApp.status == .enabled; loginMessage = SMAppService.mainApp.status == .requiresApproval ? "Approve Coda in System Settings → General → Login Items." : "" }
         catch { loginMessage = "Could not change login launch. Check Coda’s location and macOS Login Items."; loginEnabled = SMAppService.mainApp.status == .enabled }
     }
-    private func jump(_ title: String, _ id: String, _ proxy: ScrollViewProxy) -> some View { Button(title) { withAnimation(.easeInOut(duration: 0.2)) { proxy.scrollTo(id, anchor: .top) } }.buttonStyle(.plain).font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary).accessibilityLabel("Jump to " + title + " settings") }
-    private func group<Content: View>(_ title: String, _ subtitle: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 17) {
-            HStack(spacing: 10) { Image(systemName: icon).font(.system(size: 16)); VStack(alignment: .leading, spacing: 5) { Text(title).font(.system(size: 16, weight: .medium)); Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary) } }
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
-            content()
-        }.padding(22).frame(maxWidth: .infinity, alignment: .leading).background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 14)).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.055)))
+    /// Jump links scroll instantly when Reduce Motion is on.
+    private func jump(_ title: String, _ id: String, _ proxy: ScrollViewProxy) -> some View {
+        Button(title) { withAnimation(CodaStyle.motion(reduceMotion)) { proxy.scrollTo(id, anchor: .top) } }
+            .buttonStyle(CodaQuietButtonStyle())
+            .accessibilityLabel("Jump to " + title + " settings")
     }
-    private func row<Action: View>(_ title: String, _ subtitle: String, @ViewBuilder action: () -> Action) -> some View {
-        HStack(spacing: 22) { VStack(alignment: .leading, spacing: 6) { Text(title).font(.system(size: 13, weight: .medium)); Text(subtitle).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }; Spacer(minLength: 8); action() }
+    private func group<Content: View>(_ title: String, _ subtitle: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        // Build eagerly: CodaSection stores an escaping view builder.
+        let built = content()
+        return CodaSection(title: title, subtitle: subtitle, icon: icon) { built }
+    }
+    private func row<Action: View>(_ title: String, _ subtitle: String, status: CodaStatusChip? = nil, @ViewBuilder action: () -> Action) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 20) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 9) {
+                    Text(title).font(CodaStyle.rowTitleFont)
+                    if let status { status }
+                }
+                Text(subtitle).font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            action()
+        }
     }
 }
