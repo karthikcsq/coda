@@ -65,6 +65,10 @@ struct SmartFormatResult: Sendable {
         guard !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .init(text: raw, accepted: false, reason: "Empty text") }
         guard raw.count <= 4000 else { return .init(text: raw, accepted: false, reason: "Long dictation · raw text retained") }
         guard !Task.isCancelled else { return .init(text: raw, accepted: false, reason: "Cancelled") }
+        if correctionPairs == nil {
+            let urlText = SpokenURL.normalize(raw)
+            if urlText != raw { return .init(text: urlText, accepted: true, reason: "Spoken URL formatted locally") }
+        }
         guard pending == nil else { return .init(text: raw, accepted: false, reason: "Local model busy · raw text retained") }
         warm()
         guard process != nil, let input else { return .init(text: raw, accepted: false, reason: "Local model unavailable · raw text retained") }

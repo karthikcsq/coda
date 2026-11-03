@@ -2,7 +2,7 @@
 
 ## Single current app, November 2, 2026
 
-The current app is **0.4.13 build 18** at `build/Coda.app`, including precise dictation
+The current app is **0.4.13 build 19** at `build/Coda.app`, including spoken URL cleanup, precise dictation
 failure reporting, Control–Option shortcut recovery and the native UI
 overhaul, dictionary learning, the word suggestion pop-up, and Smart number/math formatting. Keep this
 single bundle up to date. Superseded bundles and duplicate source/review folders
@@ -14,11 +14,11 @@ The new dictionary/cleanup work and existing meeting changes were checkpointed
 locally before the UI overhaul. No remote push or signing/access policy change
 was made. Do not recreate a directory of versioned binary backups.
 
-Build 18 passed strict signature verification with the existing certificate requirement.
+Build 19 passed strict signature verification with the existing certificate requirement.
 The canonical executable reports Accessibility trusted and automatic insertion enabled.
-Coda was confirmed idle and quit normally before replacement; all 124 checked local
+Coda was confirmed idle and quit normally before replacement; all 130 checked local
 data/preferences files were preserved byte-for-byte. Native renders, regression results
-and the executable hash are recorded in `docs/validation/transcription-2026-11-02.md`.
+and the executable hash are recorded in `docs/validation/urls-2026-11-02.md`.
 
 ## Historical installed update — 0.4.12 build 11
 
