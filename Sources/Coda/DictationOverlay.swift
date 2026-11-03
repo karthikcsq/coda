@@ -54,6 +54,22 @@ struct DictationHUD: View {
     @Bindable var controller: DictationController
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var listening: Bool { controller.lifecycle.phase == .listening }
+    var statusTitle: String {
+        switch controller.lifecycle.phase {
+        case .arming: "Starting microphone"
+        case .listening: "Listening"
+        case .processing: "Transcribing"
+        case .cancelling: "Cancelling"
+        case .failed: "Dictation failed"
+        default: controller.pendingInsertion != nil ? "Choose a text field"
+            : !controller.text.isEmpty ? "Text saved"
+            : controller.message.hasPrefix("Ready") ? "Ready to dictate" : "Dictation"
+        }
+    }
+    var statusDetail: String {
+        if listening { return "Esc to cancel" }
+        return controller.message.hasPrefix("Ready") ? controller.shortcutLabel : controller.message
+    }
     var body: some View {
         HStack(spacing: 12) {
             if listening {
@@ -67,10 +83,10 @@ struct DictationHUD: View {
                 ProgressView().controlSize(.small).frame(width: 28)
             } else { Image(systemName: "waveform").font(.system(size: 19, weight: .light)).frame(width: 28) }
             VStack(alignment: .leading, spacing: 3) {
-                Text(listening ? "Listening" : controller.lifecycle.busy ? "Transcribing" : controller.pendingInsertion != nil ? "Choose a text field" : controller.text.isEmpty ? "Ready to dictate" : "Text saved")
+                Text(statusTitle)
                     .font(CodaStyle.rowTitleFont).lineLimit(1)
-                Text(listening ? "Esc to cancel" : controller.lifecycle.busy ? "On your Mac" : controller.text.isEmpty ? controller.shortcutLabel : controller.message)
-                    .font(.system(size: 10)).foregroundStyle(CodaStyle.muted).lineLimit(1)
+                Text(statusDetail)
+                    .font(.system(size: 10)).foregroundStyle(CodaStyle.muted).lineLimit(2)
             }.frame(maxWidth: .infinity, alignment: .leading).help(controller.message)
             if !controller.lifecycle.busy && !controller.text.isEmpty {
                 Button { controller.copyResult() } label: { Image(systemName: "doc.on.doc") }

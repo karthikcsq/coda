@@ -150,13 +150,16 @@ extension KeyboardShortcuts.Name {
         }
     }
     var modifierShortcutStatus: String {
+        if !shortcutPauses.isEmpty { return "Shortcut paused while this Mac is locked, asleep or inactive." }
         if ModifierShortcut.voiceOverConflict { return "Control–Option is reserved while VoiceOver is active. Choose a custom shortcut." }
         if accessibility.trusted, !visualReview, modifierMonitor?.available != true { return "Shortcut listener unavailable. Refresh Accessibility status in System settings." }
         return accessibility.trusted ? "Hold Control + Option alone briefly to dictate. Release either to finish. Other keys cancel the chord; events are never intercepted." : "Control–Option needs Coda’s existing Accessibility access."
     }
     private var modifierMonitor: ModifierShortcut?
+    private var shortcutPauses = Set<Notification.Name>()
     private func configureModifierShortcut() {
         modifierMonitor?.stop()
+        guard shortcutPauses.isEmpty else { return }
         if modifierShortcut {
             KeyboardShortcuts.disable(.codaDictation)
             let monitor = ModifierShortcut { [weak self] event in
@@ -257,6 +260,7 @@ extension KeyboardShortcuts.Name {
             MainActor.assumeIsolated { self?.refreshAccessibility() }
         }
         DistributedNotificationCenter.default().addObserver(self, selector: #selector(screenLocked(_:)), name: NSNotification.Name("com.apple.screenIsLocked"), object: nil)
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(screenUnlocked(_:)), name: NSNotification.Name("com.apple.screenIsUnlocked"), object: nil)
         KeyboardShortcuts.onKeyDown(for: .codaDictation) { [weak self] in
             guard let self, !self.modifierShortcut else { return }; handle(lifecycle.keyDown(mode: mode))
         }
@@ -268,14 +272,30 @@ extension KeyboardShortcuts.Name {
         KeyboardShortcuts.disable(.codaCancelDictation)
         configureModifierShortcut()
         if cleanupMode == .smart { smartFormatter.warm() }
-        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification] {
-            observers.append(NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.cancel(); self?.lifecycle.resetKeys() }
+        for (pause, resume) in [(NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification),
+                                (NSWorkspace.screensDidSleepNotification, NSWorkspace.screensDidWakeNotification),
+                                (NSWorkspace.sessionDidResignActiveNotification, NSWorkspace.sessionDidBecomeActiveNotification)] {
+            observers.append(NSWorkspace.shared.notificationCenter.addObserver(forName: pause, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.pauseShortcut(for: pause) }
+            })
+            observers.append(NSWorkspace.shared.notificationCenter.addObserver(forName: resume, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.resumeShortcut(for: pause) }
             })
         }
     }
     // macOS also posts this lock notification when the session locks without system sleep.
-    @objc private func screenLocked(_ notification: Notification) { cancel(); lifecycle.resetKeys() }
+    @objc private func screenLocked(_ notification: Notification) { pauseShortcut(for: notification.name) }
+    @objc private func screenUnlocked(_ notification: Notification) {
+        resumeShortcut(for: NSNotification.Name("com.apple.screenIsLocked"))
+    }
+    func pauseShortcut(for reason: Notification.Name) {
+        shortcutPauses.insert(reason); modifierMonitor?.stop()
+        cancel(); lifecycle.resetKeys()
+    }
+    func resumeShortcut(for reason: Notification.Name) {
+        guard shortcutPauses.remove(reason) != nil, shortcutPauses.isEmpty, !visualReview else { return }
+        configureModifierShortcut()
+    }
     func attach(_ model: AppModel) { self.model = model }
     func useSuggestedShortcut() {
         guard !visualReview else { return }

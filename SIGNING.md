@@ -2,7 +2,8 @@
 
 ## Single current app, November 2, 2026
 
-The current app is **0.4.13 build 16** at `build/Coda.app`, including the native UI
+The current app is **0.4.13 build 17** at `build/Coda.app`, including Control–Option
+shortcut recovery and the native UI
 overhaul, dictionary learning, the word suggestion pop-up, and Smart number/math formatting. Keep this
 single bundle up to date. Superseded bundles and duplicate source/review folders
 have been removed; historical paths below describe prior validation only and are
@@ -13,11 +14,11 @@ The new dictionary/cleanup work and existing meeting changes were checkpointed
 locally before the UI overhaul. No remote push or signing/access policy change
 was made. Do not recreate a directory of versioned binary backups.
 
-Build 16 passed strict signature verification with the existing certificate requirement.
+Build 17 passed strict signature verification with the existing certificate requirement.
 The canonical executable reports Accessibility trusted and automatic insertion enabled.
-Coda was not running before replacement; all 121 checked local data/preferences files
-were preserved byte-for-byte. Native renders, regression results and the executable
-hash are recorded in `docs/validation/ui-overhaul-2026-11-02.md`.
+Coda was confirmed idle and quit normally before replacement; all 122 checked local
+data/preferences files were preserved byte-for-byte. Native renders, regression results
+and the executable hash are recorded in `docs/validation/shortcut-2026-11-02.md`.
 
 ## Historical installed update — 0.4.12 build 11
 

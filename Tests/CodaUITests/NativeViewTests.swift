@@ -108,6 +108,8 @@ import CodaCore
     controller.targetName = "Synthetic target"
     let begun = controller.lifecycle.begin(meetingBusy: false, modelReady: true)
     let token = try #require(begun)
+    controller.message = "Preparing microphone…"
+    try render(VStack(spacing: 4) { Text("Synthetic state · no microphone active").font(.system(size: 10)); DictationHUD(controller: controller) }, name: "dictation-starting", size: CGSize(width: 320, height: 84))
     let listening = controller.lifecycle.listening(token)
     #expect(listening); controller.level = 0.6
     try render(VStack(spacing: 4) { Text("Synthetic state · no microphone active").font(.system(size: 10)); DictationHUD(controller: controller) }, name: "dictation-listening", size: CGSize(width: 320, height: 84))
@@ -115,6 +117,9 @@ import CodaCore
     #expect(processing == token)
     controller.message = "Synthetic preview · no audio or model use"
     try render(VStack(spacing: 4) { Text("Synthetic state · no model running").font(.system(size: 10)); DictationHUD(controller: controller) }, name: "dictation-processing", size: CGSize(width: 320, height: 84))
+    controller.lifecycle.fail(token)
+    controller.message = "Microphone could not start. Check your input device and permission, then retry."
+    try render(VStack(spacing: 4) { Text("Synthetic failure · no microphone active").font(.system(size: 10)); DictationHUD(controller: controller) }, name: "dictation-failed", size: CGSize(width: 320, height: 84))
     #expect(!model.modelConsent && !model.autoSummary)
 }
 
