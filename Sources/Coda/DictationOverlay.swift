@@ -60,7 +60,7 @@ struct DictationHUD: View {
         case .listening: "Listening"
         case .processing: "Transcribing"
         case .cancelling: "Cancelling"
-        case .failed: "Dictation failed"
+        case .failed: controller.failureTitle
         default: controller.pendingInsertion != nil ? "Choose a text field"
             : !controller.text.isEmpty ? "Text saved"
             : controller.message.hasPrefix("Ready") ? "Ready to dictate" : "Dictation"

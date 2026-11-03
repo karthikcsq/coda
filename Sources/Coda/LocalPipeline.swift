@@ -15,14 +15,21 @@ actor LocalPipeline {
         try Task.checkCancellation()
     }
     func dictate(_ audio: URL, consent: Bool, vocabulary: [String] = []) async throws -> String {
-        guard consent, Voz.isDownloaded(cacheRoot: cache) else { throw CodaError.message("Prepare the local model first.") }
+        guard consent, Voz.isDownloaded(cacheRoot: cache) else { throw DictationFailure.modelNotReady }
         try Task.checkCancellation()
         // The prepared cache is required: no first-use downloads during a dictation session.
-        if voz == nil { voz = try await Voz(cacheRoot: cache) }
-        guard let voz else { throw CodaError.emptyAudio }
-        let result = try await voz.transcribe(audio, vocabulary: vocabulary)
+        if voz == nil {
+            do { voz = try await Voz(cacheRoot: cache) }
+            catch is CancellationError { throw CancellationError() }
+            catch { throw DictationFailure.modelLoad(DictationFailure.diagnosticCode(error)) }
+        }
+        guard let voz else { throw DictationFailure.modelNotReady }
+        let result: Voz.Result
+        do { result = try await voz.transcribe(audio, vocabulary: vocabulary) }
+        catch is CancellationError { throw CancellationError() }
+        catch { throw DictationFailure.decodingOrRecognition(error) }
         try Task.checkCancellation()
-        guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw CodaError.emptyAudio }
+        guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw DictationFailure.noWords }
         return result.text
     }
     func process(_ audio: URL, consent: Bool, speakerCount: Int? = nil, progress: @escaping @Sendable (String, Double?) -> Void) async throws -> [Segment] {

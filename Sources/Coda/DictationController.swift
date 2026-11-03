@@ -125,6 +125,8 @@ extension KeyboardShortcuts.Name {
     }
     var lifecycle = DictationLifecycle()
     var message = "Ready to dictate"
+    var failureTitle = "Dictation failed"
+    private var captureStats = DictationCaptureStats()
     var text = ""
     private var rawText = ""
     let smartFormatter: SmartFormatter
@@ -340,6 +342,7 @@ extension KeyboardShortcuts.Name {
         if cleanupMode == .smart { smartFormatter.warm() }
         sessionID = id
         model.dictationBusy = true; text = ""; rawText = ""; level = 0
+        failureTitle = "Dictation failed"; captureStats = DictationCaptureStats()
         insertion.captureTarget(); targetName = insertion.targetName
         message = "Preparing microphone…"; show()
         // Escape is scoped to a live Coda operation, never registered while idle.
@@ -370,6 +373,9 @@ extension KeyboardShortcuts.Name {
                         try? await Task.sleep(for: .milliseconds(90))
                         guard let self, self.lifecycle.id == id, self.lifecycle.phase == .listening else { return }
                         self.recorder?.updateMeters()
+                        if let peak = self.recorder?.peakPower(forChannel: 0), peak.isFinite {
+                            self.captureStats.peakDB = max(self.captureStats.peakDB ?? -160, Double(peak))
+                        }
                         self.level = min(1, max(0, (Double(self.recorder?.averagePower(forChannel: 0) ?? -60) + 50) / 50))
                         if Date().timeIntervalSince(self.started ?? .now) > 120 { self.finish(); return }
                     }
@@ -384,7 +390,13 @@ extension KeyboardShortcuts.Name {
     }
     private func finish() {
         guard let id = lifecycle.processing(), let url = audioURL, let model else { return }
+        captureStats.seconds = recorder?.currentTime ?? 0
+        recorder?.updateMeters()
+        if let peak = recorder?.peakPower(forChannel: 0), peak.isFinite {
+            captureStats.peakDB = max(captureStats.peakDB ?? -160, Double(peak))
+        }
         recorder?.stop(); recorder = nil; meterTask?.cancel(); meterTask = nil; level = 0
+        captureStats.bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         message = "Transcribing locally… • Esc to cancel"
         task = Task { [weak self] in
             guard let self else { return }
@@ -418,13 +430,20 @@ extension KeyboardShortcuts.Name {
                 saveSession(outcome: inserted ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired, detail: message + (cleanupDetail.isEmpty ? "" : " " + cleanupDetail))
             } catch is CancellationError { message = "Cancelled • nothing inserted"; lifecycle.settled(id) }
             catch {
-                if lifecycle.phase == .cancelling { message = "Cancelled • nothing inserted" }
-                else { message = "Could not transcribe. Check the local model and microphone, then retry." }
-                lifecycle.fail(id)
-                if sessionID != nil { saveSession(outcome: .failed, detail: message) }
-                dismissAfterResult()
+                if lifecycle.phase == .cancelling { message = "Cancelled • nothing inserted"; lifecycle.fail(id) }
+                else { reportTranscriptionFailure(error, for: id) }
             }
         }
+    }
+    @discardableResult
+    func reportTranscriptionFailure(_ error: Error, for id: UUID) -> Bool {
+        guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
+        let failure = (error as? DictationFailure) ?? .decodingOrRecognition(error)
+        lifecycle.fail(id); failureTitle = failure.title
+        message = failure.message
+        if sessionID != nil { saveSession(outcome: .failed, detail: message + " " + captureStats.description) }
+        show(); dismissAfterResult(after: .seconds(10))
+        return true
     }
     // Presentation ends at transcription completion, independently of insertion latency.
     // Keep the lifecycle busy until delivery settles so insertion remains serialized.
