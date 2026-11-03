@@ -34,9 +34,11 @@ returned the distinct `noWords` category. Other tests check diagnostic privacy, 
 number bounds, truthful HUD categories and stale-result rejection. No private audio,
 microphone input or transcript upload was used by these tests.
 
-The model test verifies the prepared model and decoder path. It does not establish why
-the user's live recording failed. The next live attempt can now report the missing
-failure category and capture measurements.
+The model test verifies the prepared model and decoder path. After build 18 reopened,
+the user retried a spoken sentence with Control–Option and confirmed: “Text appeared.”
+This verifies a successful live shortcut/capture/transcription retry. The exact cause of
+the earlier intermittent failure remains unknown because the previous build discarded
+its exception; future failures retain the category and capture measurements.
 
 ## Canonical bundle
 
