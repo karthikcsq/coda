@@ -60,8 +60,14 @@ struct SmartFormatResult: Sendable {
         do { try worker.run(); process = worker; input = stdin.fileHandleForWriting; status = "Starting local cleanup…"; scheduleIdle() }
         catch { status = "Local model unavailable · raw text fallback" }
     }
-    // Formatting never holds insertion for several seconds. Slow/cold/long requests
-    // retain the already-saved raw transcript; warm-up overlaps dictation recording.
+    /// The cleanup model reads every dictation, so long dictations get proportionally
+    /// longer (the worker's own budget is 0.5 s + 6 ms per word, capped at 3 s).
+    nonisolated static func cleanupTimeout(for text: String) -> Duration {
+        let words = text.split(whereSeparator: \.isWhitespace).count
+        return .milliseconds(min(3500, 900 + 10 * words))
+    }
+    // Slow/cold/long requests retain the already-saved raw transcript;
+    // warm-up overlaps dictation recording.
     func format(_ raw: String, timeout: Duration = .milliseconds(900), correctionPairs: [WordCorrection]? = nil, edited: String? = nil,
                 soundAlikes: [SoundAlikeProposal]? = nil) async -> SmartFormatResult {
         guard !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .init(text: raw, accepted: false, reason: "Empty text") }
@@ -130,7 +136,8 @@ struct SmartFormatResult: Sendable {
             let line = Data(buffer[..<newline]); buffer.removeSubrange(...newline)
             guard let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any] else { stop(reason: "Invalid model response · raw text retained"); return }
             if object["ready"] as? Bool == true {
-                status = object["model_ready"] as? Bool == true ? "Local cleanup + Qwen3.5 2B · ready" :
+                status = object["cleanup_ready"] as? Bool == true ? "Spokenly Cleanup 1 · ready" :
+                    object["model_ready"] as? Bool == true ? "Local cleanup + Qwen3.5 2B · ready" :
                     object["model_warming"] as? Bool == true ? "Local cleanup ready · model warming" : "Local cleanup ready"
                 continue
             }

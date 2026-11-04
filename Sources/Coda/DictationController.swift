@@ -422,7 +422,7 @@ extension KeyboardShortcuts.Name {
                 }
                 if cleanupMode == .smart {
                     // Smart cleanup starts from the dictionary-corrected words.
-                    let formatted = await smartFormatter.format(text)
+                    let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))
                     try Task.checkCancellation()
                     guard acceptSmartFormatting(formatted, for: id) else { return }
                 }

@@ -1,4 +1,14 @@
-# Local dictation cleanup — 0.4.10
+# Local dictation cleanup — 0.4.14
+
+## 0.4.14 model-first Smart cleanup
+
+Smart cleanup now sends every dictation to a small model trained for dictation cleanup, spokenly/cleanup-1 (0.6B, Apache-2.0, 8-bit MLX, ~615 MB), before any rules. The model decides what to fix: fillers, repeated words, restarts and spoken corrections, plus punctuation, capitals and digits. One guard (`scripts/smart-cleanup/model_cleanup.py`) checks its output instead of rule-by-rule validation: the result must be the speaker's own words with some removed, in the same order. The only allowed rewrite is spoken numbers turned into digits of the same value. No new symbols are allowed, and at most half the words (minimum 4) may be removed. If the model is missing, still loading, too slow or rejected, the previous rule-based path runs unchanged. Leftover um/uh, layout and number formatting still run on accepted model output. The Qwen 2B model still handles sound-alike and correction review only.
+
+The cleanup model loads in the background when the worker starts (~1.5–2 s, overlapping recording). The app's deadline grows with length: 0.9 s + 10 ms per word, capped at 3.5 s. The worker's own budget is 0.5 s + 6 ms per word, capped at 3 s.
+
+Replay of 124 saved dictations through the real worker: 120 cleaned by the model, 2 rejected by the guard (invented "Lubuntu" for "deskto", "Sen" for "Sent") and given rule cleanup, 2 protected. Median 0.06 s, maximum ~1.05 s. Known gaps: it still misses some restarts ("my manager asked would ask") and sometimes removes real words the guard cannot detect ("that part and that part and that part" became "this thing"; "the actual side panel" lost "actual"). Fine-tuning on the user's own corrections is the next step. All Python suites (including 7 new guard tests) and Swift suites passed. Saved dictation/meeting files matched their pre-install hashes.
+
+## Historical 0.4.10 notes
 
 ## 0.4.10 automatic punctuation, lists and paragraphs
 

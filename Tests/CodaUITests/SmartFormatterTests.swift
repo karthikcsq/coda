@@ -168,3 +168,10 @@ import CodaCore
     #expect(controller.text.isEmpty)
     #expect(controller.records.first?.rawText == "Um, uh.")
 }
+@Test func cleanupTimeoutGrowsWithDictationLengthAndIsCapped() {
+    #expect(SmartFormatter.cleanupTimeout(for: "ship it") == .milliseconds(920))
+    let long = Array(repeating: "word", count: 242).joined(separator: " ")
+    #expect(SmartFormatter.cleanupTimeout(for: long) == .milliseconds(3320))
+    let huge = Array(repeating: "word", count: 2000).joined(separator: " ")
+    #expect(SmartFormatter.cleanupTimeout(for: huge) == .milliseconds(3500))
+}
