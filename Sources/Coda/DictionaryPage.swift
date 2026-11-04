@@ -13,6 +13,7 @@ struct DictionaryPage: View {
     private var dictionary: CustomDictionary { controller.dictionary }
     private func matches(_ word: CustomWord) -> Bool {
         query.isEmpty || word.word.localizedCaseInsensitiveContains(query) || word.original?.localizedCaseInsensitiveContains(query) == true
+            || word.heardAs.contains { $0.localizedCaseInsensitiveContains(query) }
     }
     var body: some View {
         ScrollView {
@@ -34,7 +35,7 @@ struct DictionaryPage: View {
                         Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).tint(mint)
                     }
                     DisclosureGroup("How learning works") {
-                        Text("Coda watches the field it just dictated into for up to 60 seconds. Small spelling corrections become suggestions. Add a word to guide future dictations, or dismiss it to stop seeing that spelling. Some editors do not expose text changes through Accessibility.")
+                        Text("Coda watches the field it just dictated into for up to 60 seconds. Small spelling corrections become suggestions. Add a word to guide future dictations, or dismiss it to stop seeing that spelling. If Coda still mishears a word, edit it and list what it was heard as; those exact words are then replaced. Some editors do not expose text changes through Accessibility.")
                             .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true).padding(.top, 8)
                     }.font(.system(size: 11)).foregroundStyle(.secondary)
                 }.codaCard(padding: 20)
@@ -66,7 +67,17 @@ struct DictionaryPage: View {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 7) {
                                 Text(word.word).font(.system(size: 15, weight: .medium)).textSelection(.enabled).lineLimit(2)
-                                if let original = word.original {
+                                if !possible, !word.heardAs.isEmpty {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "ear").font(.system(size: 10))
+                                        Text("Heard as")
+                                        Text(word.heardAs.joined(separator: ", ")).lineLimit(1)
+                                        Image(systemName: "arrow.right").font(.system(size: 9))
+                                        Text(word.word).foregroundStyle(mint).lineLimit(1)
+                                    }.font(.system(size: 11)).foregroundStyle(.secondary)
+                                        .accessibilityElement(children: .ignore)
+                                        .accessibilityLabel("Replaces \(word.heardAs.joined(separator: ", ")) with \(word.word)")
+                                } else if let original = word.original {
                                     HStack(spacing: 6) {
                                         Text(original).strikethrough().lineLimit(1)
                                         Image(systemName: "arrow.right").font(.system(size: 9))
@@ -97,20 +108,60 @@ struct DictionaryPage: View {
     }
 }
 
-private struct DictionaryWordEditor: View {
+struct DictionaryWordEditor: View {
     let dictionary: CustomDictionary
     let word: CustomWord?
+    var isCommon: @MainActor (String) -> Bool = CustomDictionary.isCommon
     @DictionaryState private var spelling: String
+    @DictionaryState private var heard: String
     @Environment(\.dismiss) private var dismiss
-    init(dictionary: CustomDictionary, word: CustomWord?) {
-        self.dictionary = dictionary; self.word = word; _spelling = DictionaryState(initialValue: word?.word ?? "")
+    init(dictionary: CustomDictionary, word: CustomWord?, isCommon: @escaping @MainActor (String) -> Bool = CustomDictionary.isCommon) {
+        self.dictionary = dictionary; self.word = word; self.isCommon = isCommon
+        _spelling = DictionaryState(initialValue: word?.word ?? "")
+        _heard = DictionaryState(initialValue: word?.heardAs.joined(separator: ", ") ?? "")
+    }
+    private var variants: [String] { SoundAlikeCorrections.parse(heard) }
+    /// The misspelling seen when this word was learned, if it is not listed yet.
+    private var observed: String? {
+        guard let original = word?.original, CustomVocabulary.valid(original), original != CustomVocabulary.cleaned(spelling),
+              !variants.contains(where: { CustomVocabulary.key($0) == CustomVocabulary.key(original) }) else { return nil }
+        return original
+    }
+    /// Variants made only of everyday words would also change ordinary speech.
+    private var everyday: [String] {
+        variants.filter { $0.split(separator: " ").allSatisfy { isCommon(String($0)) } }
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text(word == nil ? "Add custom word" : "Edit custom word").font(.title2)
-            TextField("Word or phrase", text: $spelling).textFieldStyle(.roundedBorder).onSubmit(save)
-                .accessibilityIdentifier("coda.dictionary.spelling")
-            Text("Up to 60 characters and four words. Keep the spelling and capitalization you want to use.").font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 7) {
+                TextField("Word or phrase", text: $spelling).textFieldStyle(.roundedBorder).onSubmit(save)
+                    .accessibilityIdentifier("coda.dictionary.spelling")
+                Text("Up to 60 characters and four words. Keep the spelling and capitalization you want to use.").font(.caption).foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Heard as").font(.system(size: 12, weight: .medium))
+                TextField("Optional, e.g. lead code, leet code", text: $heard).textFieldStyle(.roundedBorder).onSubmit(save)
+                    .accessibilityIdentifier("coda.dictionary.heardAs")
+                    .accessibilityLabel("Heard as. Comma-separated spellings to replace")
+                if let observed {
+                    HStack(spacing: 8) {
+                        Button { heard = (variants + [observed]).joined(separator: ", ") } label: {
+                            Label("Add “\(observed)”", systemImage: "plus").font(.system(size: 11, weight: .medium))
+                                .padding(.horizontal, 10).frame(height: 24).background(CodaStyle.mint.opacity(0.14), in: Capsule())
+                                .foregroundStyle(CodaStyle.mint)
+                        }.buttonStyle(.plain).accessibilityIdentifier("coda.dictionary.heardAs.suggestion")
+                        Text("From your correction").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Text("Separate spellings with commas. After transcription, Coda replaces these exact words with your spelling. It skips quotes, links and code, and does nothing when cleanup is set to None.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if !everyday.isEmpty {
+                    Label("\(everyday.map { "“\($0)”" }.joined(separator: ", ")) \(everyday.count == 1 ? "is an everyday word" : "are everyday words"). It will be replaced every time you say it.",
+                          systemImage: "exclamationmark.triangle")
+                        .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                }
+            }
             if let error = dictionary.error { Text(error).font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true) }
             HStack {
                 Spacer()
@@ -118,10 +169,10 @@ private struct DictionaryWordEditor: View {
                 Button(word?.status == .approved ? "Save" : "Add word", action: save).keyboardShortcut(.defaultAction)
                     .disabled(CustomVocabulary.cleaned(spelling).isEmpty)
             }
-        }.padding(28).frame(width: 430).preferredColorScheme(.dark)
+        }.padding(28).frame(width: 460).preferredColorScheme(.dark)
     }
     private func save() {
-        let saved = word.map { dictionary.approve($0.id, spelling: spelling) } ?? dictionary.add(spelling)
+        let saved = word.map { dictionary.approve($0.id, spelling: spelling, heardAs: variants) } ?? dictionary.add(spelling, heardAs: variants)
         if saved { dismiss() }
     }
 }

@@ -413,7 +413,8 @@ extension KeyboardShortcuts.Name {
                 refreshAccessibility()
                 guard acceptTranscription(result, for: id) else { return }
                 if cleanupMode == .smart {
-                    let formatted = await smartFormatter.format(result)
+                    // Smart cleanup starts from the dictionary-corrected words.
+                    let formatted = await smartFormatter.format(text)
                     try Task.checkCancellation()
                     guard acceptSmartFormatting(formatted, for: id) else { return }
                 }
@@ -451,12 +452,19 @@ extension KeyboardShortcuts.Name {
     func acceptTranscription(_ result: String, for id: UUID) -> Bool {
         guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
         cleanupDetail = ""
-        let cleaned = DictationCleanup.apply(result, mode: cleanupMode)
-        rawText = cleaned.raw
+        // "None · raw text" stays exact. Otherwise the user's heard-as entries
+        // run first; History keeps the recognizer's raw words as the original.
+        let replaced = cleanupMode == .none ? SoundAlikeResult(text: result, applied: [])
+            : SoundAlikeCorrections.apply(result, rules: dictionary.soundAlikeRules)
+        let cleaned = DictationCleanup.apply(replaced.text, mode: cleanupMode)
+        rawText = result
         text = cleaned.text
+        if !replaced.applied.isEmpty {
+            cleanupDetail = "Dictionary corrected \(replaced.applied.count == 1 ? "1 misheard term" : "\(replaced.applied.count) misheard terms")."
+        }
+        let detail = cleaned.changed ? "Light cleanup applied. Original preserved in History." : text != result ? "Original preserved in History." : "Saved locally before insertion."
         saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
-            detail: cleaned.changed ? "Light cleanup applied. Original preserved in History." : "Saved locally before insertion.",
-            rawText: rawText, cleanupMode: cleanupMode))
+            detail: cleanupDetail.isEmpty ? detail : cleanupDetail + " " + detail, rawText: rawText, cleanupMode: cleanupMode))
         dismissal?.cancel()
         presentationID = UUID()
         overlay?.hide()
@@ -465,9 +473,10 @@ extension KeyboardShortcuts.Name {
     @discardableResult
     func acceptSmartFormatting(_ formatted: SmartFormatResult, for id: UUID) -> Bool {
         guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
-        text = formatted.text; cleanupDetail = formatted.reason
+        text = formatted.text
+        cleanupDetail = cleanupDetail.isEmpty ? formatted.reason : cleanupDetail + " " + formatted.reason
         saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
-            detail: formatted.reason + ". Original preserved in History.", rawText: rawText, cleanupMode: .smart))
+            detail: cleanupDetail + ". Original preserved in History.", rawText: rawText, cleanupMode: .smart))
         return true
     }
     func cancel() {

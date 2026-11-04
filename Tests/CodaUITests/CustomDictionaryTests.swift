@@ -98,6 +98,7 @@ import CodaCore
     let controller = DictationController(preview: true)
     controller.dictionary.suggest([.init(original: "Cartick", corrected: "Karthik"), .init(original: "supper base", corrected: "Supabase")], session: UUID())
     #expect(controller.dictionary.add("Wispr Flow"))
+    #expect(controller.dictionary.add("LeetCode", heardAs: ["lead code", "leet code"]))
     controller.workspaceSection = "Dictionary"
     let model = AppModel(preview: true)
     defer { try? FileManager.default.removeItem(at: model.root) }
@@ -106,6 +107,89 @@ import CodaCore
     let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
     window.contentView = host; host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: .now.addingTimeInterval(0.1))
     let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds)); host.cacheDisplay(in: host.bounds, to: bitmap)
-    try #require(bitmap.representation(using: .png, properties: [:])).write(to: URL(fileURLWithPath: "/tmp/coda-dictionary-review.png"))
-    #expect(controller.dictionary.possible.count == 2 && controller.dictionary.vocabulary == ["Wispr Flow"])
+    try #require(bitmap.representation(using: .png, properties: [:])).write(to: renderDirectory.appendingPathComponent("coda-dictionary-review.png"))
+    #expect(controller.dictionary.possible.count == 2 && controller.dictionary.vocabulary == ["LeetCode", "Wispr Flow"])
+}
+
+/// Renders go to CODA_RENDER_DIR when set, otherwise the temporary directory.
+private var renderDirectory: URL {
+    ProcessInfo.processInfo.environment["CODA_RENDER_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) } ?? FileManager.default.temporaryDirectory
+}
+
+@Test @MainActor func renderHeardAsEditorWithObservedSuggestionAndEverydayWarning() throws {
+    _ = NSApplication.shared
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let dictionary = CustomDictionary(root: root, preview: true)
+    dictionary.suggest([.init(original: "lead code", corrected: "LeetCode")], session: UUID())
+    #expect(dictionary.add("LaTeX", heardAs: ["later"]))
+    let learned = try #require(dictionary.possible.first)
+    let latex = try #require(dictionary.approved.first)
+    let everyday: Set<String> = ["later", "lead", "code"]
+    for (name, word) in [("suggestion", learned), ("everyday", latex)] {
+        let host = NSHostingView(rootView: DictionaryWordEditor(dictionary: dictionary, word: word, isCommon: { everyday.contains($0.lowercased()) })
+            .background(Color(white: 0.16)).environment(\.colorScheme, .dark))
+        host.appearance = NSAppearance(named: .darkAqua)
+        host.frame = CGRect(origin: .zero, size: host.fittingSize)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host; host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: .now.addingTimeInterval(0.1))
+        #expect(host.bounds.width == 460 && host.bounds.height < 520)
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds)); host.cacheDisplay(in: host.bounds, to: bitmap)
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: renderDirectory.appendingPathComponent("coda-dictionary-editor-\(name).png"))
+    }
+}
+
+@Test @MainActor func heardAsVariantsPersistAndOnlyApprovedEntriesReplace() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let dictionary = CustomDictionary(root: root, preview: true)
+    dictionary.suggest([.init(original: "lead code", corrected: "LeetCode")], session: UUID())
+    let suggested = try #require(dictionary.possible.first)
+    // A learned misspelling is only offered; nothing replaces until the user approves it.
+    #expect(suggested.heardAs.isEmpty && dictionary.soundAlikeRules.isEmpty)
+    #expect(dictionary.approve(suggested.id))
+    #expect(dictionary.soundAlikeRules.isEmpty && dictionary.vocabulary == ["LeetCode"])
+    #expect(dictionary.approve(suggested.id, heardAs: [suggested.original!, "leet code"]))
+    #expect(dictionary.add("Wispr Flow", heardAs: ["whisperflow"]))
+    let reloaded = CustomDictionary(root: root, preview: true)
+    #expect(Set(reloaded.soundAlikeRules.map(\.heard)) == ["lead code", "leet code", "whisperflow"])
+    #expect(reloaded.vocabulary == ["LeetCode", "Wispr Flow"]) // Variants never become recognition hints.
+    // Approving without a variant list keeps the current variants.
+    #expect(reloaded.approve(suggested.id, spelling: "LeetCode"))
+    #expect(reloaded.words.first { $0.id == suggested.id }?.heardAs == ["lead code", "leet code"])
+    // Conflicts are rejected without saving.
+    #expect(!reloaded.add("Leetcode Pro", heardAs: ["Lead Code"]) && reloaded.error?.contains("LeetCode") == true)
+    #expect(!reloaded.add("Whisperflow"))
+    #expect(!reloaded.approve(suggested.id, heardAs: ["LeetCode"]))
+    // Removing a word stops its replacements, and re-adding starts with none.
+    let flow = try #require(reloaded.approved.first { $0.word == "Wispr Flow" })
+    #expect(reloaded.dismiss(flow.id) && reloaded.soundAlikeRules.map(\.heard).sorted() == ["lead code", "leet code"])
+    #expect(reloaded.add("Wispr Flow") && CustomDictionary(root: root, preview: true).soundAlikeRules.count == 2)
+}
+
+@Test @MainActor func heardAsRunsBeforeCleanupAndHistoryKeepsRawWords() throws {
+    // A missing worker keeps Smart mode from starting any local model process.
+    let controller = DictationController(preview: true, formatter: SmartFormatter(python: URL(fileURLWithPath: "/no-runtime"),
+                                                                                  script: URL(fileURLWithPath: "/no-worker")))
+    defer { controller.cancel() }
+    #expect(controller.dictionary.add("LeetCode", heardAs: ["lead code"]))
+    #expect(controller.dictionary.add("Google Meet", heardAs: ["google me"]))
+    for mode in [DictationCleanupMode.light, .smart, .none] {
+        controller.cleanupMode = mode
+        let begun = controller.lifecycle.begin(meetingBusy: false, modelReady: true)
+        let id = try #require(begun)
+        _ = controller.lifecycle.listening(id); _ = controller.lifecycle.processing()
+        let raw = "practice lead code on the google me call, not \"lead code\""
+        #expect(controller.acceptTranscription(raw, for: id))
+        let record = try #require(controller.records.first { $0.id == id })
+        #expect(record.rawText == raw)
+        if mode == .none {
+            #expect(controller.text == raw && record.text == raw)
+        } else {
+            #expect(controller.text == "practice LeetCode on the Google Meet call, not \"lead code\"", Comment(rawValue: mode.rawValue))
+            #expect(record.detail.contains("Dictionary corrected 2 misheard terms"))
+        }
+        _ = controller.lifecycle.complete(id); controller.lifecycle.settled(id)
+    }
+    controller.cleanupMode = .light
 }

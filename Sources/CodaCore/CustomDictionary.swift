@@ -61,8 +61,26 @@ public struct CustomWord: Codable, Identifiable, Equatable, Sendable {
     public var original: String?
     public var status: Status
     public var observations: [UUID]
-    public init(id: UUID = UUID(), word: String, original: String? = nil, status: Status, observations: [UUID] = []) {
-        self.id = id; self.word = word; self.original = original; self.status = status; self.observations = observations
+    /// User-approved misrecognitions replaced by `word` after transcription.
+    /// Absent in dictionaries written before sound-alike corrections existed.
+    public var heardAs: [String]
+    public init(id: UUID = UUID(), word: String, original: String? = nil, status: Status, observations: [UUID] = [], heardAs: [String] = []) {
+        self.id = id; self.word = word; self.original = original; self.status = status; self.observations = observations; self.heardAs = heardAs
+    }
+    private enum CodingKeys: String, CodingKey { case id, word, original, status, observations, heardAs }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id); word = try values.decode(String.self, forKey: .word)
+        original = try values.decodeIfPresent(String.self, forKey: .original); status = try values.decode(Status.self, forKey: .status)
+        observations = try values.decode([UUID].self, forKey: .observations)
+        heardAs = try values.decodeIfPresent([String].self, forKey: .heardAs) ?? []
+    }
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id); try values.encode(word, forKey: .word)
+        try values.encodeIfPresent(original, forKey: .original); try values.encode(status, forKey: .status)
+        try values.encode(observations, forKey: .observations)
+        if !heardAs.isEmpty { try values.encode(heardAs, forKey: .heardAs) }
     }
 }
 
@@ -92,7 +110,14 @@ public struct CustomDictionaryStore {
         let words = try JSONDecoder().decode([CustomWord].self, from: Data(contentsOf: file))
         guard words.allSatisfy({ CustomVocabulary.valid($0.word) }), Set(words.map { CustomVocabulary.key($0.word) }).count == words.count,
               Set(words.map(\.id)).count == words.count else { throw CocoaError(.fileReadCorruptFile) }
-        return words
+        // A hand-edited variant must not make the whole dictionary unreadable:
+        // keep only variants that could have been saved through the app.
+        return words.map { word in
+            var word = word, seen = Set<String>()
+            word.heardAs = word.heardAs.filter { CustomVocabulary.valid($0) && $0 != word.word && seen.insert(CustomVocabulary.key($0)).inserted }
+                .prefix(SoundAlikeCorrections.variantLimit).map { $0 }
+            return word
+        }
     }
     public func save(_ words: [CustomWord]) throws {
         try JSONEncoder().encode(words).write(to: file, options: [.atomic])
