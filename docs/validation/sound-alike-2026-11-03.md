@@ -114,5 +114,11 @@ the whole dictionary unreadable.
   row and the word editor with and without the observed-misspelling chip. The
   renders were inspected locally, not committed. To regenerate them, run
   `CODA_RENDER_DIR=<dir> ./scripts/test.sh --filter "renderDictionary|renderHeardAs"`.
-- `build/Coda.app` was not rebuilt or replaced, and the change has not been tried in
-  a live dictation.
+- Installed on November 4 as `build/Coda.app` 0.4.13 build 23, built from this
+  branch after merging `main` (summaries and Smart cleanup refinement); both suites
+  passed on the merge. Coda was idle (no recent history or recording writes, no
+  worker running), quit normally, and was relaunched. It is signed with the same
+  "Coda Local Development" identity and passes strict deep verification.
+  `CodaProjectDirectory` was set back to the main checkout so `.env` lookup is
+  unchanged. The 128 history records were unchanged after the relaunch. The change
+  has not yet been tried in a live dictation.
