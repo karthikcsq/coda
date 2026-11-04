@@ -55,6 +55,23 @@ def _number(words):
     return None if value is None else str(value)
 
 
+_LABEL = r'(?:chapter|page|step|version|level|option|number|room|section|part|phase|round|season|episode|grade|gate|player|item|line|slide|row|column|table|figure|lesson|unit|stage|tier|floor|week|day|game|question|problem|test)'
+_UNIT = r'(?:percent|per cent|dollars?|cents?|minutes?|hours?|seconds?|miles?|kilometers?|km|kg|pounds?|ounces?|inches?|feet|foot|meters?|grams?|liters?|gb|mb|tb|ms|k|am|pm|o\'clock)'
+_MATH = r'(?:plus|minus|times|multiplied|divided|over|equals|is equal|by|point|squared|cubed|to the power)'
+
+
+def _numeric_one(text, start, end):
+    """A bare 'one' is usually a pronoun or idiom ('the current one', 'one sentence
+    tagline'). It becomes 1 only in clearly numeric company."""
+    before, after = text[:start], text[end:]
+    number = r'(?:\d|\b(?:zero|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|hundred)\b)'
+    return bool(re.search(r'(?:\b' + _MATH + r'|[+×÷=/−<>])[ \t]*$', before, re.I)
+                or re.match(r'[ \t]*(?:[+×÷=/−%<>]|' + _MATH + r'\b|' + _UNIT + r'\b|x\b)', after, re.I)
+                or re.search(r'\b' + _LABEL + r'[ \t]+$', before, re.I)
+                or re.search(number + r'[ \t]*(?:,|and|or|to|through|-)[ \t]*$', before, re.I)
+                or re.match(r'[ \t]*(?:,|and|or|to|through|-)[ \t]*' + number, after, re.I))
+
+
 def _cardinals(text):
     matches = list(LEXEME.finditer(text)); spans = []; i = 0
     while i < len(matches):
@@ -83,6 +100,8 @@ def _cardinals(text):
         ordinal_tail = re.match(r'-(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)\b', following, re.I)
         embedded = bool(re.search(r'[\w_/@.-]$', before) or re.match(r'[_/@-]|\.(?=\w)', following))
         value = _number(words)
+        if words == ['one'] and not _numeric_one(text, matches[start].start(), end):
+            value = None
         if value is not None and not proper and not ordinal_tail and not embedded:
             spans.append((matches[start].start(), end, value))
     for start, end, value in reversed(spans): text = text[:start] + value + text[end:]

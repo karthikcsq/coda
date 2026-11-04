@@ -138,7 +138,7 @@ import Voz
                 Segment(id: "s3", start: 16, end: 23, speakers: [0], text: "Then we have a decision: finish the local notebook before adding collaboration."),
                 Segment(id: "s4", start: 24, end: 27, speakers: [0, 1], text: "Yes, let's start with that.")
             ]
-            sample.summary = MeetingSummary(overview: [SummaryItem(text: "The first release focuses on a local meeting notebook.", evidence: ["s1", "s3"])], decisions: [SummaryItem(text: "Finish the local notebook before adding collaboration.", evidence: ["s3"])], actions: [SummaryItem(text: "Review onboarding copy.", evidence: ["s2"], owner: "Sam")])
+            sample.summary = MeetingSummary(brief: SummaryItem(text: "A planning check-in that settled the first release: a local meeting notebook, with collaboration later.", evidence: ["s1", "s3"]), takeaways: [SummaryItem(text: "The first release ships recording, a clear transcript and next steps; collaboration waits until the local notebook is finished.", evidence: ["s1", "s3"]), SummaryItem(text: "Onboarding copy still needs review, and no deadline has been set.", evidence: ["s2"])], overview: [SummaryItem(text: "The first release focuses on a local meeting notebook.", evidence: ["s1", "s3"], topic: "Release scope")], decisions: [SummaryItem(text: "Finish the local notebook before adding collaboration.", evidence: ["s3"])], actions: [SummaryItem(text: "Review onboarding copy.", evidence: ["s2"], owner: "Sam")], openQuestions: [SummaryItem(text: "When onboarding review is due; no deadline was set.", evidence: ["s2"])])
             meetings = [sample]; try? store?.save(sample)
             status = "Synthetic UI preview • no audio, models, or network used"
         }

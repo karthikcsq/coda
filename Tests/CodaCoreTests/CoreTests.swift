@@ -39,20 +39,25 @@ private func meeting() -> Meeting {
     meeting.speakerNames = ["0": "Alex"]
     return meeting
 }
-private func response(evidence: String = "s1", status: String = "completed") throws -> Data {
-    let summary = MeetingSummary(overview: [SummaryItem(text: "The draft will ship.", evidence: [evidence])], decisions: [], actions: [])
-    var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(summary)) as! [String: Any]
-    for key in ["overview", "decisions", "actions"] {
-        object[key] = (object[key] as! [[String: Any]]).map { item in
-            var item = item; item["owner"] = item["owner"] ?? NSNull(); item["dueDate"] = item["dueDate"] ?? NSNull(); return item
-        }
-    }
+/// A strict-schema wire payload: every item carries all five keys, nulls included.
+private func wireItem(_ text: String, evidence: String, topic: Any = NSNull(), owner: Any = NSNull()) -> [String: Any] {
+    ["text": text, "evidence": [evidence], "topic": topic, "owner": owner, "dueDate": NSNull()]
+}
+private func response(evidence: String = "s1", status: String = "completed", payload: [String: Any]? = nil) throws -> Data {
+    let object = payload ?? [
+        "brief": wireItem("A short check-in that settled shipping the draft.", evidence: evidence),
+        "takeaways": [wireItem("The draft ships.", evidence: evidence)],
+        "decisions": [], "actions": [], "openQuestions": [],
+        "notes": [wireItem("The draft will ship.", evidence: evidence, topic: "Draft")]
+    ]
     let text = String(decoding: try JSONSerialization.data(withJSONObject: object), as: UTF8.self)
     return try JSONSerialization.data(withJSONObject: ["status": status, "output": [["type": "message", "content": [["type": "output_text", "text": text]]]]])
 }
 @Test func parseStructuredSummaryAndValidateEvidence() throws {
     let result = try Summarizer.parse(response(), segments: meeting().segments)
     #expect(result.overview.first?.owner == nil)
+    #expect(result.overview.first?.topic == "Draft")
+    #expect(result.brief?.text.isEmpty == false && result.takeaways.count == 1 && result.leadsWithTakeaways)
     #expect(throws: CodaError.invalidSummary) { try Summarizer.parse(response(evidence: "made-up"), segments: meeting().segments) }
     #expect(throws: CodaError.incomplete) { try Summarizer.parse(response(status: "incomplete"), segments: meeting().segments) }
     #expect(throws: CodaError.invalidSummary) { try Summarizer.parse(Data("garbage".utf8), segments: []) }
@@ -70,6 +75,37 @@ actor StubTransport: HTTPTransport {
     }
     func count() -> Int { requests.count }
     func bodyString() -> String { String(decoding: requests.first!.httpBody!, as: UTF8.self) }
+}
+@Test func summaryLeadsWithBriefAndDropsMisplacedFields() throws {
+    let payload: [String: Any] = [
+        "brief": wireItem("Prep call.", evidence: "s1", topic: "Stray", owner: "Alex"),
+        "takeaways": [wireItem("Ship it.", evidence: "s1", owner: "Alex")],
+        "decisions": [], "openQuestions": [],
+        "actions": [wireItem("Send the draft.", evidence: "s1", topic: "Stray", owner: "Alex")],
+        "notes": [wireItem("Shipping the draft.", evidence: "s1", topic: "Draft", owner: "Alex")]
+    ]
+    let summary = try Summarizer.parse(response(payload: payload), segments: meeting().segments)
+    // Owners belong to actions and headings to notes, wherever the model put them.
+    #expect(summary.brief?.owner == nil && summary.brief?.topic == nil)
+    #expect(summary.takeaways.first?.owner == nil)
+    #expect(summary.actions.first?.owner == "Alex" && summary.actions.first?.topic == nil)
+    #expect(summary.overview.first?.topic == "Draft" && summary.overview.first?.owner == nil)
+    // A brief is required, and its evidence is validated like every other item.
+    var missing = payload; missing["brief"] = nil
+    #expect(throws: CodaError.invalidSummary) { try Summarizer.parse(response(payload: missing), segments: meeting().segments) }
+    var invented = payload; invented["brief"] = wireItem("Prep call.", evidence: "s99")
+    #expect(throws: CodaError.invalidSummary) { try Summarizer.parse(response(payload: invented), segments: meeting().segments) }
+}
+@Test func summariesSavedBeforeTakeawaysStillLoad() throws {
+    let legacy = #"{"overview":[{"text":"Old note","evidence":["s1"],"owner":null,"dueDate":null}],"decisions":[],"actions":[{"text":"Do it","evidence":["s1"],"owner":"Alex","dueDate":"Friday"}]}"#
+    let summary = try JSONDecoder().decode(MeetingSummary.self, from: Data(legacy.utf8))
+    #expect(!summary.leadsWithTakeaways && summary.takeaways.isEmpty && summary.openQuestions.isEmpty)
+    #expect(summary.overview.first?.text == "Old note" && summary.overview.first?.topic == nil)
+    #expect(summary.actions.first?.owner == "Alex")
+    var item = meeting(); item.summary = summary
+    let markdown = Export.render(item, markdown: true)
+    #expect(markdown.contains("## Summary\n- Old note [01:02]"))
+    #expect(!markdown.contains("Key takeaways"))
 }
 @Test func retriesRateLimitsAndServerFailuresWithoutUploadingAudio() async throws {
     let transport = StubTransport(statuses: [429, 503, 200], data: try response())
@@ -112,7 +148,12 @@ actor StubTransport: HTTPTransport {
     let markdown = Export.render(item, markdown: true)
     #expect(markdown.contains("# Synthetic meeting"))
     #expect(markdown.contains("[01:02] Alex:"))
-    #expect(markdown.contains("The draft will ship. [01:02]"))
+    #expect(markdown.contains("## Summary\nA short check-in that settled shipping the draft. [01:02]"))
+    #expect(markdown.contains("## Key takeaways\n1. The draft ships. [01:02]"))
+    #expect(markdown.contains("## Notes\n- **Draft.** The draft will ship. [01:02]"))
+    #expect(!markdown.contains("Open questions"))
+    #expect(Export.render(item, markdown: false).contains("- Draft: The draft will ship. [01:02]"))
+    #expect(try store.load().first?.summary == item.summary)
     #expect(!Export.render(item, markdown: false).hasPrefix("#"))
     try store.remove(item)
     #expect(try store.load().isEmpty)

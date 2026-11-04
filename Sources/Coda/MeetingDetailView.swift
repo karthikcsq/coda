@@ -371,12 +371,24 @@ struct ContentView: View {
                         Button("Generate again…") { model.showSummaryConsent = true }
                             .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
                     }
-                    summarySection("Discussion notes", kind: .note, items: summary.overview, meeting: meeting)
+                    if let brief = summary.brief {
+                        briefBlock(brief, meeting: meeting)
+                    } else {
+                        CodaNotice(kind: .info, text: "This summary was made before Coda added a brief and key takeaways. Generate again to get them.")
+                    }
+                    if !summary.takeaways.isEmpty {
+                        summarySection("Key takeaways", kind: .takeaway, items: summary.takeaways, meeting: meeting)
+                    }
                     summarySection("Decisions", kind: .decision, items: summary.decisions, meeting: meeting)
                     summarySection("Action items", kind: .action, items: summary.actions, meeting: meeting)
+                    if !summary.openQuestions.isEmpty {
+                        summarySection("Open questions", kind: .question, items: summary.openQuestions, meeting: meeting)
+                    }
+                    summarySection(summary.leadsWithTakeaways ? "Notes" : "Discussion notes", kind: .note,
+                                   items: summary.overview, meeting: meeting)
                 } else {
                     CodaEmptyState(icon: "sparkles", title: "No summary yet",
-                                   message: "Summaries, decisions and action items cite the transcript. Only transcript text and speaker names go to OpenAI; your audio stays on this Mac.",
+                                   message: "Get a one-line brief, the key takeaways, decisions, action items and topic notes, each citing the transcript. Only transcript text and speaker names go to OpenAI; your audio stays on this Mac.",
                                    tint: CodaStyle.mint) {
                         Button("Summarize with OpenAI…") { model.showSummaryConsent = true }
                             .buttonStyle(CodaPrimaryButtonStyle()).disabled(model.isOccupied)
@@ -389,13 +401,27 @@ struct ContentView: View {
         }
     }
 
-    private enum SummaryKind { case note, decision, action }
+    /// The bottom line, set as a lead paragraph rather than another list row.
+    private func briefBlock(_ brief: SummaryItem, meeting: Meeting) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(brief.text).font(.system(size: 17, weight: .regular)).lineSpacing(6)
+                .foregroundStyle(CodaStyle.ink).textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+            citations(brief, meeting: meeting)
+        }
+        .padding(.leading, 18).padding(.vertical, 4)
+        .overlay(alignment: .leading) { Capsule().fill(CodaStyle.mint).frame(width: 3) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Summary: " + brief.text)
+    }
+
+    private enum SummaryKind { case takeaway, note, decision, action, question }
 
     private func summarySection(_ title: String, kind: SummaryKind, items: [SummaryItem], meeting: Meeting) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Text(title).font(CodaStyle.sectionFont)
-                if !items.isEmpty { CodaCountBadge(count: items.count) }
+                if !items.isEmpty && kind != .takeaway { CodaCountBadge(count: items.count) }
             }
             if items.isEmpty {
                 Text("None explicitly stated.").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
@@ -403,7 +429,7 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         if index > 0 { Rectangle().fill(CodaStyle.hairline).frame(height: 1).padding(.leading, 46) }
-                        summaryRow(item, kind: kind, meeting: meeting)
+                        summaryRow(item, kind: kind, rank: index + 1, meeting: meeting)
                     }
                 }
                 .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
@@ -412,31 +438,52 @@ struct ContentView: View {
         }
     }
 
-    private func summaryRow(_ item: SummaryItem, kind: SummaryKind, meeting: Meeting) -> some View {
-        let cited = item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }
-        return HStack(alignment: .firstTextBaseline, spacing: 12) {
+    private func summaryRow(_ item: SummaryItem, kind: SummaryKind, rank: Int, meeting: Meeting) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
             Group {
                 switch kind {
-                case .note: Circle().fill(CodaStyle.mint).frame(width: 5, height: 5).offset(y: -3)
+                case .takeaway:
+                    Text("\(rank)").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(CodaStyle.mint)
+                        .frame(width: 20, height: 20).background(CodaStyle.mint.opacity(0.14), in: Circle())
+                        .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
+                case .note: Circle().fill(CodaStyle.mint.opacity(0.8)).frame(width: 5, height: 5).offset(y: -3)
                 case .decision: Image(systemName: "checkmark.seal.fill").foregroundStyle(CodaStyle.mint)
                 case .action: Image(systemName: "circle").foregroundStyle(CodaStyle.muted)
+                case .question: Image(systemName: "questionmark.circle").foregroundStyle(CodaStyle.speakerColor(2))
                 }
             }
-            .font(.system(size: 13)).frame(width: 18).accessibilityHidden(true)
+            .font(.system(size: 13)).frame(width: 20).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 10) {
-                Text(item.text).font(CodaStyle.bodyFont).lineSpacing(4).textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-                if item.owner != nil || item.dueDate != nil || !cited.isEmpty {
-                    HStack(spacing: 6) {
-                        if let owner = item.owner { CodaTag(icon: "person.fill", text: owner) }
-                        if let due = item.dueDate { CodaTag(icon: "calendar", text: due) }
-                        ForEach(cited) { segment in citation(segment) }
+                VStack(alignment: .leading, spacing: 4) {
+                    if let topic = item.topic {
+                        Text(topic).font(.system(size: 13, weight: .semibold)).foregroundStyle(CodaStyle.ink)
                     }
+                    Text(item.text).font(kind == .takeaway ? .system(size: 14, weight: .medium) : CodaStyle.bodyFont)
+                        .foregroundStyle(item.topic == nil ? CodaStyle.ink : CodaStyle.ink.opacity(0.86))
+                        .lineSpacing(4).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                citations(item, meeting: meeting)
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16).padding(.vertical, 15)
+    }
+
+    /// Owner, deadline and up to four transcript links; the rest are counted, not dropped silently.
+    @ViewBuilder private func citations(_ item: SummaryItem, meeting: Meeting) -> some View {
+        let cited = item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }
+        if item.owner != nil || item.dueDate != nil || !cited.isEmpty {
+            CodaFlowLayout(spacing: 6) {
+                if let owner = item.owner { CodaTag(icon: "person.fill", text: owner) }
+                if let due = item.dueDate { CodaTag(icon: "calendar", text: due) }
+                ForEach(cited.prefix(4)) { segment in citation(segment) }
+                if cited.count > 4 {
+                    CodaTag(text: "+\(cited.count - 4)")
+                        .help(cited.dropFirst(4).map { timestamp($0.start) }.joined(separator: ", "))
+                }
+            }
+        }
     }
 
     /// Citations are links back into the transcript, not decorative brackets.
