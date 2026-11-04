@@ -8,160 +8,172 @@ struct NotetakerPage: View {
     private var days: [Date] {
         Array(Set(model.filteredMeetings.map { Calendar.current.startOfDay(for: $0.created) })).sorted(by: >)
     }
-    private func dayLabel(_ day: Date) -> String {
-        if Calendar.current.isDateInToday(day) { return "Today" }
-        if Calendar.current.isDateInYesterday(day) { return "Yesterday" }
-        return day.formatted(.dateTime.weekday(.wide).month(.wide).day())
-    }
     var body: some View {
         if model.showingMeetingDetail || operationInProgress || model.showRecordConsent {
-            VStack(spacing: 0) {
-                HStack {
-                    Button { model.showMeetingLibrary() } label: {
-                        Label("All meetings", systemImage: "chevron.left").font(CodaStyle.secondaryFont)
-                    }
-                    .buttonStyle(CodaQuietButtonStyle()).disabled(operationInProgress)
-                    .accessibilityIdentifier("coda.meetings.back")
-                    Spacer()
-                }
-                .padding(.horizontal, 28).padding(.vertical, 14)
-                .codaDivider()
-                ContentView(model: model, dictation: controller, showsMeetingSidebar: false)
-            }
+            ContentView(model: model, dictation: controller, showsMeetingSidebar: false,
+                        onBack: { model.showMeetingLibrary() })
         } else {
-            HStack(spacing: 0) {
-                library
-                Rectangle().fill(CodaStyle.hairline).frame(width: 1)
-                detail
-            }
+            library
         }
     }
+
+    // MARK: Library
+
     private var library: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: CodaStyle.blockSpacing) {
-                CodaPageHeader(icon: "square.and.pencil", title: "Notetaker",
-                               subtitle: "Record or import audio locally.") {
-                    HStack(spacing: 8) {
-                        Button { model.openSettings() } label: { Image(systemName: "gearshape") }
-                            .buttonStyle(CodaIconButtonStyle()).help("Notetaker settings")
-                            .accessibilityLabel("Notetaker settings")
-                        Button("Import audio") { model.importAudio() }
-                            .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
-                        Button("New recording") { model.requestMeetingRecording() }
-                            .buttonStyle(CodaPrimaryButtonStyle()).disabled(model.isOccupied)
-                    }
-                }
-                HStack(alignment: .center, spacing: 12) {
-                    CodaEyebrow(text: "Saved meetings")
-                    if !model.filteredMeetings.isEmpty { CodaCountBadge(count: model.filteredMeetings.count) }
-                    Spacer(minLength: 12)
-                    CodaSearchField(prompt: "Search meetings", text: $model.search, width: 200)
-                }
-                if model.filteredMeetings.isEmpty {
-                    CodaEmptyState(icon: model.search.isEmpty ? "doc.text" : "magnifyingglass",
-                                   title: model.search.isEmpty ? "Your notes start here" : "No matching meetings",
-                                   message: model.search.isEmpty
-                                    ? "Start a recording or import audio. Coda saves the audio first, then transcribes and labels speakers locally."
-                                    : "Try part of a meeting title.",
-                                   tint: model.search.isEmpty ? CodaStyle.mint : CodaStyle.muted)
+            VStack(alignment: .leading, spacing: 24) {
+                header
+                if model.meetings.isEmpty {
+                    emptyLibrary
                 } else {
-                    // Grouped by day, so a date appears once instead of above every row.
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        ForEach(days, id: \.self) { day in
-                            VStack(alignment: .leading, spacing: 10) {
-                                CodaEyebrow(text: dayLabel(day))
-                                ForEach(model.filteredMeetings.filter { Calendar.current.isDate($0.created, inSameDayAs: day) }) { meeting in
-                                    meetingRow(meeting)
-                                }
-                            }
+                    CodaSearchField(prompt: "Search meetings", text: $model.search, width: 280)
+                    if model.filteredMeetings.isEmpty {
+                        CodaEmptyState(icon: "magnifyingglass", title: "No matching meetings",
+                                       message: "Try part of a meeting title.")
+                    } else {
+                        // Grouped by day, so a date appears once instead of above every row.
+                        LazyVStack(alignment: .leading, spacing: 24) {
+                            ForEach(days, id: \.self) { day in daySection(day) }
                         }
                     }
                 }
-            }.padding(CodaStyle.pageInset)
-        }.frame(maxWidth: .infinity)
+            }
+            .codaPageInsets()
+        }
+        .frame(maxWidth: .infinity)
     }
+
+    private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 16) {
+                titleBlock
+                Spacer(minLength: 16)
+                actions
+            }
+            VStack(alignment: .leading, spacing: 16) {
+                titleBlock
+                actions
+            }
+        }
+    }
+
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Notetaker").font(CodaStyle.pageTitleFont).fixedSize()
+            Text(libraryLine).font(CodaStyle.secondaryFont).foregroundStyle(.secondary).lineLimit(1)
+        }
+    }
+
+    /// Honest totals only: counts and transcribed length from what is saved locally.
+    private var libraryLine: String {
+        let count = model.meetings.count
+        guard count > 0 else { return "Record or import a conversation. Everything stays on this Mac." }
+        var parts = [count == 1 ? "1 meeting" : "\(count) meetings"]
+        let audio = model.meetings.compactMap(\.transcribedDuration).reduce(0, +)
+        if audio > 0 { parts.append(MeetingFormat.duration(audio)) }
+        parts.append("Stored on this Mac")
+        return parts.joined(separator: "  ·  ")
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button { model.openSettings() } label: { Image(systemName: "gearshape") }
+                .buttonStyle(CodaIconButtonStyle(size: 34)).help("Notetaker settings")
+                .accessibilityLabel("Notetaker settings")
+            Button { model.importAudio() } label: {
+                Label("Import audio", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
+            Button { model.requestMeetingRecording() } label: {
+                Label("New recording", systemImage: "record.circle")
+            }
+            .buttonStyle(CodaPrimaryButtonStyle()).disabled(model.isOccupied)
+        }
+        .fixedSize()
+    }
+
+    private func daySection(_ day: Date) -> some View {
+        let group = model.filteredMeetings.filter { Calendar.current.isDate($0.created, inSameDayAs: day) }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                CodaEyebrow(text: MeetingFormat.dayLabel(day))
+                if group.count > 1 { CodaCountBadge(count: group.count) }
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(group.enumerated()), id: \.element.id) { index, meeting in
+                    if index > 0 { Rectangle().fill(CodaStyle.hairline).frame(height: 1).padding(.leading, 96) }
+                    meetingRow(meeting)
+                }
+            }
+            .background(CodaStyle.sunken)
+            .clipShape(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+        }
+    }
+
     private func meetingRow(_ meeting: Meeting) -> some View {
         Button { model.openMeeting(meeting.id) } label: {
-            HStack(spacing: 12) {
-                Image(systemName: meeting.segments.isEmpty ? "waveform" : "doc.text").font(.system(size: 16))
-                    .foregroundStyle(meeting.segments.isEmpty ? CodaStyle.muted : CodaStyle.mint)
-                    .frame(width: 36, height: 36)
-                    .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
-                    .accessibilityHidden(true)
+            HStack(alignment: .center, spacing: 16) {
+                Text(meeting.created.formatted(date: .omitted, time: .shortened))
+                    .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(CodaStyle.muted)
+                    .frame(width: 64, alignment: .leading)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(meeting.title).font(.system(size: 14, weight: .medium)).lineLimit(2)
-                    HStack(spacing: 8) {
-                        Text(meeting.created.formatted(date: .omitted, time: .shortened))
-                            .font(CodaStyle.secondaryFont).foregroundStyle(.secondary).monospacedDigit()
-                        Text("·").foregroundStyle(.secondary)
-                        Text(meeting.segments.isEmpty
-                             ? "Audio saved · ready to transcribe"
-                             : meeting.summary == nil ? "Transcript ready" : "Transcript and summary")
-                            .font(CodaStyle.secondaryFont).foregroundStyle(.secondary).lineLimit(1)
-                    }
+                    Text(meeting.title).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                    Text(meeting.previewLine ?? "Audio saved. Open it to transcribe on this Mac.")
+                        .font(CodaStyle.secondaryFont).foregroundStyle(.secondary).lineLimit(1)
                 }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.system(size: 11)).foregroundStyle(CodaStyle.muted)
-                    .accessibilityHidden(true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
+                if !meeting.speakerIDs.isEmpty {
+                    CodaAvatarStack(meeting: meeting, size: 22, ring: CodaStyle.canvas)
+                }
+                status(meeting)
+                if let length = meeting.transcribedDuration {
+                    Text(MeetingFormat.duration(length))
+                        .font(.system(size: 12)).monospacedDigit().foregroundStyle(CodaStyle.muted)
+                        .frame(minWidth: 48, alignment: .trailing)
+                }
+                Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(CodaStyle.muted.opacity(0.7)).accessibilityHidden(true)
             }
-            .padding(12).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            .padding(.horizontal, 16).padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(CodaListRowStyle(selected: model.selection == meeting.id))
+        .buttonStyle(CodaTableRowStyle())
         .help("Open this meeting")
         .accessibilityIdentifier("coda.meetings.open.\(meeting.id.uuidString)")
         .accessibilityLabel("Open " + meeting.title)
     }
-    private var detail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if let meeting = model.selected {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(meeting.title).font(.system(size: 17, weight: .medium))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(meeting.created.formatted(date: .abbreviated, time: .shortened))
-                        .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                }
-                CodaStatusChip(readiness: meeting.segments.isEmpty ? .pending : .ready,
-                               text: meeting.segments.isEmpty ? "Ready to transcribe" : meeting.summary == nil ? "Transcribed" : "Transcribed · summarized")
-                Rectangle().fill(CodaStyle.hairline).frame(height: 1)
-                let speakers = Set(meeting.segments.flatMap(\.speakers)).sorted()
-                VStack(alignment: .leading, spacing: 10) {
-                    CodaEyebrow(text: "Speakers")
-                    if speakers.isEmpty {
-                        Text("Available after transcription.").font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                    }
-                    ForEach(speakers, id: \.self) { speaker in
-                        HStack(spacing: 10) {
-                            Text(String(meeting.speakerLabel([speaker]).prefix(1)))
-                                .font(.system(size: 13, weight: .medium))
-                                .frame(width: 26, height: 26)
-                                .background(CodaStyle.mint.opacity(0.12), in: Circle())
-                                .foregroundStyle(CodaStyle.mint)
-                                .accessibilityHidden(true)
-                            Text(meeting.speakerLabel([speaker])).font(.system(size: 13))
-                        }
-                    }
-                }
-                Button("Open meeting") { model.openMeeting(meeting.id) }
-                    .buttonStyle(CodaPrimaryButtonStyle())
-                    .accessibilityLabel("Open " + meeting.title)
-                Text(meeting.summary == nil
-                     ? "The transcript and the optional summary live inside the note."
-                     : "Includes the transcript, decisions and action items.")
-                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Meeting details").font(.system(size: 17, weight: .medium))
-                    Text("Select a meeting to see its speakers and open the transcript.")
-                        .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            Spacer(minLength: 12)
-            Label("Saved on this Mac", systemImage: "internaldrive")
-                .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+
+    @ViewBuilder private func status(_ meeting: Meeting) -> some View {
+        if meeting.segments.isEmpty {
+            CodaTag(icon: "waveform", text: "Not transcribed")
+        } else if meeting.summary != nil {
+            CodaTag(icon: "sparkles", text: "Summary", tint: CodaStyle.mint)
         }
-        .padding(22).frame(width: 248).frame(maxHeight: .infinity, alignment: .top)
-        .background(CodaStyle.chrome)
+    }
+
+    private var emptyLibrary: some View {
+        VStack(spacing: 20) {
+            CodaEmblem(symbol: "waveform")
+            VStack(spacing: 8) {
+                Text("No meetings yet").font(.system(size: 18, weight: .semibold, design: .rounded))
+                Text("Start a recording or import audio. Coda saves the audio first, then transcribes and labels speakers on this Mac.")
+                    .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center).lineSpacing(3)
+                    .frame(maxWidth: 380).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 20) {
+                Label("Local transcription", systemImage: "lock")
+                Label("Up to 4 speakers", systemImage: "person.2")
+                Label("Optional AI summary", systemImage: "sparkles")
+            }
+            .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 56).padding(.horizontal, 24)
+        .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
     }
 }

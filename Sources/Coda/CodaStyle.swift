@@ -50,6 +50,19 @@ enum CodaStyle {
         reduce ? nil : .easeInOut(duration: duration)
     }
 
+    /// Live-capture red. Reserved for recording state so it never reads as an error.
+    static let recording = Color(red: 1.0, green: 0.42, blue: 0.40)
+
+    /// Speaker hues: four muted tones tuned to sit beside mint on charcoal. Index 0 is mint,
+    /// so a one-person recording looks exactly like the rest of the app.
+    static let speakerPalette: [Color] = [
+        mint,
+        Color(red: 0.58, green: 0.76, blue: 0.98),
+        Color(red: 0.80, green: 0.69, blue: 0.98),
+        Color(red: 0.98, green: 0.75, blue: 0.60)
+    ]
+    static func speakerColor(_ index: Int) -> Color { speakerPalette[abs(index) % speakerPalette.count] }
+
     static let heroGradient = LinearGradient(
         colors: [Color(red: 0.10, green: 0.17, blue: 0.16), Color(red: 0.12, green: 0.13, blue: 0.13)],
         startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -258,11 +271,12 @@ struct CodaSection<Content: View>: View {
 
 struct CodaPrimaryButtonStyle: ButtonStyle {
     var tint: Color = CodaStyle.mint
+    var ink: Color = Color(white: 0.1)
     @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Color(white: 0.1))
+            .foregroundStyle(ink)
             .lineLimit(1).fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 16).frame(height: 34)
             .background(tint.opacity(configuration.isPressed ? 0.78 : 1), in: Capsule())
@@ -370,6 +384,25 @@ struct CodaListRowStyle: ButtonStyle {
                 .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius)
                     .strokeBorder(selected ? CodaStyle.strongEdge : .clear))
                 .contentShape(RoundedRectangle(cornerRadius: CodaStyle.radius))
+                .onHover { hovering = $0 }
+                .animation(CodaStyle.motion(reduceMotion, duration: 0.12), value: hovering)
+        }
+    }
+}
+
+/// Flat row inside a shared list surface: hover and press fill edge to edge, no per-row border.
+struct CodaTableRowStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        StyleBody(configuration: configuration)
+    }
+    struct StyleBody: View {
+        let configuration: ButtonStyleConfiguration
+        @StyleState private var hovering = false
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        var body: some View {
+            configuration.label
+                .background(configuration.isPressed ? CodaStyle.selected : hovering ? CodaStyle.hover : .clear)
+                .contentShape(Rectangle())
                 .onHover { hovering = $0 }
                 .animation(CodaStyle.motion(reduceMotion, duration: 0.12), value: hovering)
         }

@@ -1,8 +1,9 @@
 # Local Coda signing
 
-## Single current app, November 2, 2026
+## Single current app, November 3, 2026
 
-The current app is **0.4.13 build 19** at `build/Coda.app`, including spoken URL cleanup, precise dictation
+The current app is **0.4.13 build 20** at `build/Coda.app`, including the Notetaker
+redesign (see `docs/validation/notetaker-ui-2026-11-03.md`), spoken URL cleanup, precise dictation
 failure reporting, Control–Option shortcut recovery and the native UI
 overhaul, dictionary learning, the word suggestion pop-up, and Smart number/math formatting. Keep this
 single bundle up to date. Superseded bundles and duplicate source/review folders

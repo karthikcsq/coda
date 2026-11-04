@@ -64,7 +64,8 @@ struct WorkspaceView: View {
                     Text("Use your shortcut with a text field focused.")
                     Text("Meeting summaries are optional.")
                 } label: { navLabel("Help", icon: "questionmark.circle") }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                    .menuStyle(.button).buttonStyle(CodaNavRowStyle(selected: false)).menuIndicator(.hidden)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Help")
             }.padding(12)
         }
