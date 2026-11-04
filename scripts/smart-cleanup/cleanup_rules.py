@@ -8,6 +8,14 @@ VERBS = set('open read write prepare check call email send buy bring review fini
 ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 COUNTS = {word: i for i, word in enumerate(['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'])}
 LIST_LABEL = r'(?:agenda|list|items|tasks|things|steps|priorities|options|groups|categories|supplies|ingredients|goals|requirements|topics|points|checks|process|groceries|shopping|packing|attendees|participants|deliverables|suggestions)'
+# Function words people stutter on. Words with a common grammatical double
+# ("that that", "had had", "is is", "tell you you", "gave her her", "turn on on")
+# and emphatic doubles ("very very", "so so", "no no") are deliberately absent.
+STUTTER = set("i i'm i’m we they he she it it's it’s the a an of to for with from and but or if are was were what how why where when which who this these those just".split())
+# Repeated phrases containing these are arithmetic or dimensions ("12 by 12 by 12").
+OPERATOR = {'by', 'times', 'x', 'plus', 'minus', 'over', 'point', 'divided', 'multiplied'}
+# A dictation that ends on one of these trailed off; a period would be wrong.
+DANGLING = {'and', 'but', 'or', 'nor', 'because', 'the', 'a', 'an'}
 ABBREVIATION = re.compile(r'\b(?:e\.g|i\.e|mr|mrs|ms|dr|prof|vs|etc)\.$', re.I)
 
 
@@ -48,6 +56,42 @@ def _fillers(text, words):
     return found
 
 
+def _repetitions(text):
+    """Drop the first copy of an immediate stutter: 'I I', 'how how', 'we have we have'.
+
+    Repeats must be adjacent and separated only by spaces or one comma. Single words
+    must be stutter-prone function words, so emphasis, names and dimensions are kept.
+    """
+    words = _words(text); spans = []; i = 0
+    plain = lambda a, b: re.fullmatch(r'[ \t]+', text[words[a][2]:words[b][1]]) is not None
+    while i < len(words):
+        for n in (4, 3, 2, 1):
+            if i + 2*n > len(words): continue
+            first = [w[0] for w in words[i:i+n]]
+            if first != [w[0] for w in words[i+n:i+2*n]]: continue
+            if not all(plain(k, k+1) for k in list(range(i, i+n-1)) + list(range(i+n, i+2*n-1))): continue
+            between = text[words[i+n-1][2]:words[i+n][1]]
+            if not re.fullmatch(r'[ \t]*,?[ \t]+', between): continue
+            # Conjunctions mark a deliberate enumeration: 'that part and that part',
+            # 'this, this or that'. A comma-separated single repeat is a list unless
+            # it is a pronoun restart ('I, I think').
+            if any(w in {'and', 'or', 'nor'} for w in first): continue
+            if n == 1 and (first[0] not in STUTTER or ',' in between and first[0] not in {'i', 'we', 'they', 'he', 'she', 'it'}): continue
+            # Multi-word restarts ('one round, one round') go; arithmetic and repeated
+            # proper names mid-sentence ('New York, New York') stay.
+            sentence_start = i == 0 or re.search(r'[.!?][ \t]*$', text[:words[i][1]])
+            proper = any(text[w[1]].isupper() for w in words[i:i+n]) and not (sentence_start and n == 1)
+            if n > 1 and (any(w in OPERATOR or w.isdigit() for w in first)
+                          or proper and not sentence_start or all(w == first[0] for w in first)): continue
+            spans.append((words[i][1], words[i+n][1])); i += n
+            break
+        else:
+            i += 1
+    for start, end in reversed(spans):
+        text = text[:start] + text[end:]
+    return text
+
+
 def surface(raw):
     """Remove clear speech noise; normalize explicitly spoken symbols and punctuation.
 
@@ -82,6 +126,7 @@ def surface(raw):
     text = raw
     for start, end in reversed(merged):
         text = text[:start] + ' ' + text[end:]
+    text = _repetitions(text)
     labels = '|'.join(sorted(LABELS, key=len, reverse=True))
     text = re.sub(r'\b('+labels+r')[ \t]+slash[ \t]+('+labels+r')\b', lambda m: m[1]+'/'+m[2], text, flags=re.I)
     text = re.sub(r'\b(domain)[ \t]+(specific)\b(?![ \t]+to\b)', lambda m: m[1]+'-'+m[2], text, flags=re.I)
@@ -107,7 +152,10 @@ def capitalize(text):
         return match[1]+(match[2] if ABBREVIATION.search(prefix) else match[2].upper())
     text = re.sub(r'(^[ \t]*|[.!?][ \t\n]+|\n[ \t]*(?:[-*•][ \t]+|\d+[.)][ \t]+)?)([a-z])', initial, text)
     text = re.sub(r'\bi\b', 'I', text)
-    if text and text[-1].isalnum() and '\n' not in text:
+    # A trailing 'And' after a sentence break is a cut-off continuation, not a sentence.
+    text = re.sub(r'\.[ \t]+(And|But|Or|So|Because)$', lambda m: ' ' + m[1].lower(), text)
+    words = WORD.findall(text)
+    if text and text[-1].isalnum() and '\n' not in text and words[-1].casefold() not in DANGLING:
         text += '.'
     return text
 
@@ -238,10 +286,14 @@ def layout(text):
         sentences = _sentences(block)
         paragraphs, current, size = [], [], 0
         for sentence in sentences:
-            topic = re.match(r'^(?:For example|Separately|In contrast|On another topic|Next),?\s', sentence, re.I)
-            if current and (len(current)>=3 or size>=80 or topic and size>=20):
-                paragraphs.append(' '.join(current)); current=[]; size=0
+            topic = re.match(r'^(?:For example|Separately|In contrast|On another topic|Next|Secondly|Also|Another thing),?\s', sentence, re.I)
+            if current and (len(current)>=3 and size>=40 or size>=80 or topic and size>=20):
+                paragraphs.append((current, size)); current=[]; size=0
             current.append(sentence); size+=len(WORD.findall(sentence))
-        if current: paragraphs.append(' '.join(current))
-        blocks.extend(paragraphs)
+        if current: paragraphs.append((current, size))
+        # A short closing sentence belongs with what precedes it, not alone.
+        if len(paragraphs) > 1 and paragraphs[-1][1] < 20:
+            tail, tail_size = paragraphs.pop()
+            paragraphs[-1] = (paragraphs[-1][0] + tail, paragraphs[-1][1] + tail_size)
+        blocks.extend(' '.join(group) for group, _ in paragraphs)
     return '\n\n'.join(blocks)

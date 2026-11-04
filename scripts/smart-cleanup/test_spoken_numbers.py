@@ -43,6 +43,24 @@ class SpokenNumbers(unittest.TestCase):
         ]:
             self.assertEqual(normalize(source), expected, source)
 
+    def test_bare_one_stays_a_word_outside_numeric_context(self):
+        for source in ['Are there tools that work as well as the one we use now?',
+                       'Now write me the one line summary.', 'If we only get one round, fold.',
+                       'No one asked.', 'That one is mine.', 'One day we will ship it.', 'one of them']:
+            self.assertEqual(normalize(source), source, source)
+        for source, expected in [
+            ('more than four channels', 'more than 4 channels'),
+            ('one or two options', '1 or 2 options'),
+            ('between one and five', 'between 1 and 5'),
+            ('one by five by two', '1 by 5 by 2'),
+            ('step one is done', 'step 1 is done'),
+            ('one percent', '1%'),
+            ('wait one minute', 'wait 1 minute'),
+            ('three plus one', '3 + 1'),
+            ('twenty one people', '21 people'),
+        ]:
+            self.assertEqual(normalize(source), expected, source)
+
     def test_time_requires_clock_context_or_meridiem(self):
         for source, expected in [
             ('Meet at three thirty tomorrow.', 'Meet at 3:30 tomorrow.'),

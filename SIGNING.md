@@ -2,7 +2,9 @@
 
 ## Single current app, November 3, 2026
 
-The current app is **0.4.13 build 20** at `build/Coda.app`, including the Notetaker
+The current app is **0.4.13 build 22** at `build/Coda.app`, including dictation cleanup refinements
+(see `docs/validation/dictation-cleanup-2026-11-03.md`), takeaway-first summaries
+(see `docs/validation/summary-2026-11-03.md`), the Notetaker
 redesign (see `docs/validation/notetaker-ui-2026-11-03.md`), spoken URL cleanup, precise dictation
 failure reporting, Control–Option shortcut recovery and the native UI
 overhaul, dictionary learning, the word suggestion pop-up, and Smart number/math formatting. Keep this

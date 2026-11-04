@@ -85,4 +85,44 @@ class CleanupRules(unittest.TestCase):
   self.assertTrue(out.endswith('\n\nWe can discuss the result tomorrow.'))
   self.assertEqual(words(raw),words(out))
 
+class Disfluencies(unittest.TestCase):
+ def test_stutters_and_repeated_phrases_are_removed(self):
+  for raw,expected in [
+   ('I I remember a meeting with two teams.','I remember a meeting with two teams.'),
+   ('See how how the editor handles it.','See how the editor handles it.'),
+   ('We have we have a few that are close.','We have a few that are close.'),
+   ('The plan is to just to just check in.','The plan is to just check in.'),
+   ('If we only get one round, one round, then fold.','If we only get one round, then fold.'),
+   ('I want to see what what it is reading.','I want to see what it is reading.'),
+   ('We should the the plan is ready.','We should the plan is ready.'),
+   ('I, I think it works.','I think it works.'),
+  ]:
+   self.assertEqual(surface(raw),expected,raw)
+ def test_emphasis_grammar_and_numbers_are_kept(self):
+  for raw in ['This is really really important.','It was very very good.','No no, keep it.','I know that that is true.',
+              'She had had enough.','I gave her her book.','Did I tell you you were right?','Turn it on on Monday.',
+              'The movie was so so.','Make it 12 by 12 by 12.','Seventeen by seventeen by four.','Bye bye.',
+              'We sang New York, New York loudly.','Two times two, times two for depth.',
+              'Can you fix that part and that part and that part?','I want to try this, this or that.',
+              'We can go here or here.']:
+   self.assertEqual(surface(raw),raw,raw)
+ def test_trailing_fragment_gets_no_period(self):
+  self.assertEqual(surface('The final layer is gonna output. And'),'The final layer is gonna output and')
+  self.assertEqual(surface('we can do this and'),'We can do this and')
+  self.assertEqual(surface('You can edit whatever you want to'),'You can edit whatever you want to.')
+  self.assertEqual(surface('Go ahead and ship it'),'Go ahead and ship it.')
+
+class Paragraphs(unittest.TestCase):
+ def test_short_closing_sentence_is_not_orphaned(self):
+  raw=('I expect the warmup will take roughly ten to fifteen minutes. Then each team gets ten minutes to review their notes and rehearse the demo. '
+       'Once that is done, we will run the same exercise again and check whether the demos got better in that round. Hopefully they did.')
+  self.assertNotIn('\n\n',layout(raw))
+  self.assertEqual(words(raw),words(layout(raw)))
+ def test_long_dictation_still_splits_on_topic(self):
+  first='We should keep the recording flow simple and make sure every step is visible to the person using it. '*3
+  raw=first+'Secondly the summary needs to capture every topic we discussed in the meeting, including the small ones near the end.'
+  out=layout(raw)
+  self.assertIn('\n\nSecondly',out)
+  self.assertEqual(words(raw),words(out))
+
 if __name__=='__main__':unittest.main()
