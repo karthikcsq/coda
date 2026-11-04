@@ -27,20 +27,47 @@ public struct SummaryItem: Codable, Sendable, Equatable {
     public let evidence: [String]
     public let owner: String?
     public let dueDate: String?
-    public init(text: String, evidence: [String], owner: String? = nil, dueDate: String? = nil) {
-        self.text = text; self.evidence = evidence; self.owner = owner; self.dueDate = dueDate
+    /// Short heading for a reference note. Nil elsewhere and in summaries saved before headings existed.
+    public let topic: String?
+    public init(text: String, evidence: [String], owner: String? = nil, dueDate: String? = nil, topic: String? = nil) {
+        self.text = text; self.evidence = evidence; self.owner = owner; self.dueDate = dueDate; self.topic = topic
+    }
+    func keeping(owner keepOwner: Bool, topic keepTopic: Bool) -> SummaryItem {
+        SummaryItem(text: text, evidence: evidence, owner: keepOwner ? owner : nil, dueDate: keepOwner ? dueDate : nil,
+                    topic: keepTopic ? topic : nil)
     }
 }
+/// Bottom line first (brief, takeaways), then outcomes, then topic notes for reference.
 public struct MeetingSummary: Codable, Sendable, Equatable {
+    /// One or two sentences: what the meeting was for and what came of it. Nil for older summaries.
+    public let brief: SummaryItem?
+    /// The few things most worth remembering, most important first.
+    public let takeaways: [SummaryItem]
+    /// Topic notes in first-discussed order. Kept under the original key so older summaries still load.
     public let overview: [SummaryItem]
     public let decisions: [SummaryItem]
     public let actions: [SummaryItem]
-    public init(overview: [SummaryItem], decisions: [SummaryItem], actions: [SummaryItem]) {
-        self.overview = overview; self.decisions = decisions; self.actions = actions
+    public let openQuestions: [SummaryItem]
+    public init(brief: SummaryItem? = nil, takeaways: [SummaryItem] = [], overview: [SummaryItem],
+                decisions: [SummaryItem], actions: [SummaryItem], openQuestions: [SummaryItem] = []) {
+        self.brief = brief; self.takeaways = takeaways; self.overview = overview
+        self.decisions = decisions; self.actions = actions; self.openQuestions = openQuestions
     }
+    enum CodingKeys: String, CodingKey { case brief, takeaways, overview, decisions, actions, openQuestions }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        brief = try values.decodeIfPresent(SummaryItem.self, forKey: .brief)
+        takeaways = try values.decodeIfPresent([SummaryItem].self, forKey: .takeaways) ?? []
+        overview = try values.decode([SummaryItem].self, forKey: .overview)
+        decisions = try values.decode([SummaryItem].self, forKey: .decisions)
+        actions = try values.decode([SummaryItem].self, forKey: .actions)
+        openQuestions = try values.decodeIfPresent([SummaryItem].self, forKey: .openQuestions) ?? []
+    }
+    /// False for summaries generated before the brief and takeaways existed.
+    public var leadsWithTakeaways: Bool { brief != nil }
     public func validated(for segments: [Segment]) throws -> Self {
         let ids = Set(segments.map(\.id))
-        for item in overview + decisions + actions {
+        for item in [brief].compactMap({ $0 }) + takeaways + overview + decisions + actions + openQuestions {
             guard !item.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   !item.evidence.isEmpty, item.evidence.allSatisfy(ids.contains) else { throw CodaError.invalidSummary }
         }
@@ -112,12 +139,24 @@ public enum Export {
     public static func render(_ meeting: Meeting, markdown: Bool) -> String {
         var lines = [markdown ? "# \(meeting.title)" : meeting.title, meeting.created.formatted(), ""]
         if let summary = meeting.summary {
-            for (name, items) in [("Summary", summary.overview), ("Decisions", summary.decisions), ("Action items", summary.actions)] {
+            let references = { (item: SummaryItem) in
+                " [" + item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }.map { timestamp($0.start) }.joined(separator: ", ") + "]"
+            }
+            if let brief = summary.brief { lines += [markdown ? "## Summary" : "Summary", brief.text + references(brief), ""] }
+            if !summary.takeaways.isEmpty {
+                lines.append(markdown ? "## Key takeaways" : "Key takeaways")
+                for (index, item) in summary.takeaways.enumerated() { lines.append("\(index + 1). " + item.text + references(item)) }
+                lines.append("")
+            }
+            var sections = [("Decisions", summary.decisions), ("Action items", summary.actions)]
+            if !summary.openQuestions.isEmpty { sections.append(("Open questions", summary.openQuestions)) }
+            sections.append((summary.leadsWithTakeaways ? "Notes" : "Summary", summary.overview))
+            for (name, items) in sections {
                 lines += [markdown ? "## \(name)" : name]
                 for item in items {
-                    let references = item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }.map { timestamp($0.start) }.joined(separator: ", ")
                     let attribution = [item.owner.map { "Owner: \($0)" }, item.dueDate.map { "Due: \($0)" }].compactMap { $0 }.joined(separator: "; ")
-                    lines.append("- \(item.text) [\(references)]\(attribution.isEmpty ? "" : " — " + attribution)")
+                    let heading = item.topic.map { markdown ? "**\($0).** " : "\($0): " } ?? ""
+                    lines.append("- " + heading + item.text + references(item) + (attribution.isEmpty ? "" : " — " + attribution))
                 }
                 lines.append("")
             }

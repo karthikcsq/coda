@@ -50,8 +50,9 @@ import AVFoundation
 @Test func strictSummaryRejectsMissingNullableFieldsAndExtraKeys() throws {
     let segments = [Segment(id: "s1", start: 0, end: 1, speakers: [], text: "Test")]
     for payload in [
-        #"{"overview":[{"text":"Test","evidence":["s1"]}],"decisions":[],"actions":[]}"#,
-        #"{"overview":[],"decisions":[],"actions":[],"unexpected":"data"}"#
+        #"{"brief":{"text":"Test","evidence":["s1"]},"takeaways":[],"decisions":[],"actions":[],"openQuestions":[],"notes":[]}"#,
+        #"{"brief":{"text":"Test","evidence":["s1"],"topic":null,"owner":null,"dueDate":null},"takeaways":[],"decisions":[],"actions":[],"openQuestions":[],"notes":[],"unexpected":"data"}"#,
+        #"{"overview":[],"decisions":[],"actions":[]}"#
     ] {
         let response = try JSONSerialization.data(withJSONObject: ["status": "completed", "output": [["type": "message", "content": [["type": "output_text", "text": payload]]]]])
         #expect(throws: CodaError.invalidSummary) { try Summarizer.parse(response, segments: segments) }
