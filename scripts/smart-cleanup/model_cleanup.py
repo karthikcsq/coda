@@ -6,7 +6,7 @@ that the output is the speaker's own words with some removed:
 - no added, reordered or replaced words, except spoken numbers rewritten as the
   same value in digits;
 - no new symbols beyond ordinary punctuation;
-- at most half of the words (minimum 4) removed.
+- at most half of the words (minimum 4) removed, and no more than 12 in a row.
 Standard library only; no I/O.
 """
 import difflib, re
@@ -15,6 +15,7 @@ from spoken_numbers import normalize as spoken_numbers
 WORD = re.compile(r"\w+(?:['’]\w+)*", re.UNICODE)
 PUNCTUATION = set(".,?!:;'-–—’\n")
 UNIT_WORDS = {'dollar', 'dollars', 'percent', 'cent', 'cents'}
+MAX_DELETED_RUN = 12
 
 
 def words(text):
@@ -34,6 +35,18 @@ def _same_number(spoken, written):
     """'two thousand five hundred dollars' -> ['2500'] matches '$2,500' -> ['2500']."""
     converted = [w for w in words(spoken_numbers(' '.join(spoken))) if w not in UNIT_WORDS]
     return bool(written) and all(w.isdigit() for w in written) and converted == written
+
+
+def _number_rewrite(spoken, written):
+    """Words removed on either side of a same-value number count as deletions:
+    'um three' -> '3' is one deletion plus a digit rewrite. Returns the deleted
+    word count, or None when no contiguous part of the spoken words matches."""
+    n = len(spoken)
+    for size in range(n, 0, -1):
+        for start in range(n - size + 1):
+            if _same_number(spoken[start:start + size], written):
+                return n - size
+    return None
 
 
 def guard(raw, out):
@@ -62,9 +75,15 @@ def guard(raw, out):
         if tag == 'insert':
             return False, 'added words'
         if tag == 'replace':
-            if not _same_number(a[i:j], b[k:l]):
+            extra = _number_rewrite(a[i:j], b[k:l])
+            if extra is None:
                 return False, 'replaced words'
+            deleted += extra
         if tag == 'delete':
+            # The longest abandoned phrase in 654 labeled examples is 10 words;
+            # a longer gap means a whole clause or instruction went missing.
+            if j - i > MAX_DELETED_RUN:
+                return False, 'removed a long passage'
             deleted += j - i
     if deleted > max(4, 0.5 * len(a)):
         return False, 'removed too much'

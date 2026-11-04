@@ -1,0 +1,20 @@
+# LoRA fine-tune of spokenly/cleanup-1 on Coda's cleanup examples (mlx_lm lora -c lora.yaml).
+# model, data and adapter_path are passed on the command line (they live outside the repo).
+fine_tune_type: lora
+mask_prompt: true          # learn only the cleaned answer, not the prompt
+num_layers: -1             # all 28 layers, as upstream did
+batch_size: 8
+iters: 120                 # ~2 passes; round 1 over-cut at 150
+learning_rate: 3.0e-5
+steps_per_report: 10
+steps_per_eval: 25
+val_batches: -1
+save_every: 50
+max_seq_length: 1024
+grad_checkpoint: false
+seed: 20261104
+lora_parameters:
+  rank: 16
+  scale: 20.0
+  dropout: 0.05
+  keys: ["self_attn.q_proj", "self_attn.k_proj", "self_attn.v_proj", "self_attn.o_proj", "mlp.gate_proj", "mlp.up_proj", "mlp.down_proj"]
