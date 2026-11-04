@@ -19,6 +19,7 @@ struct SmartFormatResult: Sendable {
         let id: UUID
         let raw: String
         let correctionPairs: [WordCorrection]?
+        let soundAlikes: [SoundAlikeProposal]?
         let expires: ContinuousClock.Instant
         let continuation: CheckedContinuation<SmartFormatResult, Never>
     }
@@ -61,11 +62,12 @@ struct SmartFormatResult: Sendable {
     }
     // Formatting never holds insertion for several seconds. Slow/cold/long requests
     // retain the already-saved raw transcript; warm-up overlaps dictation recording.
-    func format(_ raw: String, timeout: Duration = .milliseconds(900), correctionPairs: [WordCorrection]? = nil, edited: String? = nil) async -> SmartFormatResult {
+    func format(_ raw: String, timeout: Duration = .milliseconds(900), correctionPairs: [WordCorrection]? = nil, edited: String? = nil,
+                soundAlikes: [SoundAlikeProposal]? = nil) async -> SmartFormatResult {
         guard !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .init(text: raw, accepted: false, reason: "Empty text") }
         guard raw.count <= 4000 else { return .init(text: raw, accepted: false, reason: "Long dictation · raw text retained") }
         guard !Task.isCancelled else { return .init(text: raw, accepted: false, reason: "Cancelled") }
-        if correctionPairs == nil {
+        if correctionPairs == nil && soundAlikes == nil {
             let urlText = SpokenURL.normalize(raw)
             if urlText != raw { return .init(text: urlText, accepted: true, reason: "Spoken URL formatted locally") }
         }
@@ -75,7 +77,7 @@ struct SmartFormatResult: Sendable {
         let id = UUID(); idle?.cancel()
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                pending = Request(id: id, raw: raw, correctionPairs: correctionPairs, expires: .now.advanced(by: timeout), continuation: continuation)
+                pending = Request(id: id, raw: raw, correctionPairs: correctionPairs, soundAlikes: soundAlikes, expires: .now.advanced(by: timeout), continuation: continuation)
                 deadline = Task { [weak self] in
                     do { try await Task.sleep(for: timeout) } catch { return }
                     guard let self, self.pending?.id == id else { return }
@@ -86,6 +88,11 @@ struct SmartFormatResult: Sendable {
                     if let correctionPairs {
                         request["kind"] = "corrections"; request["edited"] = edited ?? ""
                         request["pairs"] = correctionPairs.map { ["original": $0.original, "corrected": $0.corrected] }
+                    } else if let soundAlikes, soundAlikes.isEmpty {
+                        request["kind"] = "warm"
+                    } else if let soundAlikes {
+                        request["kind"] = "sound_alikes"
+                        request["proposals"] = soundAlikes.map { ["heard": $0.heardPassage, "fixed": $0.fixedPassage] }
                     }
                     var data = try JSONSerialization.data(withJSONObject: request); data.append(10)
                     try input.write(contentsOf: data)
@@ -101,6 +108,18 @@ struct SmartFormatResult: Sendable {
     func classifyCorrections(original: String, edited: String, pairs: [WordCorrection], timeout: Duration = .milliseconds(1300)) async -> [Bool]? {
         guard !pairs.isEmpty, pairs.count <= 4, edited.count <= 4000 else { return nil }
         return await format(original, timeout: timeout, correctionPairs: pairs, edited: edited).correctionJudgments
+    }
+    /// The local model reviews each exact heard-as match in context. Nil means
+    /// no verdict (model missing, warming, busy or slow): nothing is replaced.
+    func reviewSoundAlikes(_ text: String, proposals: [SoundAlikeProposal], timeout: Duration = .milliseconds(1300)) async -> [Bool]? {
+        guard !proposals.isEmpty, proposals.count <= SoundAlikeCorrections.proposalLimit,
+              proposals.allSatisfy({ $0.heardPassage.count <= 480 && $0.fixedPassage.count <= 480 }) else { return nil }
+        return await format(text, timeout: timeout, soundAlikes: proposals).correctionJudgments
+    }
+    /// Starts loading the local model while the user is still speaking.
+    func prepareModel() async {
+        guard pending == nil else { return }
+        _ = await format("warm", timeout: .milliseconds(800), soundAlikes: [])
     }
     private func receive(_ data: Data, generation token: UUID) {
         guard generation == token else { return }
@@ -119,9 +138,9 @@ struct SmartFormatResult: Sendable {
             // A busy UI thread may delay the timer callback. Late model output still
             // must not win the race against the interactive latency deadline.
             guard ContinuousClock.now < active.expires else { stop(reason: "Local formatting timed out · raw text retained"); return }
-            if let pairs = active.correctionPairs {
+            if let count = active.correctionPairs?.count ?? active.soundAlikes?.count {
                 let decisions = object["decisions"] as? [Bool]
-                let valid = object["accepted"] as? Bool == true && decisions?.count == pairs.count
+                let valid = object["accepted"] as? Bool == true && decisions?.count == count
                 pending = nil; deadline?.cancel(); deadline = nil
                 active.continuation.resume(returning: .init(text: active.raw, accepted: false,
                     reason: valid ? "Corrections checked locally" : "Local correction check unavailable", correctionJudgments: valid ? decisions : nil))

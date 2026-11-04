@@ -95,3 +95,35 @@ private func fix(_ text: String) -> String { SoundAlikeCorrections.apply(text, r
     try Data(edited.utf8).write(to: store.file)
     #expect(try store.load()[0].heardAs == ["lead code"])
 }
+
+@Test func proposalsCarryWordAlignedWindowsForReview() throws {
+    let rules = SoundAlikeCorrections.rules(entries)
+    let text = "Talk to you later. I compile the latex file and join the google me call."
+    let found = SoundAlikeCorrections.proposals(text, rules: rules)
+    #expect(found.map(\.rule.replacement) == ["LaTeX", "Google Meet"]) // "later" is not a listed variant.
+    let first = try #require(found.first)
+    #expect(first.heardPassage == text)
+    #expect(first.fixedPassage == "Talk to you later. I compile the LaTeX file and join the google me call.")
+    // Long dictations are cut to whole words around the match.
+    let long = String(repeating: "alpha beta ", count: 60) + "open latex now " + String(repeating: "gamma delta ", count: 60)
+    let window = try #require(SoundAlikeCorrections.proposals(long, rules: rules, window: 40).first)
+    #expect(window.heardPassage.count <= 40 * 2 + 5 && window.heardPassage.contains("open latex now"))
+    #expect(window.heardPassage.split(separator: " ").allSatisfy { ["alpha", "beta", "gamma", "delta", "open", "latex", "now"].contains($0) })
+    #expect(window.fixedPassage == window.heardPassage.replacingOccurrences(of: "latex", with: "LaTeX"))
+    // Review is bounded per dictation; extra matches stay as recognized.
+    let many = Array(repeating: "latex", count: 9).joined(separator: " and ")
+    #expect(SoundAlikeCorrections.proposals(many, rules: rules).count == SoundAlikeCorrections.proposalLimit)
+}
+
+@Test func onlyAcceptedProposalsAreApplied() {
+    let rules = SoundAlikeCorrections.rules(entries)
+    let text = "Can you google me a recipe before the google me call?"
+    let found = SoundAlikeCorrections.proposals(text, rules: rules)
+    #expect(found.count == 2)
+    let result = SoundAlikeCorrections.apply(text, proposals: found, accepted: [false, true])
+    #expect(result.text == "Can you google me a recipe before the Google Meet call?")
+    #expect(result.applied.map(\.replacement) == ["Google Meet"])
+    #expect(SoundAlikeCorrections.apply(text, proposals: found, accepted: [false, false]).text == text)
+    // A verdict that does not line up with the proposals changes nothing.
+    #expect(SoundAlikeCorrections.apply(text, proposals: found, accepted: [true]).text == text)
+}

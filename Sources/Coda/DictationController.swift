@@ -340,6 +340,8 @@ extension KeyboardShortcuts.Name {
         // Overlap a cold formatter start with listening instead of delaying insertion
         // after the transcript is ready. This never downloads models or captures audio.
         if cleanupMode == .smart { smartFormatter.warm() }
+        // Heard-as review needs the local model itself; load it while listening.
+        if cleanupMode != .none, !dictionary.soundAlikeRules.isEmpty { Task { await smartFormatter.prepareModel() } }
         sessionID = id
         model.dictationBusy = true; text = ""; rawText = ""; level = 0
         failureTitle = "Dictation failed"; captureStats = DictationCaptureStats()
@@ -412,6 +414,12 @@ extension KeyboardShortcuts.Name {
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
                 refreshAccessibility()
                 guard acceptTranscription(result, for: id) else { return }
+                let proposals = soundAlikeProposals(for: result)
+                if !proposals.isEmpty {
+                    let decisions = await smartFormatter.reviewSoundAlikes(result, proposals: proposals)
+                    try Task.checkCancellation()
+                    guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
+                }
                 if cleanupMode == .smart {
                     // Smart cleanup starts from the dictionary-corrected words.
                     let formatted = await smartFormatter.format(text)
@@ -452,22 +460,36 @@ extension KeyboardShortcuts.Name {
     func acceptTranscription(_ result: String, for id: UUID) -> Bool {
         guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
         cleanupDetail = ""
-        // "None · raw text" stays exact. Otherwise the user's heard-as entries
-        // run first; History keeps the recognizer's raw words as the original.
-        let replaced = cleanupMode == .none ? SoundAlikeResult(text: result, applied: [])
-            : SoundAlikeCorrections.apply(result, rules: dictionary.soundAlikeRules)
-        let cleaned = DictationCleanup.apply(replaced.text, mode: cleanupMode)
-        rawText = result
+        let cleaned = DictationCleanup.apply(result, mode: cleanupMode)
+        rawText = cleaned.raw
         text = cleaned.text
-        if !replaced.applied.isEmpty {
-            cleanupDetail = "Dictionary corrected \(replaced.applied.count == 1 ? "1 misheard term" : "\(replaced.applied.count) misheard terms")."
-        }
-        let detail = cleaned.changed ? "Light cleanup applied. Original preserved in History." : text != result ? "Original preserved in History." : "Saved locally before insertion."
         saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
-            detail: cleanupDetail.isEmpty ? detail : cleanupDetail + " " + detail, rawText: rawText, cleanupMode: cleanupMode))
+            detail: cleaned.changed ? "Light cleanup applied. Original preserved in History." : "Saved locally before insertion.",
+            rawText: rawText, cleanupMode: cleanupMode))
         dismissal?.cancel()
         presentationID = UUID()
         overlay?.hide()
+        return true
+    }
+    /// Exact heard-as matches to review. "None · raw text" stays exact.
+    func soundAlikeProposals(for result: String) -> [SoundAlikeProposal] {
+        cleanupMode == .none ? [] : SoundAlikeCorrections.proposals(result, rules: dictionary.soundAlikeRules)
+    }
+    /// Applies only the replacements the local model accepted, then reruns Light
+    /// cleanup from the corrected words. History keeps the recognizer's words.
+    @discardableResult
+    func acceptSoundAlikeReview(_ decisions: [Bool]?, proposals: [SoundAlikeProposal], raw: String, for id: UUID) -> Bool {
+        guard lifecycle.accepts(id), lifecycle.phase == .processing else { return false }
+        guard let decisions, decisions.count == proposals.count else { return true }
+        let replaced = SoundAlikeCorrections.apply(raw, proposals: proposals, accepted: decisions)
+        guard !replaced.applied.isEmpty else { return true }
+        let cleaned = DictationCleanup.apply(replaced.text, mode: cleanupMode)
+        text = cleaned.text
+        let count = replaced.applied.count
+        cleanupDetail = "Dictionary corrected \(count == 1 ? "1 misheard term" : "\(count) misheard terms")."
+        saveRecord(DictationRecord(id: id, text: text, target: targetName, outcome: .saved,
+            detail: cleanupDetail + (cleaned.changed ? " Light cleanup applied." : "") + " Original preserved in History.",
+            rawText: raw, cleanupMode: cleanupMode))
         return true
     }
     @discardableResult

@@ -55,6 +55,37 @@ def parse_correction_decisions(generated, count):
     except (ValueError, TypeError):
         return None
 
+def valid_sound_alike_proposals(proposals):
+    """Each proposal is one passage window as heard and with the custom term."""
+    if not isinstance(proposals, list) or not 1 <= len(proposals) <= 6: return False
+    return all(isinstance(item, dict) and set(item) == {'heard', 'fixed'} and
+               all(isinstance(item[k], str) and 0 < len(item[k]) <= 480 for k in item) and item['heard'] != item['fixed']
+               for item in proposals)
+
+def passage_logprob(backend, text):
+    """Total log-probability of the passage under the local language model."""
+    mx = backend['mx']; tokenizer = backend['tokenizer']
+    ids = tokenizer.encode(text)
+    if len(ids) < 2: return 0.0
+    logits = backend['model'](mx.array(ids)[None])[0].astype(mx.float32)
+    scores = logits - mx.logsumexp(logits, axis=-1, keepdims=True)
+    picked = mx.take_along_axis(scores[:-1], mx.array(ids[1:])[:, None], axis=-1)
+    return float(picked.sum())
+
+# Rescoring, as in speech-recognition n-best rescoring: a proposed replacement
+# is accepted only when the model finds the passage with the custom term more
+# likely than the passage as heard. Ordinary uses ("talk to you later") score
+# far below zero; see docs/validation/sound-alike-2026-11-03.md.
+SOUND_ALIKE_MARGIN = 0.0
+
+def review_sound_alikes(backend, proposals, start):
+    decisions = []
+    for item in proposals:
+        if time.perf_counter() - start > MODEL_BUDGET_SECONDS: return None
+        margin = passage_logprob(backend, item['fixed']) - passage_logprob(backend, item['heard'])
+        decisions.append(margin > SOUND_ALIKE_MARGIN)
+    return decisions
+
 def same_value_kind(a,b):
     return a != b and (any(a in group and b in group for group in VALUE_GROUPS) or (a.isdecimal() and b.isdecimal()))
 
@@ -251,6 +282,24 @@ def main():
         try:
             request=json.loads(line); raw=request['text']; request_id=request['id']; start=time.perf_counter()
             if not isinstance(raw,str) or len(raw)>4000: raise ValueError('input bound')
+            if request.get('kind') == 'warm':
+                # Sent when recording starts, so a review is not left without
+                # a verdict while the model loads.
+                if not backend_started.is_set():
+                    backend_started.set(); threading.Thread(target=warm_backend,daemon=True).start()
+                emit({'id':request_id,'accepted':True,'decisions':[]})
+                continue
+            if request.get('kind') == 'sound_alikes':
+                proposals = request.get('proposals')
+                if not valid_sound_alike_proposals(proposals): raise ValueError('invalid proposals')
+                decisions = None
+                if not backend_ready.is_set() or not backend:
+                    if not backend_started.is_set():
+                        backend_started.set(); threading.Thread(target=warm_backend,daemon=True).start()
+                else:
+                    decisions = review_sound_alikes(backend, proposals, start)
+                emit({'id':request_id,'accepted':decisions is not None,'decisions':decisions})
+                continue
             if request.get('kind') == 'corrections':
                 pairs = request.get('pairs'); edited = request.get('edited')
                 if not isinstance(edited, str) or len(edited) > 4000 or not isinstance(pairs, list) or not 1 <= len(pairs) <= 4:

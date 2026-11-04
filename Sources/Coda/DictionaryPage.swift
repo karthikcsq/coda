@@ -35,7 +35,7 @@ struct DictionaryPage: View {
                         Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).tint(mint)
                     }
                     DisclosureGroup("How learning works") {
-                        Text("Coda watches the field it just dictated into for up to 60 seconds. Small spelling corrections become suggestions. Add a word to guide future dictations, or dismiss it to stop seeing that spelling. If Coda still mishears a word, edit it and list what it was heard as; those exact words are then replaced. Some editors do not expose text changes through Accessibility.")
+                        Text("Coda watches the field it just dictated into for up to 60 seconds. Small spelling corrections become suggestions. Add a word to guide future dictations, or dismiss it to stop seeing that spelling. If Coda still mishears a word, edit it and list what it was heard as; the local model then fixes those words where your word fits the sentence. Some editors do not expose text changes through Accessibility.")
                             .font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true).padding(.top, 8)
                     }.font(.system(size: 11)).foregroundStyle(.secondary)
                 }.codaCard(padding: 20)
@@ -111,12 +111,11 @@ struct DictionaryPage: View {
 struct DictionaryWordEditor: View {
     let dictionary: CustomDictionary
     let word: CustomWord?
-    var isCommon: @MainActor (String) -> Bool = CustomDictionary.isCommon
     @DictionaryState private var spelling: String
     @DictionaryState private var heard: String
     @Environment(\.dismiss) private var dismiss
-    init(dictionary: CustomDictionary, word: CustomWord?, isCommon: @escaping @MainActor (String) -> Bool = CustomDictionary.isCommon) {
-        self.dictionary = dictionary; self.word = word; self.isCommon = isCommon
+    init(dictionary: CustomDictionary, word: CustomWord?) {
+        self.dictionary = dictionary; self.word = word
         _spelling = DictionaryState(initialValue: word?.word ?? "")
         _heard = DictionaryState(initialValue: word?.heardAs.joined(separator: ", ") ?? "")
     }
@@ -126,10 +125,6 @@ struct DictionaryWordEditor: View {
         guard let original = word?.original, CustomVocabulary.valid(original), original != CustomVocabulary.cleaned(spelling),
               !variants.contains(where: { CustomVocabulary.key($0) == CustomVocabulary.key(original) }) else { return nil }
         return original
-    }
-    /// Variants made only of everyday words would also change ordinary speech.
-    private var everyday: [String] {
-        variants.filter { $0.split(separator: " ").allSatisfy { isCommon(String($0)) } }
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -154,13 +149,10 @@ struct DictionaryWordEditor: View {
                         Text("From your correction").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Text("Separate spellings with commas. After transcription, Coda replaces these exact words with your spelling. It skips quotes, links and code, and does nothing when cleanup is set to None.")
+                Text("Separate spellings with commas. When a dictation contains one, the local model checks the sentence and swaps in your spelling only where it fits, so “talk to you later” stays as said. Quotes, links and code are never changed.")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                if !everyday.isEmpty {
-                    Label("\(everyday.map { "“\($0)”" }.joined(separator: ", ")) \(everyday.count == 1 ? "is an everyday word" : "are everyday words"). It will be replaced every time you say it.",
-                          systemImage: "exclamationmark.triangle")
-                        .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-                }
+                Label("Uses the Smart cleanup model on this Mac. Off when cleanup is None.", systemImage: "cpu")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if let error = dictionary.error { Text(error).font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true) }
             HStack {

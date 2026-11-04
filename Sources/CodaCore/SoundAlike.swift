@@ -15,12 +15,24 @@ public struct SoundAlikeResult: Equatable, Sendable {
     public init(text: String, applied: [SoundAlikeRule]) { self.text = text; self.applied = applied }
 }
 
-/// Exact, case-insensitive, whole-word replacement of misrecognitions the user
-/// listed. No fuzzy matching: an unlisted near-miss is left unchanged. Quoted
-/// text, code, URLs, email addresses and path- or identifier-like tokens are
-/// never rewritten.
+/// One exact match of a heard-as variant, for the local model to review in
+/// context. `heardPassage` and `fixedPassage` are the same bounded window
+/// around the match, as recognized and with the custom term.
+public struct SoundAlikeProposal: Equatable, Sendable {
+    public let range: NSRange
+    public let rule: SoundAlikeRule
+    public let heardPassage: String
+    public let fixedPassage: String
+}
+
+/// Exact matching proposes; a model reviews. A variant only ever becomes a
+/// proposal where it matches whole words outside quoted text, code, URLs,
+/// email addresses and path- or identifier-like tokens. Nothing is replaced
+/// unless its proposal is accepted.
 public enum SoundAlikeCorrections {
     public static let variantLimit = 6
+    /// Proposals reviewed per dictation; further matches stay as recognized.
+    public static let proposalLimit = 6
 
     public static func rules(_ words: [CustomWord]) -> [SoundAlikeRule] {
         var seen = Set<String>()
@@ -34,8 +46,8 @@ public enum SoundAlikeCorrections {
         }
     }
 
-    public static func apply(_ text: String, rules: [SoundAlikeRule]) -> SoundAlikeResult {
-        guard !rules.isEmpty, !text.isEmpty, text.utf16.count <= 20_000 else { return .init(text: text, applied: []) }
+    public static func proposals(_ text: String, rules: [SoundAlikeRule], window: Int = 160) -> [SoundAlikeProposal] {
+        guard !rules.isEmpty, !text.isEmpty, text.utf16.count <= 20_000 else { return [] }
         var byKey: [String: SoundAlikeRule] = [:]
         for rule in rules where byKey[matchKey(rule.heard)] == nil { byKey[matchKey(rule.heard)] = rule }
         // Longest phrase first, so "google me" never pre-empts "google meet up".
@@ -50,22 +62,50 @@ public enum SoundAlikeCorrections {
         }.joined(separator: "|")
         let pattern = #"(?<![\p{L}\p{M}\p{N}_'’\-.@/\\])(?:"# + alternation + #")"# +
             #"(?:(?=['’]s(?![\p{L}\p{M}\p{N}]))|(?![\p{L}\p{M}\p{N}_@/\\]|['’\-.][\p{L}\p{M}\p{N}]))"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return .init(text: text, applied: []) }
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
         let source = text as NSString
         let protected = protectedRanges(text)
-        var output = "", cursor = 0, applied: [SoundAlikeRule] = []
+        var result: [SoundAlikeProposal] = []
         for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)) {
-            let range = match.range
+            let range = match.range, heard = source.substring(with: range)
             guard !protected.contains(where: { NSIntersectionRange($0, range).length > 0 }),
-                  let rule = byKey[matchKey(source.substring(with: range))],
-                  source.substring(with: range) != rule.replacement else { continue }
-            output += source.substring(with: NSRange(location: cursor, length: range.location - cursor)) + rule.replacement
-            cursor = range.location + range.length
-            if !applied.contains(rule) { applied.append(rule) }
+                  let rule = byKey[matchKey(heard)], heard != rule.replacement else { continue }
+            guard result.count < proposalLimit else { break }
+            // Whole words of context on each side, bounded for the model.
+            var lower = max(0, range.location - window), upper = min(source.length, range.location + range.length + window)
+            while lower > 0, !isSpace(source.character(at: lower - 1)) { lower += 1; if lower >= range.location { break } }
+            while upper < source.length, !isSpace(source.character(at: upper)) { upper -= 1; if upper <= range.location + range.length { break } }
+            let before = source.substring(with: NSRange(location: lower, length: range.location - lower))
+            let after = source.substring(with: NSRange(location: range.location + range.length, length: upper - range.location - range.length))
+            let trim = { (value: String) in value.trimmingCharacters(in: .whitespacesAndNewlines) }
+            result.append(.init(range: range, rule: rule, heardPassage: trim(before + heard + after), fixedPassage: trim(before + rule.replacement + after)))
+        }
+        return result
+    }
+
+    /// Applies only the proposals marked accepted; `accepted` pairs with `proposals`.
+    public static func apply(_ text: String, proposals: [SoundAlikeProposal], accepted: [Bool]) -> SoundAlikeResult {
+        guard proposals.count == accepted.count else { return .init(text: text, applied: []) }
+        let source = text as NSString
+        var output = "", cursor = 0, applied: [SoundAlikeRule] = []
+        for (proposal, ok) in zip(proposals, accepted) where ok {
+            guard proposal.range.location >= cursor, NSMaxRange(proposal.range) <= source.length else { continue }
+            output += source.substring(with: NSRange(location: cursor, length: proposal.range.location - cursor)) + proposal.rule.replacement
+            cursor = NSMaxRange(proposal.range)
+            if !applied.contains(proposal.rule) { applied.append(proposal.rule) }
         }
         guard !applied.isEmpty else { return .init(text: text, applied: []) }
-        output += source.substring(from: cursor)
-        return .init(text: output, applied: applied)
+        return .init(text: output + source.substring(from: cursor), applied: applied)
+    }
+
+    /// Accept-all, for testing what matching alone would propose.
+    static func apply(_ text: String, rules: [SoundAlikeRule]) -> SoundAlikeResult {
+        let found = proposals(text, rules: rules)
+        return apply(text, proposals: found, accepted: found.map { _ in true })
+    }
+
+    private static func isSpace(_ unit: unichar) -> Bool {
+        unit == 32 || unit == 9 || unit == 10 || unit == 13
     }
 
     /// Spans that must stay literal. Unclosed quotes and code protect to the end.

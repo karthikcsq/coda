@@ -116,7 +116,7 @@ private var renderDirectory: URL {
     ProcessInfo.processInfo.environment["CODA_RENDER_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) } ?? FileManager.default.temporaryDirectory
 }
 
-@Test @MainActor func renderHeardAsEditorWithObservedSuggestionAndEverydayWarning() throws {
+@Test @MainActor func renderHeardAsEditorWithObservedSuggestion() throws {
     _ = NSApplication.shared
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
@@ -125,9 +125,8 @@ private var renderDirectory: URL {
     #expect(dictionary.add("LaTeX", heardAs: ["later"]))
     let learned = try #require(dictionary.possible.first)
     let latex = try #require(dictionary.approved.first)
-    let everyday: Set<String> = ["later", "lead", "code"]
-    for (name, word) in [("suggestion", learned), ("everyday", latex)] {
-        let host = NSHostingView(rootView: DictionaryWordEditor(dictionary: dictionary, word: word, isCommon: { everyday.contains($0.lowercased()) })
+    for (name, word) in [("suggestion", learned), ("variants", latex)] {
+        let host = NSHostingView(rootView: DictionaryWordEditor(dictionary: dictionary, word: word)
             .background(Color(white: 0.16)).environment(\.colorScheme, .dark))
         host.appearance = NSAppearance(named: .darkAqua)
         host.frame = CGRect(origin: .zero, size: host.fittingSize)
@@ -167,29 +166,74 @@ private var renderDirectory: URL {
     #expect(reloaded.add("Wispr Flow") && CustomDictionary(root: root, preview: true).soundAlikeRules.count == 2)
 }
 
-@Test @MainActor func heardAsRunsBeforeCleanupAndHistoryKeepsRawWords() throws {
-    // A missing worker keeps Smart mode from starting any local model process.
-    let controller = DictationController(preview: true, formatter: SmartFormatter(python: URL(fileURLWithPath: "/no-runtime"),
-                                                                                  script: URL(fileURLWithPath: "/no-worker")))
-    defer { controller.cancel() }
+/// A fake worker standing in for the local model: it rejects the proposal that
+/// would read "Google Meet a", and records each review request it receives.
+@MainActor private func reviewingFormatter(_ root: URL, accept: String = "'Google Meet a' not in p['fixed']") throws -> SmartFormatter {
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let script = root.appendingPathComponent("worker.py")
+    try """
+    import json,sys
+    print(json.dumps({'ready':True}),flush=True)
+    for line in sys.stdin:
+        r=json.loads(line)
+        if r.get('kind') == 'sound_alikes':
+            open(sys.argv[1]+'/reviews.jsonl','a').write(json.dumps(r['proposals'])+'\\n')
+            print(json.dumps({'id':r['id'],'accepted':True,'decisions':[\(accept) for p in r['proposals']]}),flush=True)
+        else:
+            print(json.dumps({'id':r['id'],'text':r['text'],'accepted':True,'reason':'fixture'}),flush=True)
+    """.write(to: script, atomically: true, encoding: .utf8)
+    return SmartFormatter(python: URL(fileURLWithPath: "/opt/homebrew/bin/python3.13"), script: script, model: root)
+}
+
+@MainActor private func dictate(_ controller: DictationController, _ raw: String) async throws -> UUID {
+    let begun = controller.lifecycle.begin(meetingBusy: false, modelReady: true)
+    let id = try #require(begun)
+    _ = controller.lifecycle.listening(id); _ = controller.lifecycle.processing()
+    #expect(controller.acceptTranscription(raw, for: id))
+    let proposals = controller.soundAlikeProposals(for: raw)
+    if !proposals.isEmpty {
+        let decisions = await controller.smartFormatter.reviewSoundAlikes(raw, proposals: proposals, timeout: .seconds(30))
+        #expect(controller.acceptSoundAlikeReview(decisions, proposals: proposals, raw: raw, for: id))
+    }
+    return id
+}
+
+@Test @MainActor func modelReviewDecidesEachHeardAsReplacementAndHistoryKeepsRawWords() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let formatter = try reviewingFormatter(root)
+    let controller = DictationController(preview: true, formatter: formatter)
+    defer { controller.cancel(); formatter.stop() }
     #expect(controller.dictionary.add("LeetCode", heardAs: ["lead code"]))
     #expect(controller.dictionary.add("Google Meet", heardAs: ["google me"]))
-    for mode in [DictationCleanupMode.light, .smart, .none] {
-        controller.cleanupMode = mode
-        let begun = controller.lifecycle.begin(meetingBusy: false, modelReady: true)
-        let id = try #require(begun)
-        _ = controller.lifecycle.listening(id); _ = controller.lifecycle.processing()
-        let raw = "practice lead code on the google me call, not \"lead code\""
-        #expect(controller.acceptTranscription(raw, for: id))
-        let record = try #require(controller.records.first { $0.id == id })
-        #expect(record.rawText == raw)
-        if mode == .none {
-            #expect(controller.text == raw && record.text == raw)
-        } else {
-            #expect(controller.text == "practice LeetCode on the Google Meet call, not \"lead code\"", Comment(rawValue: mode.rawValue))
-            #expect(record.detail.contains("Dictionary corrected 2 misheard terms"))
-        }
-        _ = controller.lifecycle.complete(id); controller.lifecycle.settled(id)
-    }
     controller.cleanupMode = .light
+    let raw = "join the google me call, then google me a recipe, then practice lead code, not \"lead code\""
+    let id = try await dictate(controller, raw)
+    // The quoted match is never proposed; the model rejected the recipe one.
+    #expect(controller.text == "join the Google Meet call, then google me a recipe, then practice LeetCode, not \"lead code\"")
+    let record = try #require(controller.records.first { $0.id == id })
+    #expect(record.rawText == raw && record.text == controller.text)
+    #expect(record.detail.contains("Dictionary corrected 2 misheard terms"))
+    let reviews = try String(contentsOf: root.appendingPathComponent("reviews.jsonl"), encoding: .utf8)
+    #expect(reviews.split(separator: "\n").count == 1 && reviews.contains("Google Meet a recipe"))
+    _ = controller.lifecycle.complete(id); controller.lifecycle.settled(id)
+
+    // None stays exact and never asks the model.
+    controller.cleanupMode = .none
+    #expect(controller.soundAlikeProposals(for: raw).isEmpty)
+}
+
+@Test @MainActor func withoutAModelVerdictNothingIsReplaced() async throws {
+    let missing = SmartFormatter(python: URL(fileURLWithPath: "/no-runtime"), script: URL(fileURLWithPath: "/no-worker"))
+    let controller = DictationController(preview: true, formatter: missing)
+    defer { controller.cancel() }
+    #expect(controller.dictionary.add("LeetCode", heardAs: ["lead code"]))
+    controller.cleanupMode = .light
+    let id = try await dictate(controller, "practice lead code daily")
+    #expect(controller.text == "practice lead code daily")
+    #expect(controller.records.first { $0.id == id }?.detail.contains("Dictionary") == false)
+    // A malformed verdict is treated the same as none.
+    let proposals = controller.soundAlikeProposals(for: "practice lead code daily")
+    #expect(proposals.count == 1 && controller.acceptSoundAlikeReview([true, true], proposals: proposals, raw: "practice lead code daily", for: id))
+    #expect(controller.text == "practice lead code daily")
 }
