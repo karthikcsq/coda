@@ -632,118 +632,146 @@ struct RecordingFocusView: View {
 
 struct RecordingOptionsView: View {
     @Bindable var model: AppModel
+
+    /// A detected call whose participant count Coda can use (1–4, system audio on).
+    private var usableCount: (service: String, count: Int)? {
+        guard model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting,
+              let count = detected.participantCount, (1...4).contains(count) else { return nil }
+        return (detected.service, count)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("New recording").font(.system(size: 22, weight: .semibold, design: .rounded))
-                Text("Make sure everyone knows you are recording. Coda shows a red indicator until you stop.")
-                    .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                CodaEyebrow(text: "Audio source")
-                HStack(spacing: 10) {
-                    sourceOption(true, icon: "person.wave.2", title: "Microphone + meeting audio", detail: "Your voice and sound from other apps")
-                    sourceOption(false, icon: "mic", title: "Microphone only", detail: "Just the voices in the room")
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                field("Source", hint: model.includeSystem
+                      ? "Needs Screen & System Audio access. Headphones reduce echo."
+                      : "Only your microphone; other apps’ audio isn’t captured.") {
+                    CodaSegmented(options: [.init(value: true, label: "Mic + meeting audio", icon: "person.wave.2"),
+                                            .init(value: false, label: "Mic only", icon: "mic")],
+                                  selection: $model.includeSystem)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("coda.recording.source")
                 }
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("coda.recording.source")
-                Text(model.includeSystem ? "Requires Microphone and Screen & System Audio Recording access. Use headphones to reduce echo." : "Voices playing through headphones or other apps are not captured. Uses Microphone access only.")
-                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                optionRow(title: "Speakers", detail: speakerDetail) {
-                    SpeakerCountPicker(selection: $model.recordingSpeakerCount).labelsHidden().frame(width: 150)
-                }
-                if model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting,
-                   let count = detected.participantCount, (1...4).contains(count) {
-                    optionRow(title: "Use \(detected.service) count: \(count), including you",
-                              detail: "Participants can include silent people or shared devices. Set a count above to override.") {
-                        Toggle("", isOn: $model.useDetectedSpeakerCount).labelsHidden()
-                            .toggleStyle(.switch).controlSize(.small)
-                            .disabled(model.recordingSpeakerCount != 0)
+                field("Speakers", hint: speakerHint) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        CodaSegmented(options: [.init(value: 0, label: "Auto")] + (1...4).map { .init(value: $0, label: "\($0)") },
+                                      selection: $model.recordingSpeakerCount)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier("coda.meeting.speakerCount")
+                            .accessibilityLabel("Speakers")
+                        if let usable = usableCount, model.recordingSpeakerCount == 0 {
+                            Toggle(isOn: $model.useDetectedSpeakerCount) {
+                                Text("Use \(usable.service)’s count of \(usable.count)")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .toggleStyle(CodaSwitchStyle())
+                        }
                     }
                 }
                 Rectangle().fill(CodaStyle.hairline).frame(height: 1)
-                optionRow(title: "Detect Meet, Zoom, and Teams calls",
-                          detail: "Suggests a recording when a call starts. It never starts one by itself.") {
-                    Toggle("", isOn: $model.detectMeetings).labelsHidden().toggleStyle(.switch).controlSize(.small)
-                        .accessibilityLabel("Detect Meet, Zoom, and Teams calls")
-                }
-                if model.detectMeetings && !model.meetingDetectionAvailable {
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("Accessibility lets Coda read meeting controls and participant counts. Manual speaker entry works without it.")
-                            .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 8)
-                        Button("Enable access…") { model.requestMeetingDetectionAccess() }
-                            .buttonStyle(CodaSecondaryButtonStyle())
+                Toggle(isOn: $model.detectMeetings) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Suggest recording when a call starts").font(.system(size: 13, weight: .medium))
+                        Text("Meet, Zoom and Teams. Coda never starts recording on its own.")
+                            .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
                     }
                 }
-            }
-            .padding(16)
-            .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
-            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(CodaStyle.hairline))
-            if model.autoSummary { CodaNotice(kind: .caution, text: "Automatic summaries are ON: this transcript will be sent to OpenAI after processing.") }
-            HStack {
-                Button("Cancel") { model.showRecordConsent = false }.buttonStyle(CodaSecondaryButtonStyle())
-                    .keyboardShortcut(.cancelAction)
-                Spacer()
-                Button { model.showRecordConsent = false; model.startRecording() } label: {
-                    Label("Start recording", systemImage: "record.circle")
+                .toggleStyle(CodaSwitchStyle())
+                .accessibilityLabel("Detect Meet, Zoom, and Teams calls")
+                if model.detectMeetings && !model.meetingDetectionAvailable {
+                    HStack(spacing: 6) {
+                        Image(systemName: "lock").font(.system(size: 10, weight: .semibold))
+                        Text("Call detection needs Accessibility access.")
+                        Button("Enable…") { model.requestMeetingDetectionAccess() }
+                            .buttonStyle(.plain).foregroundStyle(CodaStyle.mint).fontWeight(.semibold)
+                    }
+                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+                    .padding(.top, -12)
                 }
-                .buttonStyle(CodaPrimaryButtonStyle())
-                .keyboardShortcut(.defaultAction)
+                if model.autoSummary {
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        Image(systemName: "sparkles").font(.system(size: 10, weight: .semibold)).foregroundStyle(CodaStyle.caution)
+                        Text("Auto-summary is on: this transcript goes to OpenAI after processing.")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(CodaStyle.captionFont).foregroundStyle(.secondary)
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CodaStyle.caution.opacity(0.07), in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
+                    .accessibilityElement(children: .combine)
+                }
             }
+            .padding(.horizontal, 24).padding(.top, 24).padding(.bottom, 22)
+            footer
         }
-        .padding(28).frame(width: 560).background(CodaStyle.canvas)
+        .frame(width: 470)
+        .background(CodaStyle.canvas)
         .preferredColorScheme(.dark).foregroundStyle(CodaStyle.ink)
     }
 
-    private var speakerDetail: String {
-        if model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting {
-            if let count = detected.participantCount, (1...4).contains(count) { return "Include yourself. Automatic can use the detected call count." }
-            return detected.participantCount.map { "\(detected.service) shows \($0) participants. Coda supports up to 4 speakers; enter a count or use automatic detection." }
-                ?? "\(detected.service) detected; participant count unavailable. Enter a count or use automatic detection."
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            ZStack {
+                Circle().fill(CodaStyle.recording.opacity(0.14))
+                Circle().fill(CodaStyle.recording).frame(width: 9, height: 9)
+            }
+            .frame(width: 32, height: 32).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("New recording").font(.system(size: 16, weight: .semibold))
+                Text("Let everyone know they’re being recorded.").font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            if model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting {
+                CodaTag(icon: "video.fill", text: detected.service, tint: CodaStyle.mint)
+            }
         }
-        return "Include yourself. A count prevents extra speaker groups; Automatic detects voices from audio."
     }
 
-    private func optionRow<Control: View>(title: String, detail: String, @ViewBuilder control: () -> Control) -> some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(CodaStyle.rowTitleFont)
-                Text(detail).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+    private var speakerHint: String {
+        if model.recordingSpeakerCount > 0 { return "Include yourself. Coda looks for exactly this many voices." }
+        if usableCount != nil, model.useDetectedSpeakerCount {
+            return "Includes you. Silent people or shared screens can inflate it."
+        }
+        if model.includeSystem, model.detectMeetings, let detected = model.recordingDetectedMeeting {
+            return detected.participantCount.map { "\(detected.service) shows \($0) people; Coda supports up to 4. Pick a count or keep Auto." }
+                ?? "\(detected.service)’s participant count isn’t visible. Pick a count or keep Auto."
+        }
+        return "Auto finds the voices. A fixed count avoids extra speakers."
+    }
+
+    private func field<Control: View>(_ title: String, hint: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Centred on the 32-pt control row beside it.
+            Text(title).font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.muted)
+                .frame(width: 64, height: 32, alignment: .leading)
+            VStack(alignment: .leading, spacing: 8) {
+                control()
+                Text(hint).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 12)
-            control()
         }
     }
 
-    private func sourceOption(_ value: Bool, icon: String, title: String, detail: String) -> some View {
-        let selected = model.includeSystem == value
-        return Button { model.includeSystem = value } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Image(systemName: icon).font(.system(size: 15))
-                        .foregroundStyle(selected ? CodaStyle.mint : CodaStyle.muted)
-                    Spacer()
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle").font(.system(size: 14))
-                        .foregroundStyle(selected ? CodaStyle.mint : CodaStyle.strongEdge)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title).font(.system(size: 13, weight: .semibold))
-                    Text(detail).font(CodaStyle.captionFont).foregroundStyle(.secondary)
-                }
+    private var footer: some View {
+        HStack(spacing: 10) {
+            Spacer(minLength: 8)
+            Button { model.showRecordConsent = false } label: {
+                HStack(spacing: 7) { Text("Cancel"); CodaKeycap("esc") }
+                    .padding(.horizontal, 10).frame(height: 32).contentShape(Rectangle())
             }
-            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? CodaStyle.mint.opacity(0.07) : CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
-            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(selected ? CodaStyle.mint.opacity(0.45) : CodaStyle.hairline))
-            .contentShape(RoundedRectangle(cornerRadius: CodaStyle.radius))
+            .buttonStyle(CodaNavRowStyle(selected: false))
+            .font(.system(size: 13, weight: .medium)).foregroundStyle(CodaStyle.ink.opacity(0.8))
+            .keyboardShortcut(.cancelAction)
+            Button { model.showRecordConsent = false; model.startRecording() } label: {
+                HStack(spacing: 8) { Text("Start recording"); CodaKeycap("↩", onAccent: true) }
+            }
+            .buttonStyle(CodaPrimaryButtonStyle())
+            .keyboardShortcut(.defaultAction)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(Color.black.opacity(0.16))
+        .overlay(alignment: .top) { Rectangle().fill(CodaStyle.hairline).frame(height: 1) }
     }
 }
 

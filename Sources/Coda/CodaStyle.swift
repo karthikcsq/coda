@@ -408,3 +408,93 @@ struct CodaTableRowStyle: ButtonStyle {
         }
     }
 }
+
+/// Slim segmented control: one sunken track and a raised thumb that slides between options.
+struct CodaSegmented<Value: Hashable>: View {
+    struct Option {
+        let value: Value
+        let label: String
+        var icon: String? = nil
+    }
+    let options: [Option]
+    @Binding var selection: Value
+    @Namespace private var thumb
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+                let selected = option.value == selection
+                Button {
+                    withAnimation(CodaStyle.motion(reduceMotion, duration: 0.18)) { selection = option.value }
+                } label: {
+                    HStack(spacing: 6) {
+                        if let icon = option.icon { Image(systemName: icon).font(.system(size: 11, weight: .medium)) }
+                        Text(option.label).font(.system(size: 12, weight: selected ? .semibold : .medium)).lineLimit(1)
+                    }
+                    .foregroundStyle(selected ? CodaStyle.ink : CodaStyle.muted)
+                    .padding(.horizontal, 10).frame(maxWidth: .infinity).frame(height: 26)
+                    .background {
+                        if selected {
+                            RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.11))
+                                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.white.opacity(0.07)))
+                                .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+                                .matchedGeometryEffect(id: "thumb", in: thumb)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(option.label)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 9))
+        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(CodaStyle.hairline))
+        .opacity(isEnabled ? 1 : 0.45)
+    }
+}
+
+/// Mint switch in Coda's palette instead of the system accent.
+struct CodaSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View { StyleBody(configuration: configuration) }
+    struct StyleBody: View {
+        let configuration: ToggleStyleConfiguration
+        @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        var body: some View {
+            Button {
+                withAnimation(CodaStyle.motion(reduceMotion, duration: 0.15)) { configuration.isOn.toggle() }
+            } label: {
+                HStack(alignment: .center, spacing: 14) {
+                    configuration.label.frame(maxWidth: .infinity, alignment: .leading)
+                    ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                        Capsule().fill(configuration.isOn ? CodaStyle.mint : Color.white.opacity(0.14))
+                        Circle().fill(Color.white.opacity(configuration.isOn ? 1 : 0.7)).padding(2)
+                            .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
+                    }
+                    .frame(width: 30, height: 18)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(isEnabled ? 1 : 0.45)
+            .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label } }
+        }
+    }
+}
+
+/// Keyboard hint shown inside a button, e.g. ↩ or esc.
+struct CodaKeycap: View {
+    let key: String
+    var onAccent = false
+    init(_ key: String, onAccent: Bool = false) { self.key = key; self.onAccent = onAccent }
+    var body: some View {
+        Text(key).font(.system(size: 10.5, weight: .semibold, design: .rounded))
+            .foregroundStyle(onAccent ? Color(white: 0.1).opacity(0.6) : CodaStyle.muted)
+            .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 17)
+            .background(onAccent ? Color.black.opacity(0.1) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 4))
+            .accessibilityHidden(true)
+    }
+}
