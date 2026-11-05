@@ -11,7 +11,7 @@ class UsablePairs(unittest.TestCase):
         pairs = usable_pairs([
             edit('my manager asked would ask', 'My manager asked would ask.', 'My manager would ask.'),
             # The model cut "actual"; the user put it back.
-            edit('the actual side panel is broken', 'The app bar is broken.', 'The actual side panel is broken.'),
+            edit('the actual side panel is broken', 'The side panel is broken.', 'The actual side panel is broken.'),
         ])
         self.assertEqual([p['clean'] for p in pairs], ['My manager would ask.', 'The actual side panel is broken.'])
 
