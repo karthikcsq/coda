@@ -1,5 +1,7 @@
 # Fine-tuning Smart cleanup
 
+Coda tunes itself on each user's edits automatically: `auto_tune.py` (bundled into the app) with `tuning.py` and the shippable `regression.jsonl`; see LOCAL_CLEANUP.md 0.4.16. The rest of this page documents the manual developer experiments that preceded it.
+
 LoRA fine-tuning of spokenly/cleanup-1 on the user's speaking mistakes. Tooling lives here; all data lives in the private folder `~/Library/Application Support/Coda/SmartCleanup/finetune/` and is never committed (it contains or paraphrases the user's dictations).
 
 | Private path | Contents |

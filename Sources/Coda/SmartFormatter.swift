@@ -136,7 +136,8 @@ struct SmartFormatResult: Sendable {
             let line = Data(buffer[..<newline]); buffer.removeSubrange(...newline)
             guard let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any] else { stop(reason: "Invalid model response · raw text retained"); return }
             if object["ready"] as? Bool == true {
-                status = object["cleanup_ready"] as? Bool == true ? "Spokenly Cleanup 1, tuned for you · ready" :
+                status = object["cleanup_personal"] as? Bool == true ? "Spokenly Cleanup 1, tuned on your edits · ready" :
+                    object["cleanup_ready"] as? Bool == true ? "Spokenly Cleanup 1 · ready" :
                     object["model_ready"] as? Bool == true ? "Local cleanup + Qwen3.5 2B · ready" :
                     object["model_warming"] as? Bool == true ? "Local cleanup ready · model warming" : "Local cleanup ready"
                 continue
@@ -164,7 +165,14 @@ struct SmartFormatResult: Sendable {
             scheduleIdle()
         }
     }
+    private var reloadAfterRequest = false
+    /// Restarts the worker so it loads the current cleanup model (after personal
+    /// tuning installs or resets one). An in-flight request finishes first.
+    func reloadModel() {
+        if pending == nil { stop(reason: "Cleanup model updated · loads on next use") } else { reloadAfterRequest = true }
+    }
     private func scheduleIdle() {
+        if reloadAfterRequest, pending == nil { reloadAfterRequest = false; stop(reason: "Cleanup model updated · loads on next use"); return }
         idle?.cancel(); idle = Task { [weak self] in
             do { try await Task.sleep(for: .seconds(300)) } catch { return }
             guard let self, self.pending == nil else { return }; self.stop(reason: "Local model idle · warms on next use")

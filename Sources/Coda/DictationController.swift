@@ -112,7 +112,8 @@ extension KeyboardShortcuts.Name {
         retryTask = Task { [weak self] in
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
-        let success = await insertion.insertWithFallback(record.text, observeCorrections: observeCorrections)
+        let cleanupInput = record.cleanupMode == .smart ? record.rawText : nil
+        let success = await insertion.insertWithFallback(record.text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -130,6 +131,7 @@ extension KeyboardShortcuts.Name {
     var text = ""
     private var rawText = ""
     let smartFormatter: SmartFormatter
+    let personalTuning: PersonalTuning
     private var cleanupDetail = ""
     var cleanupMode: DictationCleanupMode {
         didSet { if !visualReview {
@@ -206,12 +208,20 @@ extension KeyboardShortcuts.Name {
             dictionary.learningEnabled = newValue
         }
     }
-    private func observeCorrections(_ target: DictationCorrectionTarget) {
-        guard learnWords, !visualReview else { return }
+    /// Watches the destination field after insertion. Word changes feed dictionary
+    /// suggestions; when the text was Smart-cleaned, the edited passage is also kept
+    /// for personal fine-tuning (`cleanupInput` is what the cleanup model received).
+    private func observeCorrections(_ target: DictationCorrectionTarget, cleanupInput: String?) {
+        let tuneOnEdits = personalTuning.enabled && cleanupInput != nil
+        guard learnWords || tuneOnEdits, !visualReview else { return }
         wordSuggestions.preferredFrame = insertion.targetDisplayFrame
         let session = UUID()
         corrections.start(target) { [weak self] changes, original, edited in
-            self?.reviewCorrections(changes, original: original, edited: edited, session: session)
+            guard let self else { return }
+            if learnWords { reviewCorrections(changes, original: original, edited: edited, session: session) }
+            if tuneOnEdits, let cleanupInput {
+                personalTuning.record(CleanupEdit(id: session, input: cleanupInput, inserted: original, edited: edited))
+            }
         }
     }
     func reviewCorrections(_ changes: [WordCorrection], original: String, edited: String, session: UUID) {
@@ -237,11 +247,15 @@ extension KeyboardShortcuts.Name {
         let dictionary = CustomDictionary(preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         self.dictionary = dictionary
         smartFormatter = formatter ?? SmartFormatter()
+        let previewRun = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
+        personalTuning = PersonalTuning(root: previewRun ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Tuning-Preview-" + UUID().uuidString) : nil)
         wordSuggestions = DictionarySuggestions(dictionary: dictionary, preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
+        personalTuning.isDictating = { [weak self] in self?.lifecycle.busy ?? false }
+        personalTuning.modelChanged = { [weak self] in self?.smartFormatter.reloadModel() }
         wordSuggestions.onReview = { [weak self] in
             self?.model?.closeSettings()
             self?.workspaceSection = "Dictionary"
@@ -420,8 +434,10 @@ extension KeyboardShortcuts.Name {
                     try Task.checkCancellation()
                     guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
                 }
+                var cleanupInput: String?
                 if cleanupMode == .smart {
                     // Smart cleanup starts from the dictionary-corrected words.
+                    cleanupInput = text
                     let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))
                     try Task.checkCancellation()
                     guard acceptSmartFormatting(formatted, for: id) else { return }
@@ -433,7 +449,9 @@ extension KeyboardShortcuts.Name {
                     return
                 }
                 let inserted: Bool
-                if autoInsert { inserted = await insertion.insertWithFallback(text, observeCorrections: observeCorrections) } else { inserted = false }
+                if autoInsert {
+                    inserted = await insertion.insertWithFallback(text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+                } else { inserted = false }
                 guard lifecycle.complete(id) else { return }
                 message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
                 saveSession(outcome: inserted ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired, detail: message + (cleanupDetail.isEmpty ? "" : " " + cleanupDetail))

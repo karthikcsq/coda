@@ -175,3 +175,29 @@ import CodaCore
     let huge = Array(repeating: "word", count: 2000).joined(separator: " ")
     #expect(SmartFormatter.cleanupTimeout(for: huge) == .milliseconds(3500))
 }
+@Test @MainActor func personalTuningCountsNewEditsAndResetReturnsToOpenWeightModel() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let tuning = PersonalTuning(root: root, script: nil, idleDelay: .seconds(3600))
+    tuning.enabled = true
+    var changed = 0
+    tuning.modelChanged = { changed += 1 }
+    tuning.record(CleanupEdit(id: UUID(), input: "a", inserted: "Ship it.", edited: "Ship it.")) // unchanged: ignored
+    let edit = CleanupEdit(id: UUID(), input: "my manager asked would ask", inserted: "My manager asked would ask.", edited: "My manager would ask.")
+    tuning.record(edit)
+    #expect(tuning.editCount == 1); #expect(tuning.newEdits == 1); #expect(!tuning.personalInstalled)
+    // A finished tune that saw this edit leaves no new edits.
+    try FileManager.default.createDirectory(at: root.appendingPathComponent("tuning"), withIntermediateDirectories: true)
+    let status = #"{"state":"installed","edits_used":1,"last_edit_created":\#(edit.created.timeIntervalSinceReferenceDate)}"#
+    try Data(status.utf8).write(to: root.appendingPathComponent("tuning/status.json"))
+    let personal = root.appendingPathComponent("v1/cleanup-personal")
+    try FileManager.default.createDirectory(at: personal, withIntermediateDirectories: true)
+    try Data("{}".utf8).write(to: personal.appendingPathComponent("config.json"))
+    tuning.refresh()
+    #expect(tuning.newEdits == 0); #expect(tuning.personalInstalled)
+    #expect(tuning.summary.contains("using your tuned model"))
+    tuning.reset()
+    #expect(!tuning.personalInstalled); #expect(changed == 1); #expect(tuning.editCount == 1)
+    tuning.reset(forgetEdits: true)
+    #expect(tuning.editCount == 0)
+}

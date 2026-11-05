@@ -257,20 +257,25 @@ def main():
     def emit(value):
         with output_lock: print(json.dumps(value,ensure_ascii=False),flush=True)
     def readiness():
-        emit({'ready':True,'model_ready':bool(backend),'model_warming':backend_started.is_set() and not backend_ready.is_set(),'model_error':backend_ready.is_set() and not bool(backend),'punctuation_ready':bool(punctuation_backend),'punctuation_error':punctuation_done.is_set() and not bool(punctuation_backend),'cleanup_ready':bool(cleanup_backend),'cleanup_error':cleanup_done.is_set() and not bool(cleanup_backend)})
+        emit({'ready':True,'model_ready':bool(backend),'model_warming':backend_started.is_set() and not backend_ready.is_set(),'model_error':backend_ready.is_set() and not bool(backend),'punctuation_ready':bool(punctuation_backend),'punctuation_error':punctuation_done.is_set() and not bool(punctuation_backend),'cleanup_ready':bool(cleanup_backend),'cleanup_personal':bool(cleanup_backend.get('personal')),'cleanup_error':cleanup_done.is_set() and not bool(cleanup_backend)})
     def warm_cleanup():
-        try:
-            path=os.path.join(os.path.dirname(sys.argv[1]),'cleanup')
-            if os.path.isdir(path):
+        # A model tuned on the user's own edits wins when installed; the
+        # open-weight model is the fallback if it is missing or fails to load.
+        folder=os.path.dirname(sys.argv[1])
+        for name in ('cleanup-personal','cleanup'):
+            path=os.path.join(folder,name)
+            if not os.path.isfile(os.path.join(path,'config.json')): continue
+            try:
                 with mlx_lock:
                     import mlx.core as mx
                     from mlx_lm import load, stream_generate
                     from mlx_lm.sample_utils import make_sampler
                     model,tokenizer=load(path,trust_remote_code=False)
                     mx.eval(model.parameters()); mx.synchronize()
-                cleanup_backend.update(mx=mx,model=model,tokenizer=tokenizer,stream_generate=stream_generate,sampler=make_sampler(temp=0.0))
-        except Exception:
-            pass  # Rule-based cleanup remains the fallback when the model is missing.
+                cleanup_backend.update(mx=mx,model=model,tokenizer=tokenizer,stream_generate=stream_generate,sampler=make_sampler(temp=0.0),personal=name=='cleanup-personal')
+                break
+            except Exception:
+                continue  # Rule-based cleanup remains the fallback when no model loads.
         cleanup_done.set()
         readiness()
     def model_first(raw,start):

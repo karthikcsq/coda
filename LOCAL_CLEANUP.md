@@ -1,4 +1,18 @@
-# Local dictation cleanup — 0.4.15
+# Local dictation cleanup — 0.4.16
+
+## 0.4.16 automatic fine-tuning on the user's edits
+
+The installed cleanup model is the open-weight spokenly/cleanup-1 (8-bit) again; the round 2 model tuned on the developer's labeled dictations is no longer installed (it remains only in the private finetune folder). Instead, Coda now learns from each user's own edits:
+
+- **Capture.** After Coda pastes a Smart-cleaned dictation, the existing post-insertion watcher (60 s, focused non-secure field, anchored to the pasted span) reports the edited passage. When "Learn from my edits" is on, Coda saves {model input, pasted text, edited text} to `Application Support/Coda/SmartCleanup/edits/` (0600, one file per dictation, latest state wins). Unchanged dictations are not saved.
+- **Filter.** `finetune/tuning.py` uses only edits that are cleanup fixes: the final text is the model input with words removed plus punctuation/capitals/same-value digits (the runtime guard's rule), and its words differ from what was pasted. Rewording and added content are ignored.
+- **Tune.** After 10 new edits and 2 minutes without dictation (or "Tune now"), Coda runs the bundled `auto_tune.py` at background QoS. It trains a LoRA (rank 16, lr 3e-5, 60–200 steps) on the open-weight 8-bit model using the usable edits (×3) plus the bundled 520-example regression set (written examples screened for overlap with any saved dictation), fuses it to 8-bit, and scores open-weight vs tuned on held-out regression examples and held-out edits.
+- **Gate.** Installed as `v1/cleanup-personal` only if it cuts no more real words and is not worse on held-out edits or the regression set, and improves on the user's edits. Otherwise discarded. Every run retrains from the open-weight model. The worker prefers `cleanup-personal` and falls back to `cleanup`. "Use open-weight model" removes the tuned copy.
+- **Status.** `SmartCleanup/tuning/status.json` (counts, scores, reasons; never edit text) feeds the Settings summary.
+
+End-to-end run on 124 simulated edits (21 usable): 53 s; installed; held-out regression exact 80→102 of 123, wrongly cut words 32→7; held-out edits exact 1→3 of 8, cut 7→0. Python suites (including 8 tuning tests), all Swift suites via `scripts/test.sh`, and a settings render passed. Saved dictation/meeting files matched their pre-install hashes. Not yet observed with live edits in other apps.
+
+## Historical 0.4.15 notes
 
 ## 0.4.15 fine-tuned cleanup model
 
