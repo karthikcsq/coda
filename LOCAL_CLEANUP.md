@@ -1,4 +1,10 @@
-# Local dictation cleanup — 0.4.14
+# Local dictation cleanup — 0.4.15
+
+## 0.4.15 fine-tuned cleanup model
+
+`Application Support/Coda/SmartCleanup/v1/cleanup` now holds spokenly/cleanup-1 fine-tuned for this user (round 2 LoRA, fused, 8-bit, 615 MB); SOURCE.json records hashes and the recipe. The untuned 8-bit model is kept at `cleanup-rollback`; to roll back, quit Coda and swap the two folders. On the fixed 103-example held-out set it scores 93.2% exact (untuned 75.7%), wrongly cuts 3 words in 3 examples (untuned 25 in 14) and averages 78 ms. The guard also accepts digits next to removed fillers and rejects outputs that drop more than 12 consecutive words. Through the installed worker, 121 of 124 saved dictations were cleaned by the model (median 0.06 s, max ~1.0 s). Still missed: "my manager asked would ask" (held out from training). Recipe, data locations and per-round results: `scripts/smart-cleanup/finetune/README.md`. All Python and Swift suites passed; saved dictation/meeting files matched their pre-install hashes.
+
+## Historical 0.4.14 notes
 
 ## 0.4.14 model-first Smart cleanup
 

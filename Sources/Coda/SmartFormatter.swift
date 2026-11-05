@@ -136,7 +136,7 @@ struct SmartFormatResult: Sendable {
             let line = Data(buffer[..<newline]); buffer.removeSubrange(...newline)
             guard let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any] else { stop(reason: "Invalid model response · raw text retained"); return }
             if object["ready"] as? Bool == true {
-                status = object["cleanup_ready"] as? Bool == true ? "Spokenly Cleanup 1 · ready" :
+                status = object["cleanup_ready"] as? Bool == true ? "Spokenly Cleanup 1, tuned for you · ready" :
                     object["model_ready"] as? Bool == true ? "Local cleanup + Qwen3.5 2B · ready" :
                     object["model_warming"] as? Bool == true ? "Local cleanup ready · model warming" : "Local cleanup ready"
                 continue
