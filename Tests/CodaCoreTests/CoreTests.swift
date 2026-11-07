@@ -159,3 +159,11 @@ actor StubTransport: HTTPTransport {
     #expect(try store.load().isEmpty)
 }
 @Test func timestampsIncludeHours() { #expect(timestamp(3661) == "1:01:01"); #expect(timestamp(.nan) == "00:00") }
+@Test func alignmentAttachesWordsAtTurnEdgesButNotInSilence() {
+    let turns = [SpeakerTurn(0, 0, 2), SpeakerTurn(1, 5, 8)]
+    let words = [Word("edge", 2.1, 2.4), Word("early", 4.7, 4.95), Word("silence", 3.0, 3.5)]
+    let segments = Alignment.align(words: words, turns: turns)
+    #expect(segments.first { $0.text == "edge" }?.speakers == [0])
+    #expect(segments.first { $0.text == "early" }?.speakers == [1])
+    #expect(segments.first { $0.text == "silence" }?.speakers == [])
+}

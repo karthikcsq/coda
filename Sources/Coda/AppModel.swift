@@ -28,6 +28,8 @@ import Voz
     private(set) var recordingStartFailure: RecordingStartFailure?
     var includeSystem = true
     var recordingSpeakerCount = 0
+    /// Optional names for a fixed speaker count, in first-to-speak order.
+    var recordingSpeakerNames: [String] = []
     var useDetectedSpeakerCount = true
     var detectedMeeting: DetectedMeeting?
     var recordingDetectedMeeting: DetectedMeeting?
@@ -80,6 +82,7 @@ import Voz
     func requestMeetingRecording() {
         guard !isOccupied else { return }
         recordingSpeakerCount = 0
+        recordingSpeakerNames = []
         useDetectedSpeakerCount = true
         recordingDetectedMeeting = detectedMeeting
         showingMeetingDetail = true
@@ -215,7 +218,7 @@ import Voz
                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
                 }
                 try Task.checkCancellation()
-                var updated = meeting; updated.segments = segments; updated.speakerNames = [:]; updated.setSummary(nil)
+                var updated = meeting; updated.segments = segments; updated.speakerNames = meeting.plannedNames(for: segments); updated.setSummary(nil)
                 try save(updated)
                 status = "Transcript saved locally"
                 if autoSummary { try await summarize(updated, consent: autoSummary) }
@@ -306,6 +309,7 @@ import Voz
     func startRecording() {
         guard !isOccupied else { return }
         let speakerCount = resolvedRecordingSpeakerCount
+        let plannedNames = recordingSpeakerCount > 0 ? Array(recordingSpeakerNames.prefix(recordingSpeakerCount)) : []
         let recordingIncludesSystem = includeSystem
         recordingStartFailure = nil
         showingMeetingDetail = true
@@ -316,6 +320,7 @@ import Voz
             do {
                 var meeting = Meeting(title: "Meeting " + Date().formatted(date: .abbreviated, time: .shortened), audioFile: UUID().uuidString + ".m4a")
                 meeting.expectedSpeakerCount = speakerCount
+                if plannedNames.contains(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) { meeting.plannedSpeakerNames = plannedNames }
                 let capture = MeetingCapture()
                 capture.onFailure = { [weak self = self] in Task { @MainActor in self?.captureFailed() } }
                 try await capture.start(url: root.appendingPathComponent(meeting.audioFile), includeSystem: recordingIncludesSystem)

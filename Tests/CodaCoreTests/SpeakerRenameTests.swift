@@ -62,3 +62,13 @@ private func summarized() -> Meeting {
     meeting.renameSpeaker(0, to: "Alex")
     #expect(meeting.summary == nil && meeting.speakerNames["0"] == "Alex")
 }
+
+@Test func plannedNamesGoToVoicesInFirstToSpeakOrder() {
+    var meeting = Meeting(title: "Call", audioFile: "none.m4a")
+    meeting.plannedSpeakerNames = ["Karthik", "  ", "Wyatt", "Absent"]
+    let segments = [Segment(id: "s1", start: 0, end: 1, speakers: [0], text: "a"),
+                    Segment(id: "s2", start: 1, end: 2, speakers: [1, 2], text: "b")]
+    #expect(meeting.plannedNames(for: segments) == ["0": "Karthik", "2": "Wyatt"])
+    meeting.plannedSpeakerNames = nil
+    #expect(meeting.plannedNames(for: segments).isEmpty)
+}

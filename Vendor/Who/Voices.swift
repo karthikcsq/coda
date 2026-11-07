@@ -96,7 +96,13 @@ enum AverageLinkage {
     /// pairwise distance is under `1 - cosine`. The distances between clusters are kept and updated on each
     /// merge (Lance-Williams), so a few hundred lanes cost milliseconds. Labels are numbered in order of
     /// first appearance.
-    static func cluster(_ unit: [[Float]], cosine: Float, speakerCount: Int? = nil) -> [Int] {
+    ///
+    /// With a speaker count, merging continues past the cut until that many clusters remain. Once no merge
+    /// is confident, a cluster holding under `minorShare` of the total `weights` (solo speech) is folded into
+    /// its nearest cluster first, so a few seconds of an unrecognizable voice cannot force two clearly
+    /// different speakers together.
+    static func cluster(_ unit: [[Float]], cosine: Float, speakerCount: Int? = nil,
+                        weights: [Float]? = nil, minorShare: Float = 0.05) -> [Int] {
         let n = unit.count
         guard n > 1 else { return [Int](repeating: 0, count: n) }
         let threshold = 1 - cosine
@@ -109,6 +115,8 @@ enum AverageLinkage {
             }
         }
         var size = [Int](repeating: 1, count: n)
+        var mass = weights?.count == n ? weights! : [Float](repeating: 1, count: n)
+        let totalMass = mass.reduce(0, +)
         var alive = [Bool](repeating: true, count: n)
         var member = Array(0..<n)                                                            // each lane's current cluster
         var remaining = n
@@ -123,6 +131,14 @@ enum AverageLinkage {
                 }
             }
             guard pair.0 >= 0, speakerCount != nil || best < threshold else { break }
+            if best >= threshold, weights != nil {
+                // Forced merge: fold the smallest cluster when it is minor, rather than joining the closest pair.
+                let smallest = (0..<n).filter { alive[$0] }.min { mass[$0] < mass[$1] }!
+                if mass[smallest] < minorShare * totalMass {
+                    let nearest = (0..<n).filter { alive[$0] && $0 != smallest }.min { distance[smallest * n + $0] < distance[smallest * n + $1] }!
+                    pair = (min(smallest, nearest), max(smallest, nearest))
+                }
+            }
             let (a, b) = pair
             for c in 0..<n where alive[c] && c != a && c != b {
                 let merged = (Float(size[a]) * distance[a * n + c] + Float(size[b]) * distance[b * n + c]) / Float(size[a] + size[b])
@@ -130,6 +146,7 @@ enum AverageLinkage {
                 distance[c * n + a] = merged
             }
             size[a] += size[b]
+            mass[a] += mass[b]
             alive[b] = false
             remaining -= 1
             for i in 0..<n where member[i] == b { member[i] = a }

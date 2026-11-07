@@ -10,6 +10,18 @@ extension Meeting {
         Dictionary(uniqueKeysWithValues: knownSpeakers.map { (String($0), speakerDisplayName($0)) })
     }
 
+    /// Planned names for a fresh transcript: the diarizer numbers voices by first appearance,
+    /// so the first name goes to the first voice heard. Blank entries stay unnamed.
+    public func plannedNames(for segments: [Segment]) -> [String: String] {
+        let found = Set(segments.flatMap(\.speakers))
+        var names: [String: String] = [:]
+        for (index, name) in (plannedSpeakerNames ?? []).enumerated() where found.contains(index) {
+            let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !name.isEmpty { names[String(index)] = name }
+        }
+        return names
+    }
+
     /// Stores a freshly generated summary along with the names it was written with.
     public mutating func setSummary(_ summary: MeetingSummary?) {
         self.summary = summary
