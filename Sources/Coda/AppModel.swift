@@ -139,6 +139,8 @@ import Voz
                 Segment(id: "s4", start: 24, end: 27, speakers: [0, 1], text: "Yes, let's start with that.")
             ]
             sample.summary = MeetingSummary(brief: SummaryItem(text: "A planning check-in that settled the first release: a local meeting notebook, with collaboration later.", evidence: ["s1", "s3"]), takeaways: [SummaryItem(text: "The first release ships recording, a clear transcript and next steps; collaboration waits until the local notebook is finished.", evidence: ["s1", "s3"]), SummaryItem(text: "Onboarding copy still needs review, and no deadline has been set.", evidence: ["s2"])], overview: [SummaryItem(text: "The first release focuses on a local meeting notebook.", evidence: ["s1", "s3"], topic: "Release scope")], decisions: [SummaryItem(text: "Finish the local notebook before adding collaboration.", evidence: ["s3"])], actions: [SummaryItem(text: "Review onboarding copy.", evidence: ["s2"], owner: "Sam")], openQuestions: [SummaryItem(text: "When onboarding review is due; no deadline was set.", evidence: ["s2"])])
+            chats[sample.id] = [ChatMessage(role: .user, text: "What do we still need to decide?"),
+                                ChatMessage(role: .assistant, text: "Only the **onboarding review deadline** is open. Sam agreed to review the onboarding copy [00:08], but no date was set [00:08]. The release scope itself is settled: finish the local notebook before collaboration [00:16].")]
             meetings = [sample]; try? store?.save(sample)
             status = "Synthetic UI preview • no audio, models, or network used"
         }
@@ -251,6 +253,57 @@ import Voz
             catch { status = "Transcript saved • summary unavailable"; self.error = safeMessage(error) }
         }
     }
+    // MARK: Chat about the summary (Codex CLI)
+
+    /// Kept in memory only: conversations are not written to disk and end when Coda quits.
+    var chats: [UUID: [ChatMessage]] = [:]
+    private(set) var chatPending: Set<UUID> = []
+    var chatErrors: [UUID: String] = [:]
+    var showChatConsent = false
+    /// Per meeting, per launch: the first question about a meeting asks before anything leaves this Mac.
+    private var chatConsented: Set<UUID> = []
+    private var queuedQuestion: (meeting: UUID, text: String)?
+    private var chatTasks: [UUID: Task<Void, Never>] = [:]
+    var chatBackend: any ChatBackend = CodexCLIBackend()
+
+    func askChat(_ question: String) {
+        guard let meeting = selected, !chatPending.contains(meeting.id) else { return }
+        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        guard !visualReview else { status = "Visual review only • chat is disabled"; return }
+        guard chatConsented.contains(meeting.id) else {
+            queuedQuestion = (meeting.id, text); showChatConsent = true; return
+        }
+        let id = meeting.id
+        let history = chats[id] ?? []
+        chats[id, default: []].append(ChatMessage(role: .user, text: text))
+        chatErrors[id] = nil
+        chatPending.insert(id)
+        let backend = chatBackend
+        chatTasks[id] = Task {
+            defer { chatPending.remove(id); chatTasks[id] = nil }
+            do {
+                let answer = try await MeetingChat.ask(text, about: meeting, history: history, backend: backend)
+                chats[id, default: []].append(ChatMessage(role: .assistant, text: answer))
+            } catch is CancellationError {
+            } catch { chatErrors[id] = safeMessage(error) }
+        }
+    }
+    func confirmChatConsent() {
+        guard let queued = queuedQuestion else { return }
+        queuedQuestion = nil
+        chatConsented.insert(queued.meeting)
+        if selection == queued.meeting { askChat(queued.text) }
+    }
+    func declineChatConsent() { queuedQuestion = nil }
+    func cancelChat() {
+        guard let id = selection else { return }
+        chatTasks[id]?.cancel()
+    }
+    func clearChat() {
+        guard let id = selection, !chatPending.contains(id) else { return }
+        chats[id] = nil; chatErrors[id] = nil
+    }
     func cancel() { operationID = nil; operation?.cancel(); status = "Cancelling • an in-flight model operation may need to finish" }
     func startRecording() {
         guard !isOccupied else { return }
@@ -300,6 +353,7 @@ import Voz
     }
     func deleteSelected() {
         guard !isOccupied, let meeting = selected else { return }
+        chatTasks[meeting.id]?.cancel(); chats[meeting.id] = nil; chatErrors[meeting.id] = nil; chatConsented.remove(meeting.id)
         do { try store?.remove(meeting); meetings.removeAll { $0.id == meeting.id }; selection = meetings.first?.id }
         catch { self.error = "Could not delete this meeting completely. Check local storage." }
     }

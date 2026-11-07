@@ -94,7 +94,7 @@ import CodaCore
         let png = try #require(bitmap.representation(using: .png, properties: [:]))
         try png.write(to: URL(fileURLWithPath: "/tmp/coda-meeting-review-" + name + ".png"))
     }
-    for tab in ["Transcript", "Summary"] {
+    for tab in ["Transcript", "Summary", "Chat"] {
         try render(ContentView(model: model, dictation: controller, initialTab: tab), name: tab.lowercased(), size: CGSize(width: 1120, height: 810))
     }
     try render(ContentView(model: model, dictation: controller), name: "narrow", size: CGSize(width: 764, height: 680))

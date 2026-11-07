@@ -109,7 +109,7 @@ struct WorkspaceOverhaulRenderSuite {
     let model = AppModel(preview: true)
     let controller = DictationController(preview: true)
     controller.attach(model)
-    for tab in ["Transcript", "Summary"] {
+    for tab in ["Transcript", "Summary", "Chat"] {
         try renderPNG(ContentView(model: model, dictation: controller, initialTab: tab)
                         .foregroundStyle(Color(white: 0.88)),
                       size: CGSize(width: 1120, height: 810),

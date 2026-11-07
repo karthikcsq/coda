@@ -54,6 +54,10 @@ struct ContentView: View {
             Button("Cancel", role: .cancel) {}
             Button("Send transcript") { model.sendSummary() }
         } message: { Text("The selected meeting's full transcript and speaker names leave this Mac and are sent to OpenAI using your API key. Raw audio stays local. API charges and OpenAI data policies apply. Review sensitive content first. AI summaries can be wrong; check their timestamp references.") }
+        .alert("Chat about this meeting with Codex?", isPresented: $model.showChatConsent) {
+            Button("Cancel", role: .cancel) { model.declineChatConsent() }
+            Button("Send to Codex") { model.confirmChatConsent() }
+        } message: { Text("Each question sends this meeting's summary, full transcript, speaker names and the chat so far to OpenAI through the Codex CLI, using the account Codex is signed in to. Raw audio stays local. The chat is kept in memory only and isn't saved. AI answers can be wrong; check their timestamps.") }
         .alert(model.recordingStartFailure == nil ? "Coda needs your attention" : "Recording couldn’t start", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             if model.recordingStartFailure?.systemAudioPermissionDenied == true {
                 Button("Microphone only…") { model.reviewRecordingOptions(microphoneOnly: true) }
@@ -151,7 +155,15 @@ struct ContentView: View {
             } else {
                 tabBar(meeting).codaColumn()
                 Rectangle().fill(CodaStyle.hairline).frame(height: 1)
-                if tab == "Transcript" { transcript(meeting) } else { summary(meeting) }
+                switch tab {
+                case "Summary": summary(meeting)
+                case "Chat":
+                    MeetingChatView(model: model, meeting: meeting) { id in
+                        focusedSegment = id
+                        withAnimation(CodaStyle.motion(reduceMotion, duration: 0.2)) { tab = "Transcript" }
+                    }
+                default: transcript(meeting)
+                }
             }
         }
     }
@@ -183,6 +195,7 @@ struct ContentView: View {
         HStack(spacing: 24) {
             tabButton("Transcript", detail: "\(meeting.segments.count)")
             tabButton("Summary", detail: meeting.summary == nil ? nil : "AI")
+            tabButton("Chat", detail: (model.chats[meeting.id]?.isEmpty ?? true) ? nil : "\((model.chats[meeting.id] ?? []).filter { $0.role == .user }.count)")
             Spacer()
         }
     }
