@@ -171,10 +171,8 @@ import Voz
     }
     func renameSpeaker(_ speaker: Int, name: String) {
         guard !isOccupied, var meeting = selected else { return }
-        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        meeting.speakerNames[String(speaker)] = name.isEmpty ? nil : name
-        // A previous summary may use the prior name; avoid retaining stale attribution.
-        meeting.summary = nil
+        // The summary keeps its content; only the speaker's name changes in it.
+        meeting.renameSpeaker(speaker, to: name)
         do { try save(meeting) } catch { self.error = "Could not save the speaker name." }
     }
     func renameMeeting(_ title: String) {
@@ -217,7 +215,7 @@ import Voz
                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
                 }
                 try Task.checkCancellation()
-                var updated = meeting; updated.segments = segments; updated.summary = nil; updated.speakerNames = [:]
+                var updated = meeting; updated.segments = segments; updated.speakerNames = [:]; updated.setSummary(nil)
                 try save(updated)
                 status = "Transcript saved locally"
                 if autoSummary { try await summarize(updated, consent: autoSummary) }
@@ -240,7 +238,7 @@ import Voz
         progress = nil
         let result = try await Summarizer().summarize(meeting, configuration: config, consent: consent)
         try Task.checkCancellation()
-        var updated = meeting; updated.summary = result
+        var updated = meeting; updated.setSummary(result)
         try save(updated); status = "Summary saved • review against the transcript"
     }
     func sendSummary() {

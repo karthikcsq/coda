@@ -84,6 +84,10 @@ public struct Meeting: Codable, Identifiable, Sendable {
     public var summary: MeetingSummary?
     /// Nil preserves automatic speaker discovery, including for older saved meetings.
     public var expectedSpeakerCount: Int?
+    /// The summary exactly as generated, and the speaker labels it was generated with. Renaming a
+    /// speaker rewrites `summary` from these, so names follow edits without summarizing again.
+    public var summarySource: MeetingSummary?
+    public var summarySpeakerLabels: [String: String]?
     public init(title: String, audioFile: String) {
         id = UUID(); self.title = title; created = Date(); self.audioFile = audioFile
         segments = []; speakerNames = [:]

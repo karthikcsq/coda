@@ -361,7 +361,7 @@ struct ContentView: View {
                     .help("Reprocess saved audio with this speaker count. Replaces the transcript and clears speaker names and summary.")
                 Spacer(minLength: 0)
             }
-            CodaNotice(kind: .caution, text: "Transcribing again replaces the transcript and clears speaker names and the summary. Renaming a speaker clears the summary.")
+            CodaNotice(kind: .caution, text: "Transcribing again replaces the transcript and clears speaker names and the summary. Renaming a speaker updates the name in the existing summary.")
         }
         .disabled(model.isOccupied)
         .padding(18)
