@@ -371,34 +371,42 @@ struct ContentView: View {
 
     // MARK: Summary
 
+    /// Reading measure for the notes; long lines are what made the old layout feel like a form.
+    private static let notesWidth: CGFloat = 680
+    private static let citationScheme = "coda-cite"
+
+    /// The summary reads as a written page of notes: headings, plain bullets and quiet
+    /// inline timestamps that jump to the transcript. No cards, no chips per line.
     private func summary(_ meeting: Meeting) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
+            Group {
                 if let summary = meeting.summary {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(CodaStyle.mint)
-                        Text("AI-generated from the transcript. Check the cited timestamps before sharing.")
-                            .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 0) {
+                        notesHeader
+                        if let brief = summary.brief {
+                            inlineText(brief, meeting: meeting, size: 16, weight: .regular, ink: CodaStyle.ink)
+                                .lineSpacing(6).padding(.top, 18)
+                                .accessibilityLabel("Summary: " + brief.text)
+                        } else {
+                            CodaNotice(kind: .info, text: "This summary was made before Coda added a brief and key takeaways. Generate again to get them.")
+                                .padding(.top, 18)
+                        }
+                        notesSection("Key takeaways", kind: .takeaway, items: summary.takeaways, meeting: meeting)
+                        notesSection("Decisions", kind: .decision, items: summary.decisions, meeting: meeting)
+                        notesSection("Action items", kind: .action, items: summary.actions, meeting: meeting)
+                        notesSection("Open questions", kind: .question, items: summary.openQuestions, meeting: meeting)
+                        notesSection(summary.leadsWithTakeaways ? "Notes" : "Discussion notes", kind: .note,
+                                     items: summary.overview, meeting: meeting)
+                        Text("AI-generated from the transcript and can be wrong. Timestamps link to the moment they cite.")
+                            .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted.opacity(0.8))
                             .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 12)
-                        Button("Generate again…") { model.showSummaryConsent = true }
-                            .buttonStyle(CodaSecondaryButtonStyle()).disabled(model.isOccupied)
+                            .padding(.top, 40)
                     }
-                    if let brief = summary.brief {
-                        briefBlock(brief, meeting: meeting)
-                    } else {
-                        CodaNotice(kind: .info, text: "This summary was made before Coda added a brief and key takeaways. Generate again to get them.")
-                    }
-                    if !summary.takeaways.isEmpty {
-                        summarySection("Key takeaways", kind: .takeaway, items: summary.takeaways, meeting: meeting)
-                    }
-                    summarySection("Decisions", kind: .decision, items: summary.decisions, meeting: meeting)
-                    summarySection("Action items", kind: .action, items: summary.actions, meeting: meeting)
-                    if !summary.openQuestions.isEmpty {
-                        summarySection("Open questions", kind: .question, items: summary.openQuestions, meeting: meeting)
-                    }
-                    summarySection(summary.leadsWithTakeaways ? "Notes" : "Discussion notes", kind: .note,
-                                   items: summary.overview, meeting: meeting)
+                    .environment(\.openURL, OpenURLAction { url in
+                        guard url.scheme == Self.citationScheme else { return .systemAction }
+                        jump(to: url.absoluteString.dropFirst(Self.citationScheme.count + 1).removingPercentEncoding ?? "")
+                        return .handled
+                    })
                 } else {
                     CodaEmptyState(icon: "sparkles", title: "No summary yet",
                                    message: "Get a one-line brief, the key takeaways, decisions, action items and topic notes, each citing the transcript. Only transcript text and speaker names go to OpenAI; your audio stays on this Mac.",
@@ -409,111 +417,125 @@ struct ContentView: View {
                     }
                 }
             }
-            .padding(.top, 24).padding(.bottom, 36)
+            .frame(maxWidth: Self.notesWidth, alignment: .leading)
+            .padding(.top, 30).padding(.bottom, 48)
             .codaColumn()
         }
     }
 
-    /// The bottom line, set as a lead paragraph rather than another list row.
-    private func briefBlock(_ brief: SummaryItem, meeting: Meeting) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(brief.text).font(.system(size: 17, weight: .regular)).lineSpacing(6)
-                .foregroundStyle(CodaStyle.ink).textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-            citations(brief, meeting: meeting)
+    private var notesHeader: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "sparkles").font(.system(size: 10.5, weight: .semibold)).foregroundStyle(CodaStyle.mint)
+            Text("AI NOTES").font(.system(size: 10.5, weight: .semibold)).tracking(1.1).foregroundStyle(CodaStyle.muted)
+            Spacer(minLength: 12)
+            Button { model.showSummaryConsent = true } label: {
+                Label("Regenerate", systemImage: "arrow.clockwise")
+                    .labelStyle(MetaLabelStyle())
+                    .padding(.horizontal, 8).frame(height: 24).contentShape(Rectangle())
+            }
+            .buttonStyle(CodaNavRowStyle(selected: false))
+            .font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.muted)
+            .disabled(model.isOccupied).opacity(model.isOccupied ? 0.45 : 1)
+            .help("Send the transcript to OpenAI again for a fresh summary")
+            .accessibilityLabel("Generate summary again")
         }
-        .padding(.leading, 18).padding(.vertical, 4)
-        .overlay(alignment: .leading) { Capsule().fill(CodaStyle.mint).frame(width: 3) }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Summary: " + brief.text)
     }
 
     private enum SummaryKind { case takeaway, note, decision, action, question }
 
-    private func summarySection(_ title: String, kind: SummaryKind, items: [SummaryItem], meeting: Meeting) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Text(title).font(CodaStyle.sectionFont)
-                if !items.isEmpty && kind != .takeaway { CodaCountBadge(count: items.count) }
-            }
-            if items.isEmpty {
-                Text("None explicitly stated.").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
-            } else {
-                VStack(spacing: 0) {
+    /// A heading and its bullets. Empty sections are left out, as in a hand-written page.
+    @ViewBuilder
+    private func notesSection(_ title: String, kind: SummaryKind, items: [SummaryItem], meeting: Meeting) -> some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(CodaStyle.ink)
+                    .accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: kind == .note ? 14 : 9) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                        if index > 0 { Rectangle().fill(CodaStyle.hairline).frame(height: 1).padding(.leading, 46) }
-                        summaryRow(item, kind: kind, rank: index + 1, meeting: meeting)
+                        notesRow(item, kind: kind, rank: index + 1, meeting: meeting)
                     }
                 }
-                .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
-                .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
             }
+            .padding(.top, 32)
         }
     }
 
-    private func summaryRow(_ item: SummaryItem, kind: SummaryKind, rank: Int, meeting: Meeting) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+    private func notesRow(_ item: SummaryItem, kind: SummaryKind, rank: Int, meeting: Meeting) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
             Group {
                 switch kind {
                 case .takeaway:
-                    Text("\(rank)").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(CodaStyle.mint)
-                        .frame(width: 20, height: 20).background(CodaStyle.mint.opacity(0.14), in: Circle())
-                        .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
-                case .note: Circle().fill(CodaStyle.mint.opacity(0.8)).frame(width: 5, height: 5).offset(y: -3)
-                case .decision: Image(systemName: "checkmark.seal.fill").foregroundStyle(CodaStyle.mint)
-                case .action: Image(systemName: "circle").foregroundStyle(CodaStyle.muted)
-                case .question: Image(systemName: "questionmark.circle").foregroundStyle(CodaStyle.speakerColor(2))
+                    Text("\(rank).").font(.system(size: 13, weight: .medium)).monospacedDigit().foregroundStyle(CodaStyle.muted)
+                case .decision:
+                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(CodaStyle.mint)
+                case .action:
+                    Image(systemName: "arrow.right").font(.system(size: 10, weight: .bold)).foregroundStyle(CodaStyle.mint)
+                case .question:
+                    Text("?").font(.system(size: 13, weight: .semibold)).foregroundStyle(CodaStyle.muted)
+                case .note:
+                    Circle().fill(CodaStyle.muted).frame(width: 4.5, height: 4.5)
+                        .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.bottom] + 4 }
                 }
             }
-            .font(.system(size: 13)).frame(width: 20).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
-                    if let topic = item.topic {
-                        Text(topic).font(.system(size: 13, weight: .semibold)).foregroundStyle(CodaStyle.ink)
-                    }
-                    Text(item.text).font(kind == .takeaway ? .system(size: 14, weight: .medium) : CodaStyle.bodyFont)
-                        .foregroundStyle(item.topic == nil ? CodaStyle.ink : CodaStyle.ink.opacity(0.86))
-                        .lineSpacing(4).textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                citations(item, meeting: meeting)
-            }
-            Spacer(minLength: 0)
+            .frame(width: 16, alignment: kind == .takeaway ? .trailing : .center)
+            .accessibilityHidden(true)
+            inlineText(item, meeting: meeting, size: 14, weight: .regular, ink: CodaStyle.ink.opacity(0.92),
+                       lead: leadText(item, kind: kind))
+                .lineSpacing(4)
         }
-        .padding(.horizontal, 16).padding(.vertical, 15)
     }
 
-    /// Owner, deadline and up to four transcript links; the rest are counted, not dropped silently.
-    @ViewBuilder private func citations(_ item: SummaryItem, meeting: Meeting) -> some View {
+    /// Bold lead-in: the topic for a note, the owner for an action item.
+    private func leadText(_ item: SummaryItem, kind: SummaryKind) -> String? {
+        switch kind {
+        case .note: item.topic
+        case .action: item.owner
+        default: item.topic
+        }
+    }
+
+    /// One flowing paragraph: optional bold lead, the text, due date, then muted timestamp links.
+    private func inlineText(_ item: SummaryItem, meeting: Meeting, size: CGFloat, weight: Font.Weight, ink: Color,
+                            lead: String? = nil) -> some View {
+        var text = AttributedString()
+        if let lead, !lead.isEmpty {
+            var run = AttributedString(lead + ": ")
+            run.font = .system(size: size, weight: .semibold); run.foregroundColor = CodaStyle.ink
+            text += run
+        }
+        var body = AttributedString(item.text)
+        body.font = .system(size: size, weight: weight); body.foregroundColor = ink
+        text += body
+        if let due = item.dueDate, !due.isEmpty {
+            var run = AttributedString("  · due " + due)
+            run.font = .system(size: size - 1.5, weight: .medium); run.foregroundColor = CodaStyle.muted
+            text += run
+        }
         let cited = item.evidence.compactMap { id in meeting.segments.first { $0.id == id } }
-        if item.owner != nil || item.dueDate != nil || !cited.isEmpty {
-            CodaFlowLayout(spacing: 6) {
-                if let owner = item.owner { CodaTag(icon: "person.fill", text: owner) }
-                if let due = item.dueDate { CodaTag(icon: "calendar", text: due) }
-                ForEach(cited.prefix(4)) { segment in citation(segment) }
-                if cited.count > 4 {
-                    CodaTag(text: "+\(cited.count - 4)")
-                        .help(cited.dropFirst(4).map { timestamp($0.start) }.joined(separator: ", "))
-                }
-            }
+        for segment in cited.prefix(4) {
+            text += AttributedString("  ")
+            var link = AttributedString(timestamp(segment.start))
+            link.font = .system(size: 11, weight: .medium).monospacedDigit()
+            link.foregroundColor = CodaStyle.mint.opacity(0.85)
+            let id = segment.id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? segment.id
+            link.link = URL(string: "\(Self.citationScheme):\(id)")
+            text += link
         }
+        if cited.count > 4 {
+            var more = AttributedString("  +\(cited.count - 4)")
+            more.font = .system(size: 11, weight: .medium); more.foregroundColor = CodaStyle.muted
+            text += more
+        }
+        return Text(text).tint(CodaStyle.mint.opacity(0.85)).textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Citations are links back into the transcript, not decorative brackets.
-    private func citation(_ segment: Segment) -> some View {
-        Button {
-            focusedSegment = segment.id
-            withAnimation(CodaStyle.motion(reduceMotion, duration: 0.2)) { tab = "Transcript" }
-        } label: {
-            Text(timestamp(segment.start)).font(.system(size: 11, weight: .medium, design: .monospaced))
-            .foregroundStyle(CodaStyle.mint)
-            .padding(.horizontal, 8).frame(height: 21)
-            .background(CodaStyle.mint.opacity(0.11), in: Capsule())
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .help("Show this moment in the transcript")
-        .accessibilityLabel("Show \(timestamp(segment.start)) in the transcript")
+    /// Citations are links back into the transcript.
+    private func jump(to segmentID: String) {
+        guard !segmentID.isEmpty else { return }
+        focusedSegment = segmentID
+        withAnimation(CodaStyle.motion(reduceMotion, duration: 0.2)) { tab = "Transcript" }
     }
 
     // MARK: Empty and pending
@@ -680,6 +702,7 @@ struct RecordingOptionsView: View {
                             }
                             .toggleStyle(CodaSwitchStyle())
                         }
+                        if model.recordingSpeakerCount > 0 { SpeakerNameFields(model: model) }
                     }
                 }
                 Rectangle().fill(CodaStyle.hairline).frame(height: 1)
@@ -742,7 +765,7 @@ struct RecordingOptionsView: View {
     }
 
     private var speakerHint: String {
-        if model.recordingSpeakerCount > 0 { return "Include yourself. Coda looks for exactly this many voices." }
+        if model.recordingSpeakerCount > 0 { return "Include yourself. Coda looks for exactly this many voices. Names go to voices in the order they first speak; you can rename them afterwards." }
         if usableCount != nil, model.useDetectedSpeakerCount {
             return "Includes you. Silent people or shared screens can inflate it."
         }
