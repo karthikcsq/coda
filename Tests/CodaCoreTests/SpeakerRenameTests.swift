@@ -72,3 +72,44 @@ private func summarized() -> Meeting {
     meeting.plannedSpeakerNames = nil
     #expect(meeting.plannedNames(for: segments).isEmpty)
 }
+
+@Test func transcribingAgainKeepsExistingNamesOnTheSameSpeakers() {
+    var meeting = Meeting(title: "Call", audioFile: "none.m4a")
+    meeting.plannedSpeakerNames = ["Planned", "Bea"]
+    meeting.speakerNames = ["0": "Karthik", "2": "Wyatt", "3": "  "]
+    let segments = [Segment(id: "s1", start: 0, end: 1, speakers: [0], text: "a"),
+                    Segment(id: "s2", start: 1, end: 2, speakers: [1], text: "b")]
+    // Given names win, planned names fill gaps, and speakers no longer heard are dropped.
+    #expect(meeting.retainedNames(for: segments) == ["0": "Karthik", "1": "Bea"])
+}
+
+@Test func swappingSpeakersExchangesNamesInTheSummaryAndKeepsTheTranscript() {
+    var meeting = summarized()
+    let transcript = meeting.segments
+    meeting.renameSpeaker(0, to: "Alex"); meeting.renameSpeaker(1, to: "Sam")
+    let named = meeting.summary
+    meeting.swapSpeakers(0, 1)
+    #expect(meeting.segments == transcript)
+    #expect(meeting.speakerNames == ["0": "Sam", "1": "Alex"])
+    #expect(meeting.summary?.brief?.text == "A sync where Sam and Alex agreed on scope.")
+    #expect(meeting.summary?.actions.first?.owner == "Sam")
+    meeting.swapSpeakers(1, 0)
+    #expect(meeting.summary == named)
+}
+
+@Test func reassigningALineChangesOnlyItsSpeaker() {
+    var meeting = summarized()
+    let summary = meeting.summary
+    let line = meeting.segments[0]
+    meeting.reassignSegment(line.id, to: [3, 3])
+    #expect(meeting.segments[0].speakers == [3])
+    #expect(meeting.segments[0].text == line.text && meeting.segments[0].start == line.start)
+    #expect(meeting.summary == summary)
+}
+
+@Test func swappingWithAnUnnamedSpeakerMovesTheName() {
+    var meeting = summarized()
+    meeting.swapSpeakers(0, 1)
+    #expect(meeting.speakerNames == ["0": "Sam"])
+    #expect(meeting.summary?.brief?.text == "A sync where Sam and Speaker 2 agreed on scope.")
+}

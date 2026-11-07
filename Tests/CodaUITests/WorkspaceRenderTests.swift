@@ -115,6 +115,10 @@ struct WorkspaceOverhaulRenderSuite {
                       size: CGSize(width: 1120, height: 810),
                       to: directory.appendingPathComponent("overhaul-meeting-\(tab.lowercased()).png"))
     }
+    try renderPNG(ContentView(model: model, dictation: controller, editingSpeakers: true)
+                    .foregroundStyle(Color(white: 0.88)),
+                  size: CGSize(width: 1120, height: 810),
+                  to: directory.appendingPathComponent("overhaul-meeting-speaker-editor.png"))
     try renderPNG(RecordCard(record: syntheticHistory()[0], controller: controller, expanded: true)
                     .padding(24).background(Color(white: 0.10)),
                   size: CGSize(width: 900, height: 600),

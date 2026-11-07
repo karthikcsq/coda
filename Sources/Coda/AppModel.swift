@@ -178,6 +178,17 @@ import Voz
         meeting.renameSpeaker(speaker, to: name)
         do { try save(meeting) } catch { self.error = "Could not save the speaker name." }
     }
+    /// Relabels without reprocessing: the transcript text and summary content stay as they are.
+    func swapSpeakers(_ first: Int, _ second: Int) {
+        guard !isOccupied, var meeting = selected else { return }
+        meeting.swapSpeakers(first, second)
+        do { try save(meeting) } catch { self.error = "Could not save the speaker change." }
+    }
+    func reassignSegment(_ id: String, to speakers: [Int]) {
+        guard !isOccupied, var meeting = selected else { return }
+        meeting.reassignSegment(id, to: speakers)
+        do { try save(meeting) } catch { self.error = "Could not save the speaker change." }
+    }
     func renameMeeting(_ title: String) {
         guard !isOccupied, var meeting = selected, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         meeting.title = title
@@ -218,7 +229,7 @@ import Voz
                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
                 }
                 try Task.checkCancellation()
-                var updated = meeting; updated.segments = segments; updated.speakerNames = meeting.plannedNames(for: segments); updated.setSummary(nil)
+                var updated = meeting; updated.segments = segments; updated.speakerNames = meeting.retainedNames(for: segments); updated.setSummary(nil)
                 try save(updated)
                 status = "Transcript saved locally"
                 if autoSummary { try await summarize(updated, consent: autoSummary) }

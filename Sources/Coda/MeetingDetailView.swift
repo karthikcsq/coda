@@ -13,6 +13,7 @@ struct ContentView: View {
     @ViewState private var tab: String
     @ViewState private var editingSpeakers: Bool
     @ViewState private var deleteConfirmation = false
+    @ViewState private var retranscribeConfirmation = false
     /// Segment a summary citation jumped to; highlighted briefly in the transcript.
     @ViewState private var focusedSegment: String?
     @Namespace private var tabIndicator
@@ -65,6 +66,10 @@ struct ContentView: View {
             } else if model.recordingStartFailure != nil { Button("Recording options…") { model.reviewRecordingOptions() } }
             Button("OK", role: .cancel) { model.dismissError() }
         } message: { Text(model.error ?? "") }
+        .alert("Transcribe this meeting again?", isPresented: $retranscribeConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Transcribe again") { model.processSelected() }
+        } message: { Text(retranscribeMessage) }
         .alert("Delete this meeting?", isPresented: $deleteConfirmation) { Button("Cancel", role: .cancel) {}; Button("Delete", role: .destructive) { model.deleteSelected() } } message: { Text("This removes Coda's local audio, transcript, and summary. The original imported file is kept.") }
         .onChange(of: model.selection) { _, _ in tab = "Transcript"; editingSpeakers = false; focusedSegment = nil }
     }
@@ -91,7 +96,12 @@ struct ContentView: View {
             }
             Spacer(minLength: 12)
             if !capturing {
-                if model.selected?.segments.isEmpty == false { exportMenu }
+                if model.selected?.segments.isEmpty == false {
+                    Button { retranscribeConfirmation = true } label: { Image(systemName: "arrow.clockwise") }
+                        .buttonStyle(CodaIconButtonStyle()).help("Transcribe again from the saved audio")
+                        .accessibilityLabel("Transcribe again").disabled(model.isOccupied)
+                    exportMenu
+                }
                 if model.selected != nil {
                     Button { deleteConfirmation = true } label: { Image(systemName: "trash") }
                         .buttonStyle(CodaIconButtonStyle()).help("Delete this meeting")
@@ -104,6 +114,12 @@ struct ContentView: View {
         }
         .padding(.horizontal, 16).frame(height: 56)
         .codaDivider()
+    }
+
+    private var retranscribeMessage: String {
+        let count = model.selected?.expectedSpeakerCount.map { "\($0) speaker\($0 == 1 ? "" : "s")" } ?? "an automatic speaker count"
+        let summary = model.selected?.summary == nil ? "" : " The summary is cleared because its timestamps would no longer match."
+        return "Coda transcribes the saved audio on this Mac again with \(count). Speaker names stay on the same speaker numbers; check them afterwards.\(summary)"
     }
 
     private var exportMenu: some View {
@@ -304,6 +320,8 @@ struct ContentView: View {
                 .padding(.top, continued ? 0 : 10).padding(.bottom, -6)
         }
         .padding(.horizontal, -12)
+        .contentShape(Rectangle())
+        .contextMenu { if !model.isOccupied { reassignMenu(segment, in: meeting) } }
         .accessibilityElement(children: .combine)
     }
 
@@ -330,9 +348,43 @@ struct ContentView: View {
                 .buttonStyle(CodaNavRowStyle(selected: editingSpeakers))
                 .font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.ink.opacity(0.86))
                 .disabled(model.isOccupied).opacity(model.isOccupied ? 0.45 : 1)
-                .help("Rename speakers or transcribe again with a different speaker count")
+                .help("Rename or swap speakers, or transcribe again with a different speaker count")
             }
             if editingSpeakers { speakerEditor(meeting).padding(.top, 12).transition(.opacity) }
+        }
+    }
+
+    /// Exchanges labels with another speaker; nothing is transcribed or summarized again.
+    private func swapMenu(_ speaker: Int, in meeting: Meeting) -> some View {
+        Menu {
+            Section("Swap names with") {
+                ForEach(meeting.speakerIDs.filter { $0 != speaker }, id: \.self) { other in
+                    Button("\(meeting.displayName(other)) · Speaker \(other + 1)") { model.swapSpeakers(speaker, other) }
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.left.arrow.right").font(.system(size: 12, weight: .medium))
+                .frame(width: 30, height: 30).contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .foregroundStyle(CodaStyle.muted)
+        .help("Swap this name with another speaker. The transcript and summary are kept.")
+        .accessibilityLabel("Swap speaker \(speaker + 1) with another speaker")
+    }
+
+    /// Right-click a line to say who actually said it.
+    @ViewBuilder private func reassignMenu(_ segment: Segment, in meeting: Meeting) -> some View {
+        let next = (meeting.knownSpeakers.max() ?? -1) + 1
+        Section("Who said this?") {
+            ForEach(meeting.speakerIDs, id: \.self) { speaker in
+                Button {
+                    model.reassignSegment(segment.id, to: [speaker])
+                } label: {
+                    if segment.speakers == [speaker] { Label(meeting.displayName(speaker), systemImage: "checkmark") }
+                    else { Text(meeting.displayName(speaker)) }
+                }
+            }
+            Button("New speaker (Speaker \(next + 1))") { model.reassignSegment(segment.id, to: [next]) }
         }
     }
 
@@ -350,6 +402,7 @@ struct ContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusSmall).strokeBorder(CodaStyle.hairline))
                         .frame(maxWidth: 260)
                         .accessibilityLabel("Name for speaker \(speaker + 1)")
+                    if meeting.speakerIDs.count > 1 { swapMenu(speaker, in: meeting) }
                 }
             }
             Rectangle().fill(CodaStyle.hairline).frame(height: 1)
@@ -358,10 +411,10 @@ struct ContentView: View {
                     .frame(width: 190)
                 Button("Apply & transcribe again") { model.processSelected() }
                     .buttonStyle(CodaSecondaryButtonStyle())
-                    .help("Reprocess saved audio with this speaker count. Replaces the transcript and clears speaker names and summary.")
+                    .help("Reprocess saved audio with this speaker count. Replaces the transcript and summary; names stay on the same speaker numbers.")
                 Spacer(minLength: 0)
             }
-            CodaNotice(kind: .caution, text: "Transcribing again replaces the transcript and clears speaker names and the summary. Renaming a speaker updates the name in the existing summary.")
+            CodaNotice(kind: .info, text: "Renaming or swapping speakers keeps the transcript and updates the names in the summary. To fix a single line, right-click it in the transcript. Transcribing again replaces the transcript and clears the summary.")
         }
         .disabled(model.isOccupied)
         .padding(18)
