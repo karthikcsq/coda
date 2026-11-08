@@ -55,6 +55,9 @@ struct ProductUpgradeRenderSuite {
         practiceController.attach(prepared)
         practiceController.modifierShortcut = true; practiceController.mode = .hold
         try render(OnboardingView(model: prepared, controller: practiceController, initialStep: .practice), name: "setup-practice-ready", size: CGSize(width: 760, height: 610))
+        practiceController.records = controller.records
+        practiceController.workspaceSection = "Home"
+        try render(WorkspaceView(model: prepared, controller: practiceController, delegate: AppDelegate()), name: "home-ready-1350", size: CGSize(width: 1350, height: 850))
         practiceController.practiceText = "Let's meet on Thursday at 3."
         practiceController.practiceCompleted = true
         try render(OnboardingView(model: prepared, controller: practiceController, initialStep: .practice), name: "setup-practice-complete", size: CGSize(width: 760, height: 610))

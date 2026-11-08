@@ -57,11 +57,9 @@ struct WorkspaceView: View {
                 Text("Coda").font(.system(size: 14, weight: .semibold)).tracking(-0.2)
             }.padding(.horizontal, 20).frame(height: 56, alignment: .center).accessibilityAddTraits(.isHeader)
             VStack(spacing: 1) {
-                navigation("Home", icon: "house", section: "Home", hint: "Setup status, quick actions and recent work")
+                navigation("Home", icon: "house", section: "Home", hint: "Your shortcut, activity and full history")
                 navigation("Dictation", icon: "waveform", section: "Dictation", hint: "Start dictating and see recent results")
                 navigation("Meetings", icon: "person.2", section: "Meetings", hint: "Meeting recordings, transcripts and summaries")
-                navGroup("Library")
-                navigation("History", icon: "clock", section: "History", hint: "Every dictation Coda has saved")
                 navigation("Insights", icon: "chart.bar", section: "Insights", hint: "Counts from the dictations saved on this Mac")
                 navGroup("Customize")
                 navigation("Make it yours", icon: "slider.horizontal.3", section: "Personalize", hint: "Writing style, app preferences and voice snippets")
@@ -157,46 +155,39 @@ private struct DictationPage: View {
     private var shortcutReady: Bool { controller.shortcutLabel != "Choose a shortcut" }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: CodaStyle.blockSpacing) {
-                if historyOnly {
-                    CodaPageHeader(icon: "clock.arrow.circlepath", title: "History",
-                                   subtitle: "Every dictation Coda has saved on this Mac.")
-                } else {
-                    hero
+            VStack(alignment: .leading, spacing: 24) {
+                CodaPageHeader(icon: historyOnly ? "clock" : "waveform", title: historyOnly ? "History" : "Dictation", subtitle: "") {
+                    HStack(spacing: 10) {
+                        CodaSearchField(prompt: "Search", text: $query, width: 200)
+                        if !historyOnly && !controller.readiness(for: model).canDictate {
+                            Button("Set up") { controller.showOnboarding = true }.buttonStyle(CodaPrimaryButtonStyle())
+                        }
+                    }
                 }
-                HStack(alignment: .center, spacing: 12) {
-                    CodaEyebrow(text: historyOnly ? "All dictations" : "Recent dictations")
-                    if !records.isEmpty { CodaCountBadge(count: records.count) }
-                    Spacer(minLength: 12)
-                    CodaSearchField(prompt: "Search dictations", text: $query, width: 210)
-                }
+                if !historyOnly { ShortcutHint(controller: controller, ready: controller.readiness(for: model).canDictate) }
                 if let warning = controller.historyWarning { CodaNotice(kind: .caution, text: warning) }
                 if records.isEmpty {
-                    CodaEmptyState(
-                        icon: query.isEmpty ? "text.bubble" : "magnifyingglass",
-                        title: query.isEmpty ? "Your words will appear here" : "No matching dictations",
-                        message: query.isEmpty
-                            ? "Click into a text field, use your dictation shortcut, and the result is saved here."
-                            : "Try a different word, or search by the app you dictated into.",
-                        tint: query.isEmpty ? CodaStyle.mint : CodaStyle.muted)
+                    if !query.isEmpty {
+                        CodaEmptyState(icon: "magnifyingglass", title: "No matches", message: "Try another word or app name.")
+                    } else if historyOnly {
+                        CodaEmptyState(icon: "clock", title: "Nothing yet", message: "Dictations you make will appear here.")
+                    }
                 } else {
                     ForEach(days, id: \.self) { day in
-                        VStack(alignment: .leading, spacing: 12) {
-                            CodaEyebrow(text: dayLabel(day))
+                        VStack(alignment: .leading, spacing: 8) {
+                            CodaEyebrow(text: dayLabel(day)).padding(.leading, 2)
                             VStack(spacing: 0) {
                                 let group = records.filter { Calendar.current.isDate($0.created, inSameDayAs: day) }
                                 ForEach(Array(group.enumerated()), id: \.element.id) { index, record in
-                                    if index > 0 { Divider().opacity(0.4) }
+                                    if index > 0 { Rectangle().fill(CodaStyle.hairline).frame(height: 1).padding(.leading, 56) }
                                     RecordCard(record: record, controller: controller)
                                 }
                             }
-                            .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+                            .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
                             .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
                         }
                     }
                 }
-                Text("Local Voz transcription · Powered by Desert Ant Labs")
-                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.faint)
             }
             .codaPageInsets()
             .animation(CodaStyle.motion(reduceMotion, duration: 0.18), value: records.count)
@@ -206,19 +197,6 @@ private struct DictationPage: View {
         if Calendar.current.isDateInToday(day) { return "Today" }
         if Calendar.current.isDateInYesterday(day) { return "Yesterday" }
         return day.formatted(.dateTime.weekday(.wide).month(.wide).day())
-    }
-    private var hero: some View {
-        CodaPageHeader(icon: "waveform", title: "Dictation",
-                       subtitle: "Focus any text field and use your shortcut. Every result is saved here first.") {
-            HStack(spacing: 10) {
-                if shortcutReady {
-                    if model.dictationModelReady { CodaKeycap(controller.shortcutLabel) }
-                    else { CodaStatusChip(readiness: .pending, text: "Model needs preparing") }
-                }
-                Button(controller.readiness(for: model).canDictate ? "Try a dictation" : "Set up dictation") { controller.showOnboarding = true }
-                    .buttonStyle(CodaPrimaryButtonStyle())
-            }
-        }
     }
 }
 
@@ -235,58 +213,162 @@ struct RecordCard: View {
         guard let original = record.rawText, original != record.text else { return nil }
         return original
     }
+    @LocalState private var hovering = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack(alignment: .top, spacing: 16) {
-                Text(record.created.formatted(date: .omitted, time: .shortened))
-                    .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
-                    .monospacedDigit().frame(width: 64, alignment: .leading).padding(.top, 1)
-                Text(record.text.isEmpty ? record.detail : record.text)
-                    .font(CodaStyle.bodyFont).lineSpacing(4).lineLimit(expanded ? nil : 4)
-                    .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                Button { controller.copyRecord(record) } label: { Image(systemName: "doc.on.doc") }
-                    .buttonStyle(CodaIconButtonStyle()).help("Copy text").accessibilityLabel("Copy this dictation")
-                // One control owns the disclosure, so the row cannot disagree with itself.
-                Button { expanded.toggle() } label: {
-                    Image(systemName: "chevron.down").rotationEffect(.degrees(expanded ? 180 : 0))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                AppIcon(name: record.target, size: 28)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(record.text.isEmpty ? record.detail : record.text)
+                        .font(CodaStyle.bodyFont).lineSpacing(3).lineLimit(expanded ? nil : 3)
+                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 6) {
+                        Text(record.target).lineLimit(1)
+                        Text("·")
+                        Text(record.created.formatted(date: .omitted, time: .shortened)).monospacedDigit()
+                        if cleanedOriginal != nil {
+                            Image(systemName: "sparkles").font(.system(size: 9))
+                                .accessibilityLabel("Automatic cleanup was applied; the original is in the details")
+                        }
+                    }.font(CodaStyle.captionFont).foregroundStyle(CodaStyle.faint)
                 }
-                .buttonStyle(CodaIconButtonStyle())
-                .help(expanded ? "Hide dictation details" : "Show dictation details")
-                .accessibilityLabel(expanded ? "Hide dictation details" : "Show dictation details")
+                HStack(spacing: 0) {
+                    Button { controller.copyRecord(record) } label: { Image(systemName: "doc.on.doc") }
+                        .buttonStyle(CodaIconButtonStyle(size: 26)).help("Copy text").accessibilityLabel("Copy this dictation")
+                    // One control owns the disclosure, so the row cannot disagree with itself.
+                    Button { expanded.toggle() } label: {
+                        Image(systemName: "chevron.down").rotationEffect(.degrees(expanded ? 180 : 0))
+                    }
+                    .buttonStyle(CodaIconButtonStyle(size: 26))
+                    .help(expanded ? "Hide dictation details" : "Show dictation details")
+                    .accessibilityLabel(expanded ? "Hide dictation details" : "Show dictation details")
+                }.opacity(hovering || expanded ? 1 : 0)
             }
-            HStack(spacing: 10) {
-                Text(record.target).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).lineLimit(1)
-                if cleanedOriginal != nil {
-                    CodaStatusChip(readiness: .ready, text: "Cleaned up")
-                        .accessibilityLabel("Automatic cleanup was applied; the original is in the details")
-                }
-                Spacer(minLength: 0)
-            }.padding(.leading, 80)
             if expanded {
                 VStack(alignment: .leading, spacing: 12) {
-                    Divider().opacity(0.4)
                     Text(record.detail).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
                         .fixedSize(horizontal: false, vertical: true)
                     if let original = cleanedOriginal {
                         VStack(alignment: .leading, spacing: 8) {
-                            CodaEyebrow(text: "Original dictation")
+                            CodaEyebrow(text: "Before cleanup")
                             Text(original).font(.system(size: 13)).textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            Button("Copy original") { controller.copyOriginal(record) }
-                                .buttonStyle(CodaSecondaryButtonStyle())
                         }
-                        .padding(14)
-                        .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                        .padding(12)
+                        .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
                     }
-                    Button("Insert into another app…") { controller.armInsertion(record) }
-                        .buttonStyle(CodaSecondaryButtonStyle())
+                    HStack(spacing: 8) {
+                        if cleanedOriginal != nil {
+                            Button("Copy original") { controller.copyOriginal(record) }.buttonStyle(CodaSecondaryButtonStyle())
+                        }
+                        Button("Insert into another app…") { controller.armInsertion(record) }.buttonStyle(CodaSecondaryButtonStyle())
+                    }
                 }
-                .padding(.leading, 80)
+                .padding(.leading, 40)
                 .transition(.opacity)
             }
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .animation(CodaStyle.motion(reduceMotion, duration: 0.18), value: expanded)
+        .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(CodaStyle.motion(reduceMotion, duration: 0.15), value: expanded)
+        .animation(CodaStyle.motion(reduceMotion, duration: 0.1), value: hovering)
+    }
+}
+
+/// The destination app's real icon when it can be found; a lettered tile otherwise.
+struct AppIcon: View {
+    let name: String
+    var size: CGFloat = 28
+    private static var cache: [String: NSImage?] = [:]
+    @MainActor private static func lookup(_ name: String) -> NSImage? {
+        if let hit = cache[name] { return hit }
+        let roots = ["/Applications", "/System/Applications", "/System/Applications/Utilities",
+                     "/Applications/Utilities", NSHomeDirectory() + "/Applications"]
+        let path = roots.map { $0 + "/" + name + ".app" }.first { FileManager.default.fileExists(atPath: $0) }
+        let image = path.map { NSWorkspace.shared.icon(forFile: $0) }
+        cache[name] = image
+        return image
+    }
+    var body: some View {
+        Group {
+            if let image = Self.lookup(name) {
+                Image(nsImage: image).resizable().interpolation(.high).frame(width: size, height: size)
+            } else {
+                Text(String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased())
+                    .font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(CodaStyle.muted)
+                    .frame(width: size, height: size)
+                    .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: size * 0.26))
+                    .overlay(RoundedRectangle(cornerRadius: size * 0.26).strokeBorder(CodaStyle.hairline))
+            }
+        }.accessibilityHidden(true)
+    }
+}
+
+/// The shortcut drawn as keys: the one thing a person needs to know to dictate.
+struct ShortcutHint: View {
+    @Bindable var controller: DictationController
+    let ready: Bool
+    private var keys: [String] {
+        let label = controller.shortcutLabel
+        if label == "Choose a shortcut" { return [] }
+        let symbols = label.filter { "⌃⌥⇧⌘".contains($0) }.map(String.init)
+        let rest = label.filter { !"⌃⌥⇧⌘".contains($0) }.trimmingCharacters(in: .whitespaces)
+        if symbols.isEmpty { return label.components(separatedBy: " + ").filter { !$0.isEmpty } }
+        return symbols + (rest.isEmpty ? [] : [rest])
+    }
+    var body: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 6) {
+                if keys.isEmpty {
+                    BigKey(label: "?")
+                } else {
+                    ForEach(Array(keys.enumerated()), id: \.offset) { _, key in BigKey(label: key) }
+                }
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(ready ? (controller.mode == .hold ? "Hold to talk" : "Press to start, press to stop") : "Set up a shortcut to dictate")
+                    .font(.system(size: 14, weight: .semibold))
+                Text(ready ? "Works in any text field" : "Takes about two minutes")
+                    .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
+            }
+            Spacer(minLength: 0)
+            WaveGlyph().frame(width: 96, height: 36).accessibilityHidden(true)
+        }
+        .padding(18).frame(maxWidth: .infinity, alignment: .leading)
+        .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct BigKey: View {
+    let label: String
+    var body: some View {
+        Text(label).font(.system(size: label.count > 2 ? 12 : 17, weight: .medium))
+            .foregroundStyle(CodaStyle.ink)
+            .padding(.horizontal, label.count > 2 ? 10 : 0)
+            .frame(minWidth: 40, minHeight: 40)
+            .background(
+                RoundedRectangle(cornerRadius: 9).fill(LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.06)], startPoint: .top, endPoint: .bottom))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Color.white.opacity(0.12)))
+            .shadow(color: .black.opacity(0.5), radius: 0, y: 2)
+    }
+}
+
+/// Static, symmetrical bars. Decorative only; it never implies capture.
+struct WaveGlyph: View {
+    private let heights: [CGFloat] = [0.25, 0.45, 0.7, 0.4, 0.95, 0.6, 0.8, 0.35, 0.55, 0.3, 0.2]
+    var body: some View {
+        GeometryReader { proxy in
+            HStack(alignment: .center, spacing: 3) {
+                ForEach(Array(heights.enumerated()), id: \.offset) { i, h in
+                    Capsule().fill(CodaStyle.mint.opacity(0.25 + 0.6 * h))
+                        .frame(width: 3, height: max(4, proxy.size.height * h))
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+        }
     }
 }
 

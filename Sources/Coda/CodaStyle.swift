@@ -114,8 +114,10 @@ struct CodaPageHeader<Trailing: View>: View {
             // The title never wraps; the subtitle gets the remaining width.
             Text(title).font(CodaStyle.pageTitleFont).tracking(CodaStyle.pageTitleTracking)
                 .fixedSize(horizontal: true, vertical: false)
-            Text(subtitle).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
-                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            if !subtitle.isEmpty {
+                Text(subtitle).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            }
         }.layoutPriority(1)
     }
 }

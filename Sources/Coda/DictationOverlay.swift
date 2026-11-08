@@ -70,47 +70,68 @@ struct DictationHUD: View {
         if listening { return controller.practiceSession ? "Practice in Coda" : controller.targetName + " / " + controller.activeStyleLabel }
         return controller.message.hasPrefix("Ready") ? controller.shortcutLabel : controller.message
     }
+    /// Only failures and pending insertions earn a second line; everything else is one word.
+    private var showsDetail: Bool { controller.lifecycle.phase == .failed || controller.pendingInsertion != nil }
+    private var failed: Bool { controller.lifecycle.phase == .failed }
     var body: some View {
-        HStack(spacing: 12) {
-            if listening {
-                // Reduce Motion keeps the level meter readable without the continuous animation.
-                HStack(spacing: 3) { ForEach(0..<7) { index in
-                    Capsule().fill(CodaStyle.mint.opacity(0.9)).frame(width: 3, height: 5 + controller.level * (index.isMultiple(of: 3) ? 22 : 14))
-                } }.frame(width: 39, height: 28)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: controller.level)
-                    .accessibilityHidden(true)
-            } else if controller.lifecycle.busy {
-                ProgressView().controlSize(.small).frame(width: 28)
-            } else { Image(systemName: "waveform").font(.system(size: 19, weight: .light)).frame(width: 28) }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(statusTitle)
-                    .font(CodaStyle.rowTitleFont).lineLimit(1)
-                Text(statusDetail)
-                    .font(.system(size: 10)).foregroundStyle(CodaStyle.muted).lineLimit(2)
+        HStack(spacing: 10) {
+            indicator.frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(statusTitle).font(.system(size: 13, weight: .medium)).lineLimit(1)
+                if showsDetail {
+                    Text(statusDetail).font(.system(size: 10.5)).foregroundStyle(CodaStyle.muted).lineLimit(1)
+                }
             }.frame(maxWidth: .infinity, alignment: .leading).help(controller.message)
             if !controller.lifecycle.busy && !controller.text.isEmpty {
                 Button { controller.copyResult() } label: { Image(systemName: "doc.on.doc") }
-                    .buttonStyle(CodaIconButtonStyle()).help("Copy saved text").accessibilityLabel("Copy saved text")
+                    .buttonStyle(CodaIconButtonStyle(size: 26)).help("Copy saved text").accessibilityLabel("Copy saved text")
             }
-            if !controller.lifecycle.busy || listening {
+            if listening || (!controller.lifecycle.busy && controller.pendingInsertion != nil) {
                 Button { controller.button() } label: {
-                    Image(systemName: listening ? "stop.fill" : controller.pendingInsertion != nil ? "arrow.up.doc" : "mic.fill")
-                        .font(.system(size: 12)).frame(width: 30, height: 30)
-                        .background(listening ? CodaStyle.mint.opacity(0.22) : Color.white.opacity(0.12), in: Circle())
+                    Image(systemName: listening ? "stop.fill" : "arrow.up.doc")
+                        .font(.system(size: 10, weight: .bold)).foregroundStyle(Color(white: 0.07))
+                        .frame(width: 26, height: 26).background(Color(white: 0.95), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .help(listening ? "Stop dictation" : controller.pendingInsertion != nil ? "Insert text here" : "Start dictation")
-                .accessibilityLabel(listening ? "Stop dictation" : controller.pendingInsertion != nil ? "Insert text here" : "Start dictation")
+                .help(listening ? "Stop dictation" : "Insert text here")
+                .accessibilityLabel(listening ? "Stop dictation" : "Insert text here")
+            } else if !controller.lifecycle.busy && controller.text.isEmpty {
+                Button { controller.button() } label: {
+                    Image(systemName: "mic.fill").font(.system(size: 11))
+                        .frame(width: 26, height: 26).background(Color.white.opacity(0.1), in: Circle())
+                }
+                .buttonStyle(.plain).help("Start dictation").accessibilityLabel("Start dictation")
             }
-            // Same 30pt target as the control beside it.
-            Button { controller.dismissOverlay() } label: { Image(systemName: "xmark").font(.system(size: 11)) }
-                .buttonStyle(CodaIconButtonStyle())
+            Button { controller.dismissOverlay() } label: { Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)) }
+                .buttonStyle(CodaIconButtonStyle(size: 26))
                 .help(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss; text stays in History")
                 .accessibilityLabel(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss dictation; text stays in History")
-        }.padding(.horizontal, 15).frame(width: 320, height: 64)
-        .background(Color(white: 0.075), in: Capsule())
-        .overlay(Capsule().strokeBorder(CodaStyle.strongEdge))
-        .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.9))
+        }
+        .padding(.leading, 10).padding(.trailing, 8).frame(width: 280, height: showsDetail ? 54 : 46)
+        .background(Color(white: 0.07), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.1)))
+        .frame(width: 320, height: 64)
+        .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
         .accessibilityElement(children: .contain).accessibilityLabel("Coda dictation")
+    }
+    @ViewBuilder private var indicator: some View {
+        if listening {
+            // Reduce Motion keeps the level meter readable without the continuous animation.
+            HStack(spacing: 2.5) { ForEach(0..<5) { index in
+                Capsule().fill(CodaStyle.recording)
+                    .frame(width: 2.5, height: 4 + controller.level * [8, 16, 20, 14, 9][index])
+            } }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.1), value: controller.level)
+            .accessibilityHidden(true)
+        } else if controller.lifecycle.busy {
+            ProgressView().controlSize(.small)
+        } else if failed {
+            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 13)).foregroundStyle(CodaStyle.caution)
+        } else if !controller.text.isEmpty {
+            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
+                .frame(width: 22, height: 22).background(CodaStyle.mint, in: Circle())
+        } else {
+            Image(systemName: "waveform").font(.system(size: 14)).foregroundStyle(CodaStyle.muted)
+        }
     }
 }
