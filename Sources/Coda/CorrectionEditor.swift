@@ -8,7 +8,7 @@ private typealias EditorState<Value> = SwiftUI.State<Value>
 
 extension KeyboardShortcuts.Name {
     /// Global: marks the most recently inserted dictation wrong and opens the editor.
-    static let codaCorrectLastDictation = Self("codaCorrectLastDictation", default: .init(.c, modifiers: [.control, .option]))
+    static let codaCorrectLastDictation = Self("codaCorrectLastDictation", default: .init(.c, modifiers: BuildIdentity.isDevelopment ? [.control, .option, .shift] : [.control, .option]))
 }
 
 /// Editing state for one marked-wrong dictation. Closing without saving keeps
@@ -75,7 +75,7 @@ extension KeyboardShortcuts.Name {
         self.editor = editor
         window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 520, height: 420), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
         super.init()
-        window.title = "Correct dictation"
+        window.title = "Correct dictation" + (BuildIdentity.isDevelopment ? " — Coda Dev" : "")
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.level = .floating

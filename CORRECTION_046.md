@@ -1,6 +1,6 @@
 # Correct last dictation (046)
 
-Global shortcut (default ⌃⌥C, rebind or clear in Settings → Dictation → "Correct last dictation")
+Global shortcut (Production default ⌃⌥C; Development ⇧⌃⌥C to avoid intercepting Production, rebind or clear in Settings → Dictation → "Correct last dictation")
 marks the most recently inserted dictation wrong and opens a native editor window.
 Also available from the menu bar ("Correct Last Dictation…") and per entry in History ("Mark wrong…" / "Edit correction…").
 

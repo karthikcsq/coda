@@ -26,6 +26,18 @@ builds never update Production. Each bundle records `CodaChannel`, the full
 the channel name and short source revision. A dirty build is for development;
 it cannot be promoted by the release script.
 
+## Worktrees
+
+Use the primary checkout on `main` as the integration point for completed work.
+Keep feature worktrees only while they are active. Before removing one, verify
+its tracked and untracked work is committed and merged, or retain its branch as
+an explicit recovery point. Remove its checkout with `git worktree remove`;
+remove merged temporary branches after consolidation. Build Development at its
+stable Applications path rather than keeping runnable bundles per worktree.
+
+The correction editor defaults to Control–Option–C in Production and
+Shift–Control–Option–C in Development so both channels can run together.
+
 ## Release
 
 1. Complete tests, native renders and the relevant manual checks in Development.
