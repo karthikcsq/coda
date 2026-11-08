@@ -87,7 +87,10 @@ import CodaCore
     func tuneNow() { pendingCheck?.cancel(); start() }
 
     private func start() {
-        guard !running, editCount > 0, let script, FileManager.default.isExecutableFile(atPath: python.path) else { return }
+        guard enabled, !running, !isDictating(), editCount > 0 else { return }
+        guard let script, FileManager.default.isExecutableFile(atPath: python.path) else {
+            status = Status(state: "failed", message: "Prepare Smart cleanup before fine-tuning."); return
+        }
         let worker = Process()
         worker.executableURL = python; worker.arguments = [script.path, root.path]
         worker.environment = ["PATH": "/usr/bin:/bin", "HOME": FileManager.default.homeDirectoryForCurrentUser.path,

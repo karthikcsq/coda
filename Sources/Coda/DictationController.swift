@@ -45,6 +45,7 @@ extension KeyboardShortcuts.Name {
     var pendingInsertion: UUID?
     var workspaceSection = "Dictation"
     private var history: DictationHistory?
+    private var trainingStore: DictationTrainingStore?
     private var sessionID: UUID?
     private var retryGeneration: UUID?
     private var retryTimeout: Task<Void, Never>?
@@ -113,7 +114,7 @@ extension KeyboardShortcuts.Name {
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
         let cleanupInput = record.cleanupMode == .smart ? record.rawText : nil
-        let success = await insertion.insertWithFallback(record.text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+        let success = await insertion.insertWithFallback(record.text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -211,15 +212,18 @@ extension KeyboardShortcuts.Name {
     /// Watches the destination field after insertion. Word changes feed dictionary
     /// suggestions; when the text was Smart-cleaned, the edited passage is also kept
     /// for personal fine-tuning (`cleanupInput` is what the cleanup model received).
-    private func observeCorrections(_ target: DictationCorrectionTarget, cleanupInput: String?) {
-        let tuneOnEdits = personalTuning.enabled && cleanupInput != nil
+    private func observeCorrections(_ target: DictationCorrectionTarget, cleanupInput: String?, session: UUID) {
+        let tuneOnEdits = personalTuning.enabled
         guard learnWords || tuneOnEdits, !visualReview else { return }
         wordSuggestions.preferredFrame = insertion.targetDisplayFrame
-        let session = UUID()
         corrections.start(target) { [weak self] changes, original, edited in
             guard let self else { return }
             if learnWords { reviewCorrections(changes, original: original, edited: edited, session: session) }
-            if tuneOnEdits, let cleanupInput {
+            if tuneOnEdits, personalTuning.enabled {
+                do { try trainingStore?.updateFinalText(id: session, text: edited) }
+                catch { message = "Could not save the dictation correction for training." }
+            }
+            if tuneOnEdits, personalTuning.enabled, let cleanupInput {
                 personalTuning.record(CleanupEdit(id: session, input: cleanupInput, inserted: original, edited: edited))
             }
         }
@@ -268,6 +272,7 @@ extension KeyboardShortcuts.Name {
                 ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Preview-" + UUID().uuidString)
                 : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/Dictations")
             let history = try DictationHistory(root: base); self.history = history
+            trainingStore = try DictationTrainingStore(root: base.appendingPathComponent("Training"))
             let loaded = try history.load(); records = loaded.records; selectedRecord = records.first?.id
             if loaded.skipped > 0 { historyWarning = "Some history files could not be read. They were preserved on disk." }
         } catch { historyWarning = "Dictation history is unavailable. New text will remain in memory until you quit." }
@@ -448,9 +453,13 @@ extension KeyboardShortcuts.Name {
                     saveSession(outcome: .saved, detail: message)
                     return
                 }
+                if personalTuning.enabled {
+                    do { try trainingStore?.save(id: id, audio: url, rawText: rawText, insertedText: text) }
+                    catch { cleanupDetail += " Could not save audio and text for training." }
+                }
                 let inserted: Bool
                 if autoInsert {
-                    inserted = await insertion.insertWithFallback(text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+                    inserted = await insertion.insertWithFallback(text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
                 } else { inserted = false }
                 guard lifecycle.complete(id) else { return }
                 message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
