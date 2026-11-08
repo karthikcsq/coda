@@ -7,11 +7,12 @@ public struct DictationRecord: Codable, Identifiable, Equatable, Sendable {
     public var text: String
     public var rawText: String?
     public var cleanupMode: DictationCleanupMode?
+    public var snippetTrigger: String?
     public var target: String
     public var outcome: Outcome
     public var detail: String
-    public init(id: UUID = UUID(), created: Date = .now, text: String, target: String, outcome: Outcome, detail: String, rawText: String? = nil, cleanupMode: DictationCleanupMode? = nil) {
-        self.rawText = rawText; self.cleanupMode = cleanupMode
+    public init(id: UUID = UUID(), created: Date = .now, text: String, target: String, outcome: Outcome, detail: String, rawText: String? = nil, cleanupMode: DictationCleanupMode? = nil, snippetTrigger: String? = nil) {
+        self.rawText = rawText; self.cleanupMode = cleanupMode; self.snippetTrigger = snippetTrigger
         self.id = id; self.created = created; self.text = text; self.target = target; self.outcome = outcome; self.detail = detail
     }
 }

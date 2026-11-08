@@ -6,6 +6,8 @@ import Voz
 @preconcurrency import ApplicationServices
 
 @MainActor @Observable final class AppModel {
+    let summaryCredentials: SummaryCredentials
+    private let previewModelPrepared: Bool
     private var visualReview = false
     var isVisualReview: Bool { visualReview }
     var dictationBusy = false
@@ -66,7 +68,7 @@ import Voz
     private var activeRecording: Meeting?
     var selected: Meeting? { meetings.first { $0.id == selection } }
     var isOccupied: Bool { visualReview || busy || recording || startingCapture || dictationBusy }
-    var filteredMeetings: [Meeting] { meetings.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) } }
+    var filteredMeetings: [Meeting] { meetings.filter { $0.matchesSearch(search) } }
     var meetingOperationInProgress: Bool { recording || busy || startingCapture }
 
     func openMeeting(_ id: UUID) {
@@ -116,7 +118,9 @@ import Voz
         }
     }
 
-    init(preview: Bool = ProcessInfo.processInfo.arguments.contains("--ui-preview")) {
+    init(preview: Bool = ProcessInfo.processInfo.arguments.contains("--ui-preview"), previewModelPrepared: Bool = false) {
+        self.previewModelPrepared = preview && previewModelPrepared
+        summaryCredentials = SummaryCredentials(preview: preview)
         visualReview = preview
         root = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-UI-Preview-" + UUID().uuidString) : FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Coda/Meetings", isDirectory: true)
         pipeline = LocalPipeline(cache: root.deletingLastPathComponent().appendingPathComponent("Models"))
@@ -149,7 +153,16 @@ import Voz
         }
         selection = meetings.first?.id
     }
-    var dictationModelReady: Bool { Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
+    var dictationModelReady: Bool { visualReview ? previewModelPrepared : Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
+    private var warmingDictation: Task<Void, Never>?
+    func warmDictation() {
+        guard !visualReview, modelConsent, dictationModelReady, warmingDictation == nil else { return }
+        warmingDictation = Task {
+            defer { warmingDictation = nil }
+            try? await pipeline.prepareVoz(consent: true) { _, _ in }
+        }
+    }
+    func cancelDictationWarmup() { warmingDictation?.cancel() }
     func transcribeDictation(_ audio: URL, vocabulary: [String] = []) async throws -> String { try await pipeline.dictate(audio, consent: modelConsent, vocabulary: vocabulary) }
     func prepareDictation() {
         guard !isOccupied, modelConsent else { return }
@@ -238,11 +251,15 @@ import Voz
         }
     }
     private func configuration() throws -> Configuration {
-        // Only runtime reads this explicitly selected file. Never log contents or expose the key in the UI.
-        let contents: String
-        do { contents = try String(contentsOfFile: envPath, encoding: .utf8) }
-        catch { throw CodaError.missingKey }
-        return Configuration(contents: contents)
+        var keychainError: Error?
+        do { if let saved = try summaryCredentials.configuration() { return saved } }
+        catch { keychainError = error }
+        do {
+            let contents = try String(contentsOfFile: envPath, encoding: .utf8)
+            let fallback = Configuration(contents: contents)
+            try fallback.validate()
+            return fallback
+        } catch { throw keychainError ?? CodaError.missingKey }
     }
     private func summarize(_ meeting: Meeting, consent: Bool) async throws {
         try Task.checkCancellation()
@@ -316,7 +333,7 @@ import Voz
         guard let id = selection, !chatPending.contains(id) else { return }
         chats[id] = nil; chatErrors[id] = nil
     }
-    func cancel() { operationID = nil; operation?.cancel(); status = "Cancelling • an in-flight model operation may need to finish" }
+    func cancel() { operationID = nil; operation?.cancel(); cancelDictationWarmup(); status = "Cancelling • an in-flight model operation may need to finish" }
     func startRecording() {
         guard !isOccupied else { return }
         let speakerCount = resolvedRecordingSpeakerCount

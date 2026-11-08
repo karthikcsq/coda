@@ -59,6 +59,11 @@ struct RecordingMenu: View {
     private func openCoda() { delegate.showMain { openWindow(id: "main") } }
     var body: some View {
         Button("Open Coda") { openCoda() }
+        Button(dictation.lifecycle.phase == .listening ? "Stop Dictation" : "Start Dictation") {
+            if model.modelConsent && model.dictationModelReady { dictation.button() }
+            else { dictation.showOnboarding = true; openCoda() }
+        }.disabled(model.meetingOperationInProgress || (dictation.lifecycle.busy && dictation.lifecycle.phase != .listening))
+        Button("Setup Guide") { dictation.showOnboarding = true; openCoda() }.disabled(model.settingsChangesLocked)
         Button(model.recording ? "Stop & Save Meeting" : "Start Meeting") {
             MeetingMenuAction.perform(recording: model.recording, occupied: model.isOccupied, open: {
                 model.closeSettings(); dictation.workspaceSection = "Meetings"; openCoda()

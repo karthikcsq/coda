@@ -23,8 +23,6 @@ struct AccessibilitySetupView: View {
             }
             HStack(spacing: 12) {
                 Button("Refresh access status") { controller.refreshAccessibility() }.buttonStyle(CodaQuietButtonStyle())
-                Text("Coda " + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development") + " • process " + String(ProcessInfo.processInfo.processIdentifier))
-                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
             }
         }
         .task {

@@ -43,7 +43,27 @@ extension KeyboardShortcuts.Name {
     var historyWarning: String?
     var selectedRecord: UUID?
     var pendingInsertion: UUID?
-    var workspaceSection = "Dictation"
+    var workspaceSection = "Home"
+    var showOnboarding = false
+    private(set) var onboardingSeen = false
+    private(set) var practiceSession = false
+    var practiceShortcutActive = false
+    var practiceText = ""
+    var practiceMessage = ""
+    var practiceCompleted = false
+    func finishOnboarding() {
+        guard !lifecycle.busy else { return }
+        showOnboarding = false; onboardingSeen = true
+        if !visualReview { UserDefaults.standard.set(true, forKey: "onboardingSeen-v1") }
+    }
+    func practice() {
+        guard !visualReview else { return }
+        if practiceSession && lifecycle.phase == .listening { finish(); return }
+        guard !lifecycle.busy, pendingInsertion == nil else { return }
+        practiceSession = true; practiceText = ""; practiceMessage = ""; practiceCompleted = false
+        begin()
+        if !lifecycle.busy { practiceSession = false }
+    }
     private var history: DictationHistory?
     private var sessionID: UUID?
     private var retryGeneration: UUID?
@@ -70,7 +90,7 @@ extension KeyboardShortcuts.Name {
     }
     private func saveSession(outcome: DictationRecord.Outcome, detail: String) {
         guard let sessionID else { return }
-        saveRecord(DictationRecord(id: sessionID, text: text, target: targetName, outcome: outcome, detail: detail, rawText: rawText.isEmpty ? nil : rawText, cleanupMode: cleanupMode))
+        saveRecord(DictationRecord(id: sessionID, text: text, target: targetName, outcome: outcome, detail: detail, rawText: rawText.isEmpty ? nil : rawText, cleanupMode: cleanupMode, snippetTrigger: sessionSnippetTrigger))
     }
     func copyRecord(_ record: DictationRecord) {
         guard !visualReview else { message = "Visual review • clipboard unchanged"; return }
@@ -113,7 +133,7 @@ extension KeyboardShortcuts.Name {
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
         let cleanupInput = record.cleanupMode == .smart ? record.rawText : nil
-        let success = await insertion.insertWithFallback(record.text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+        let success = await insertion.insertWithFallback(record.text, observeCorrections: record.snippetTrigger != nil ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -132,6 +152,18 @@ extension KeyboardShortcuts.Name {
     private var rawText = ""
     let smartFormatter: SmartFormatter
     let personalTuning: PersonalTuning
+    let preferences: DictationPreferences
+    private var targetBundleID: String?
+    var activeStyleLabel: String { cleanupMode == .none ? "Raw text" : sessionPreferences.style(forBundleID: targetBundleID).title }
+    private var sessionPreferences = DictationPreferenceSettings()
+    private var sessionSnippetTrigger: String?
+    func snapshotPreferences(bundleID: String?) {
+        sessionPreferences = preferences.settings; targetBundleID = bundleID
+    }
+    func deliveryText(recognized: String, cleaned: String) -> DictationPersonalizationResult {
+        DictationPersonalization.forDelivery(recognized: recognized, cleaned: cleaned, mode: cleanupMode,
+                                              bundleID: targetBundleID, settings: sessionPreferences)
+    }
     private var cleanupDetail = ""
     var cleanupMode: DictationCleanupMode {
         didSet { if !visualReview {
@@ -181,7 +213,8 @@ extension KeyboardShortcuts.Name {
     var autoInsert: Bool {
         didSet { if !visualReview { UserDefaults.standard.set(autoInsert, forKey: "dictationAutoInsert") } }
     }
-    var permissionGranted: Bool { AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
+    private let previewMicrophoneAllowed: Bool
+    var permissionGranted: Bool { visualReview ? previewMicrophoneAllowed : AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
     var shortcutLabel: String { modifierShortcut ? "⌃⌥ Control + Option" : KeyboardShortcuts.getShortcut(for: .codaDictation)?.description ?? "Choose a shortcut" }
     private var visualReview = false
     private weak var model: AppModel?
@@ -243,11 +276,13 @@ extension KeyboardShortcuts.Name {
     }
 
     override convenience init() { self.init(preview: false) }
-    init(preview: Bool, formatter: SmartFormatter? = nil) {
+    init(preview: Bool, formatter: SmartFormatter? = nil, previewMicrophoneAllowed: Bool = false) {
+        self.previewMicrophoneAllowed = preview && previewMicrophoneAllowed
         let dictionary = CustomDictionary(preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         self.dictionary = dictionary
         smartFormatter = formatter ?? SmartFormatter()
         let previewRun = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
+        preferences = DictationPreferences(preview: previewRun)
         personalTuning = PersonalTuning(root: previewRun ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Tuning-Preview-" + UUID().uuidString) : nil)
         wordSuggestions = DictionarySuggestions(dictionary: dictionary, preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
@@ -261,7 +296,8 @@ extension KeyboardShortcuts.Name {
             self?.workspaceSection = "Dictionary"
             self?.showDictionaryWindow?()
         }
-        visualReview = preview
+        visualReview = previewRun
+        onboardingSeen = UserDefaults.standard.bool(forKey: "onboardingSeen-v1")
         modifierShortcut = UserDefaults.standard.bool(forKey: "dictationModifierShortcut")
         do {
             let base = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
@@ -327,7 +363,13 @@ extension KeyboardShortcuts.Name {
         else if !lifecycle.busy { begin() }
     }
     private func handle(_ intent: DictationIntent) {
-        switch intent { case .begin: if pendingInsertion != nil { insertPending() } else { begin() }; case .finish: finish(); case .cancel: cancel(); case .none: break }
+        switch intent { case .begin:
+            if pendingInsertion != nil { insertPending() }
+            else if showOnboarding && NSWorkspace.shared.frontmostApplication?.processIdentifier == getpid() {
+                if practiceShortcutActive { practice() }
+                else { message = "Continue to Try it out to test your shortcut." }
+            }
+            else { begin() }; case .finish: finish(); case .cancel: cancel(); case .none: break }
     }
     private func show() {
         presentationID = UUID()
@@ -356,10 +398,13 @@ extension KeyboardShortcuts.Name {
         if cleanupMode == .smart { smartFormatter.warm() }
         // Heard-as review needs the local model itself; load it while listening.
         if cleanupMode != .none, !dictionary.soundAlikeRules.isEmpty { Task { await smartFormatter.prepareModel() } }
-        sessionID = id
+        snapshotPreferences(bundleID: practiceSession ? nil : NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+        model.warmDictation()
+        sessionID = id; sessionSnippetTrigger = nil
         model.dictationBusy = true; text = ""; rawText = ""; level = 0
         failureTitle = "Dictation failed"; captureStats = DictationCaptureStats()
-        insertion.captureTarget(); targetName = insertion.targetName
+        if practiceSession { insertion.clear(); targetName = "Coda practice" }
+        else { insertion.captureTarget(); targetName = insertion.targetName }
         message = "Preparing microphone…"; show()
         // Escape is scoped to a live Coda operation, never registered while idle.
         KeyboardShortcuts.enable(.codaCancelDictation)
@@ -368,7 +413,7 @@ extension KeyboardShortcuts.Name {
             let allowed = await AVCaptureDevice.requestAccess(for: .audio)
             guard lifecycle.accepts(id), !Task.isCancelled else { return }
             guard allowed else {
-                lifecycle.fail(id); model.dictationBusy = false
+                lifecycle.fail(id); model.dictationBusy = false; practiceSession = false
                 message = "Microphone access is off. Enable Coda in System Settings → Privacy & Security → Microphone."
                 saveSession(outcome: .failed, detail: message); sessionID = nil
                 insertion.clear(); KeyboardShortcuts.disable(.codaCancelDictation); dismissAfterResult(); return
@@ -397,7 +442,7 @@ extension KeyboardShortcuts.Name {
                     }
                 }
             } catch {
-                lifecycle.fail(id); model.dictationBusy = false; recorder?.stop(); recorder = nil; cleanupAudio()
+                lifecycle.fail(id); model.dictationBusy = false; practiceSession = false; recorder?.stop(); recorder = nil; cleanupAudio()
                 message = "Microphone could not start. Check your input device and permission, then retry."
                 saveSession(outcome: .failed, detail: message); sessionID = nil
                 insertion.clear(); KeyboardShortcuts.disable(.codaCancelDictation); dismissAfterResult()
@@ -406,6 +451,7 @@ extension KeyboardShortcuts.Name {
     }
     private func finish() {
         guard let id = lifecycle.processing(), let url = audioURL, let model else { return }
+        let isPractice = practiceSession
         captureStats.seconds = recorder?.currentTime ?? 0
         recorder?.updateMeters()
         if let peak = recorder?.peakPower(forChannel: 0), peak.isFinite {
@@ -418,6 +464,8 @@ extension KeyboardShortcuts.Name {
             guard let self else { return }
             defer {
                 cleanupAudio(); insertion.clear(); lifecycle.settled(id); sessionID = nil
+                if isPractice { practiceMessage = message }
+                practiceSession = false
                 model.dictationBusy = lifecycle.busy
                 KeyboardShortcuts.disable(.codaCancelDictation)
             }
@@ -428,29 +476,46 @@ extension KeyboardShortcuts.Name {
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
                 refreshAccessibility()
                 guard acceptTranscription(result, for: id) else { return }
-                let proposals = soundAlikeProposals(for: result)
-                if !proposals.isEmpty {
-                    let decisions = await smartFormatter.reviewSoundAlikes(result, proposals: proposals)
-                    try Task.checkCancellation()
-                    guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
-                }
                 var cleanupInput: String?
-                if cleanupMode == .smart {
-                    // Smart cleanup starts from the dictionary-corrected words.
-                    cleanupInput = text
-                    let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))
-                    try Task.checkCancellation()
-                    guard acceptSmartFormatting(formatted, for: id) else { return }
+                let initialDelivery = deliveryText(recognized: result, cleaned: text)
+                let expandedSnippet = initialDelivery.snippet != nil
+                if let snippet = initialDelivery.snippet {
+                    // Authored text bypasses cleanup and all correction learning.
+                    text = snippet.expansion; sessionSnippetTrigger = snippet.trigger
+                    cleanupDetail = "Voice snippet: " + snippet.trigger
+                } else {
+                    let proposals = soundAlikeProposals(for: result)
+                    if !proposals.isEmpty {
+                        let decisions = await smartFormatter.reviewSoundAlikes(result, proposals: proposals)
+                        try Task.checkCancellation()
+                        guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
+                    }
+                    if cleanupMode == .smart {
+                        cleanupInput = text
+                        let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))
+                        try Task.checkCancellation()
+                        guard acceptSmartFormatting(formatted, for: id) else { return }
+                    }
+                    text = deliveryText(recognized: result, cleaned: text).text
                 }
+                saveSession(outcome: .saved, detail: "Saved locally before insertion. " + cleanupDetail)
                 if text.isEmpty {
                     guard lifecycle.complete(id) else { return }
                     message = "Only speech fillers detected. Nothing inserted. Original saved in History."
                     saveSession(outcome: .saved, detail: message)
                     return
                 }
+                if isPractice {
+                    guard lifecycle.complete(id) else { return }
+                    practiceText = text; practiceCompleted = true
+                    message = "Practice complete. No text was pasted into another app."
+                    saveSession(outcome: .saved, detail: message)
+                    overlay?.hide()
+                    return
+                }
                 let inserted: Bool
                 if autoInsert {
-                    inserted = await insertion.insertWithFallback(text, observeCorrections: { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+                    inserted = await insertion.insertWithFallback(text, observeCorrections: expandedSnippet ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
                 } else { inserted = false }
                 guard lifecycle.complete(id) else { return }
                 message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
@@ -520,6 +585,7 @@ extension KeyboardShortcuts.Name {
         return true
     }
     func cancel() {
+        model?.cancelDictationWarmup()
         corrections.stop()
         stopCorrectionReview()
         wordSuggestions.close()
@@ -530,6 +596,8 @@ extension KeyboardShortcuts.Name {
         lifecycle.cancel(); task?.cancel(); recorder?.stop(); recorder = nil
         meterTask?.cancel(); meterTask = nil; level = 0; started = nil; insertion.clear()
         if !wasProcessing { cleanupAudio(); model?.dictationBusy = false }
+        if practiceSession { practiceMessage = "Practice cancelled. Start again when you are ready." }
+        practiceSession = false
         message = wasProcessing ? "Cancelling local inference…" : "Cancelled • nothing inserted"
         KeyboardShortcuts.disable(.codaCancelDictation)
         overlay?.hide()

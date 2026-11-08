@@ -10,13 +10,15 @@ struct WorkspaceView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var shortcutReady: Bool { controller.shortcutLabel != "Choose a shortcut" }
-    private var setupComplete: Bool { shortcutReady && model.dictationModelReady }
+    private var setupComplete: Bool { controller.readiness(for: model).canDictate }
     private var page: String { model.showSettings ? "Settings" : controller.workspaceSection }
     var body: some View {
         HStack(spacing: 0) {
             sidebar
             Group {
                 if model.showSettings { SettingsPanel(model: model, controller: controller) }
+                else if controller.workspaceSection == "Home" { HomePage(model: model, controller: controller) }
+                else if controller.workspaceSection == "Personalize" { PersonalizationPage(model: model, controller: controller) }
                 else if controller.workspaceSection == "Dictionary" { DictionaryPage(controller: controller) }
                 else if controller.workspaceSection == "Meetings" { NotetakerPage(model: model, controller: controller) }
                 else if controller.workspaceSection == "Insights" { InsightsPage(controller: controller) }
@@ -34,6 +36,13 @@ struct WorkspaceView: View {
             delegate.reopenMain = { delegate.showMain { openWindow(id: "main") } }
             controller.showDictionaryWindow = { delegate.reopenMain?() }
             controller.refreshAccessibility()
+            if !model.isVisualReview && !controller.onboardingSeen && !model.modelConsent && !model.dictationModelReady {
+                controller.showOnboarding = true
+            }
+        }
+        .sheet(isPresented: $controller.showOnboarding) { OnboardingView(model: model, controller: controller) }
+        .onChange(of: controller.workspaceSection) { _, section in
+            if section == "Dictation" { model.warmDictation() }
         }
         .onChange(of: model.selection, initial: true) { _, _ in
             // Imports can originate in the File menu while another workspace is open.
@@ -47,26 +56,23 @@ struct WorkspaceView: View {
                 Text("coda").font(.system(size: 23, weight: .semibold, design: .rounded))
             }.padding(.horizontal, 22).frame(height: 76, alignment: .center).accessibilityAddTraits(.isHeader)
             VStack(spacing: 3) {
+                navigation("Home", icon: "house", section: "Home", hint: "Setup status, quick actions and recent work")
                 navigation("Dictation", icon: "waveform", section: "Dictation", hint: "Start dictating and see recent results")
+                navigation("Make it yours", icon: "slider.horizontal.3", section: "Personalize", hint: "Writing style, app preferences and voice snippets")
                 navigation("Dictionary", icon: "character.book.closed", section: "Dictionary", hint: "Custom words and suggestions to review")
-                navigation("Notetaker", icon: "square.and.pencil", section: "Meetings", hint: "Meeting recordings, transcripts and summaries")
+                navigation("Meetings", icon: "square.and.pencil", section: "Meetings", hint: "Meeting recordings, transcripts and summaries")
                 navigation("Insights", icon: "chart.bar", section: "Insights", hint: "Counts from the dictations saved on this Mac")
                 navigation("History", icon: "clock.arrow.circlepath", section: "History", hint: "Every dictation Coda has saved")
             }.padding(.horizontal, 12)
-            if !setupComplete { setupCard.padding(12).padding(.top, 18) }
+            if !setupComplete && controller.workspaceSection != "Home" { setupCard.padding(12).padding(.top, 18) }
             Spacer(minLength: 12)
             VStack(spacing: 3) {
                 Button { model.openSettings() } label: { navLabel("Settings", icon: "gearshape") }
                     .buttonStyle(CodaNavRowStyle(selected: model.showSettings))
                     .accessibilityLabel("Settings")
-                Menu {
-                    Text("Coda runs transcription locally.")
-                    Text("Use your shortcut with a text field focused.")
-                    Text("Meeting summaries are optional.")
-                } label: { navLabel("Help", icon: "questionmark.circle") }
-                    .menuStyle(.button).buttonStyle(CodaNavRowStyle(selected: false)).menuIndicator(.hidden)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityLabel("Help")
+                Button { controller.showOnboarding = true } label: { navLabel("Setup guide", icon: "questionmark.circle") }
+                    .buttonStyle(CodaNavRowStyle(selected: false)).disabled(model.settingsChangesLocked)
+                    .accessibilityLabel("Open setup guide")
             }.padding(12)
         }
         .frame(width: 216)
@@ -76,8 +82,8 @@ struct WorkspaceView: View {
     private var setupCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             CodaEyebrow(text: "Finish setting up")
-            setupStep("Choose a shortcut", label: "Shortcut", icon: "keyboard", done: shortcutReady)
-            setupStep("Prepare local dictation", label: "Local model", icon: "waveform", done: model.dictationModelReady)
+            Text(controller.readiness(for: model).nextAction).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
+            Button("Continue setup") { controller.showOnboarding = true }.buttonStyle(CodaSecondaryButtonStyle()).disabled(model.settingsChangesLocked)
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
         .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
@@ -186,11 +192,11 @@ private struct DictationPage: View {
             VStack(alignment: .leading, spacing: 9) {
                 CodaEyebrow(text: "Dictation")
                 Text("A little less typing.").font(.system(size: 27, weight: .medium, design: .rounded))
-                Text("Speak naturally. Your voice and your words stay on this Mac.")
+                Text("Focus a text field and use your shortcut. Your words are saved before insertion.")
                     .font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.ink.opacity(0.78))
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 10) {
-                    Button(shortcutReady ? "Dictation settings" : "Set up dictation") { model.openSettings() }
+                    Button(controller.readiness(for: model).canDictate ? "Try a dictation" : "Set up dictation") { controller.showOnboarding = true }
                         .buttonStyle(CodaPrimaryButtonStyle())
                     if shortcutReady {
                         CodaStatusChip(readiness: model.dictationModelReady ? .ready : .pending,

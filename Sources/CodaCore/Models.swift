@@ -184,3 +184,14 @@ public enum Export {
         return lines.joined(separator: "\n") + "\n"
     }
 }
+
+
+extension Meeting {
+    /// Local search includes the words and speaker names, not just a recording's title.
+    public func matchesSearch(_ query: String) -> Bool {
+        let terms = query.split(whereSeparator: \.isWhitespace).map(String.init)
+        guard !terms.isEmpty else { return true }
+        let fields = [title] + segments.map(\.text) + Array(speakerNames.values)
+        return terms.allSatisfy { term in fields.contains { $0.localizedCaseInsensitiveContains(term) } }
+    }
+}

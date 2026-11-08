@@ -67,7 +67,7 @@ struct DictationHUD: View {
         }
     }
     var statusDetail: String {
-        if listening { return "Esc to cancel" }
+        if listening { return controller.practiceSession ? "Practice in Coda" : controller.targetName + " / " + controller.activeStyleLabel }
         return controller.message.hasPrefix("Ready") ? controller.shortcutLabel : controller.message
     }
     var body: some View {
