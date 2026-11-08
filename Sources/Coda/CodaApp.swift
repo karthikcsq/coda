@@ -63,6 +63,8 @@ struct RecordingMenu: View {
             if model.modelConsent && model.dictationModelReady { dictation.button() }
             else { dictation.showOnboarding = true; openCoda() }
         }.disabled(model.meetingOperationInProgress || (dictation.lifecycle.busy && dictation.lifecycle.phase != .listening))
+        Button("Correct Last Dictation… (\(dictation.correctionShortcutLabel))") { dictation.correctLastDictation() }
+            .disabled(dictation.lifecycle.busy)
         Button("Setup Guide") { dictation.showOnboarding = true; openCoda() }.disabled(model.settingsChangesLocked)
         Button(model.recording ? "Stop & Save Meeting" : "Start Meeting") {
             MeetingMenuAction.perform(recording: model.recording, occupied: model.isOccupied, open: {

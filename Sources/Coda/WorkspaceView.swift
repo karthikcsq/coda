@@ -219,13 +219,17 @@ struct RecordCard: View {
             HStack(alignment: .top, spacing: 12) {
                 AppIcon(name: record.target, size: 28)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(record.text.isEmpty ? record.detail : record.text)
+                    Text(record.finalText.isEmpty ? record.detail : record.finalText)
                         .font(CodaStyle.bodyFont).lineSpacing(3).lineLimit(expanded ? nil : 3)
                         .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                     HStack(spacing: 6) {
                         Text(record.target).lineLimit(1)
                         Text("·")
                         Text(record.created.formatted(date: .omitted, time: .shortened)).monospacedDigit()
+                        if record.correctedText != nil {
+                            Image(systemName: "pencil").font(.system(size: 9))
+                                .accessibilityLabel("You corrected this dictation; the inserted text is in the details")
+                        }
                         if cleanedOriginal != nil {
                             Image(systemName: "sparkles").font(.system(size: 9))
                                 .accessibilityLabel("Automatic cleanup was applied; the original is in the details")
@@ -248,6 +252,15 @@ struct RecordCard: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(record.detail).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
                         .fixedSize(horizontal: false, vertical: true)
+                    if record.correctedText != nil {
+                        VStack(alignment: .leading, spacing: 8) {
+                            CodaEyebrow(text: "Coda inserted")
+                            Text(record.text).font(.system(size: 13)).textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(12)
+                        .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                    }
                     if let original = cleanedOriginal {
                         VStack(alignment: .leading, spacing: 8) {
                             CodaEyebrow(text: "Before cleanup")
@@ -262,6 +275,11 @@ struct RecordCard: View {
                             Button("Copy original") { controller.copyOriginal(record) }.buttonStyle(CodaSecondaryButtonStyle())
                         }
                         Button("Insert into another app…") { controller.armInsertion(record) }.buttonStyle(CodaSecondaryButtonStyle())
+                        if !record.text.isEmpty {
+                            Button(record.correctedText == nil ? "Mark wrong…" : "Edit correction…") { controller.correct(record) }
+                                .buttonStyle(CodaSecondaryButtonStyle()).disabled(controller.lifecycle.busy)
+                                .help("Type what you meant. The inserted text is kept.")
+                        }
                     }
                 }
                 .padding(.leading, 40)
