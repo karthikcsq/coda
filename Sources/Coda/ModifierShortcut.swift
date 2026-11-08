@@ -12,8 +12,8 @@ import CodaCore
                 && flags.intersection(requiringShift ? [.command, .function] : [.command, .shift, .function]).isEmpty && !otherKey
         }
     }
-    private var global: Any?
-    private var local: Any?
+    private var eventTap: CFMachPort?
+    private var tapSource: CFRunLoopSource?
     private var timer: Timer?
     private var chord = ModifierChord()
     private var pending: Task<Void, Never>?
@@ -49,22 +49,46 @@ import CodaCore
     func start() {
         stop()
         guard canListen() else { return }
-        let mask: NSEvent.EventTypeMask = [.flagsChanged, .keyDown]
-        global = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in
-            MainActor.assumeIsolated { self?.receive(event) }
+        // A listen-only CGEvent tap does not participate in AppKit's local
+        // event queue. NSEvent global/local monitors can disrupt menu tracking
+        // on the installed macOS build, even after they are removed.
+        let mask = (CGEventMask(1) << CGEventType.flagsChanged.rawValue)
+            | (CGEventMask(1) << CGEventType.keyDown.rawValue)
+        eventTap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .tailAppendEventTap,
+            options: .listenOnly, eventsOfInterest: mask, callback: { _, type, event, context in
+                guard let context else { return Unmanaged.passUnretained(event) }
+                let monitor = Unmanaged<ModifierShortcut>.fromOpaque(context).takeUnretainedValue()
+                MainActor.assumeIsolated {
+                    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                        monitor.interrupt()
+                        if let tap = monitor.eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
+                    } else if monitor.canListen() {
+                        monitor.update(NSEvent.ModifierFlags(rawValue: UInt(event.flags.rawValue)), otherKey: type == .keyDown)
+                    } else { monitor.interrupt() }
+                }
+                return Unmanaged.passUnretained(event) // Never consume or modify input.
+            }, userInfo: Unmanaged.passUnretained(self).toOpaque())
+        if let eventTap {
+            let source = CFMachPortCreateRunLoopSource(nil, eventTap, 0)
+            tapSource = source
+            CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+            CGEvent.tapEnable(tap: eventTap, enable: true)
         }
-        local = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
-            MainActor.assumeIsolated { self?.receive(event) }; return event
-        }
-        available = global != nil && local != nil
-        guard available else { stop(); return }
+        // Physical-state polling is also a fallback if macOS refuses a tap.
+        available = true
         // Recover both presses and releases when AppKit misses flagsChanged.
         // stop() requires a full release before a fresh chord can arm.
-        let timer = Timer(timeInterval: 0.08, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.04, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
         }
         self.timer = timer
         RunLoop.main.add(timer, forMode: .common)
+    }
+    isolated deinit {
+        if let eventTap { CFMachPortInvalidate(eventTap) }
+        if let tapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), tapSource, .commonModes) }
+        timer?.invalidate()
+        pending?.cancel()
     }
     func poll() {
         guard canListen() else { interrupt(); return }
@@ -73,18 +97,15 @@ import CodaCore
     }
     func stop() {
         pending?.cancel(); generation = UUID(); timer?.invalidate(); timer = nil
-        if let global { NSEvent.removeMonitor(global) }; if let local { NSEvent.removeMonitor(local) }
-        global = nil; local = nil; available = false
+        if let eventTap { CFMachPortInvalidate(eventTap) }
+        if let tapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), tapSource, .commonModes) }
+        eventTap = nil; tapSource = nil; available = false
         _ = chord.interrupt()
     }
     func interrupt() {
         pending?.cancel(); generation = UUID()
         let event = chord.interrupt()
         if event != .none { action(event) }
-    }
-    private func receive(_ event: NSEvent) {
-        guard canListen() else { interrupt(); return }
-        update(event.modifierFlags, otherKey: event.type == .keyDown)
     }
     private func update(_ flags: NSEvent.ModifierFlags, otherKey: Bool) {
         let event = chord.update(control: flags.contains(.control) && (!requiresShift || flags.contains(.shift)), option: flags.contains(.option),

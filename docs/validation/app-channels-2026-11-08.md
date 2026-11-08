@@ -136,3 +136,39 @@ UI/integration, 5 speaker/tool), plus the menu routing smoke check. The menu
 source was compared directly with bbeb1a0; the only differences are channel names,
 a distinct circled-waveform Dev icon, and the new correction command. No feature
 controller, current workspace page, user data or permission grant was reverted.
+
+
+## Verified live pointer fix
+
+Native automation reproduced the actual failure: the menu row had an enabled,
+nonzero frame and received pointer events, but selection did not complete.
+The same binary in UI-preview mode accepted the physical click. In normal mode,
+disabling the modifier listener also allowed physical selection. Pausing the
+AppKit listener only after menu tracking began was insufficient.
+
+Replaced the modifier listener's NSEvent global/local monitors with a listen-only
+CGEvent tap (flagsChanged/keyDown only, every event returned unchanged), retaining
+physical-state recovery polling. All shortcut interception is suspended during
+AppKit menu tracking and restored afterward, including nested menus and prior
+disabled state. Shift–Control–Option remains enabled. No vendor changes or custom
+popup remain. The original MenuBarExtra/window implementation and newer app
+features remain in place.
+
+Verification on the installed normal-mode Dev app (not --ui-preview):
+
+- `swift scripts/verify-menu-click.swift` passed repeatedly. A real pointer click
+  on Setup Guide dismissed the status menu and opened the sheet. A real pointer
+  click closed the sheet. Repetition verified listener restoration did not break
+  the next menu interaction.
+- `swift scripts/verify-menu-click.swift --quit-at-end` also passed: the physical
+  Quit menu click exited Dev normally.
+- The restored Dev input tap was enabled and listen-only. The Dev modifier
+  preference was restored to true after diagnostic A/B testing.
+- All 228 tests passed: 131 core, 92 UI/integration, 5 speaker/tool.
+- The builder refused to overwrite the running Dev app. Its process check now
+  compares executable paths separately from arguments, covering diagnostic
+  launches with --ui-preview as well as normal launches.
+
+Earlier claimed menu diagnoses above were not sufficient and are superseded by
+these native pointer results. Production was not restarted or replaced. The
+briefly hidden Wispr windows were restored; no Wispr settings were changed.

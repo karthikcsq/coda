@@ -36,7 +36,12 @@ if [[ "$CHANNEL" == development && -f "$APP/Contents/Info.plist" ]]; then
     fi
 fi
 # Never overwrite an executable while it is running, including development.
-if /usr/bin/pgrep -f "^$APP/Contents/MacOS/Coda$" >/dev/null; then
+if python3 - "$APP/Contents/MacOS/Coda" <<'PY_CHECK'
+import subprocess, sys
+processes = subprocess.check_output(['ps', '-axo', 'comm='], text=True)
+raise SystemExit(0 if any(line.strip() == sys.argv[1] for line in processes.splitlines()) else 1)
+PY_CHECK
+then
     echo "Quit $APP_NAME normally before building into $APP." >&2; exit 1
 fi
 swift build -c release

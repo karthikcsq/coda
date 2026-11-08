@@ -82,3 +82,12 @@ Use `git revert` on the release commit(s), review/test the result, and run the s
 release command from main. This makes GitHub and Production agree on the rollback
 without retaining old runnable bundles or rewriting Git history. Data migrations
 must remain backward compatible or supply a separately reviewed recovery plan.
+
+
+For a native menu regression check, run `swift scripts/verify-menu-click.swift`
+with Dev open and idle. It uses actual pointer clicks to verify Setup Guide,
+menu dismissal, and the setup close control. Add `--quit-at-end` to verify normal
+Quit. This is an explicit UI check, requiring existing native automation access;
+it moves the pointer but does not record audio, type, paste, or change settings.
+Modifier-key listening uses a listen-only system tap, and input handlers pause
+while menus track clicks. Shortcut handling resumes after the outer menu closes.

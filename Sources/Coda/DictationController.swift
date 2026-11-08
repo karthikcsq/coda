@@ -2,8 +2,9 @@ import SwiftUI
 import AVFoundation
 import AppKit
 @preconcurrency import ApplicationServices
-import KeyboardShortcuts
+@preconcurrency import KeyboardShortcuts
 import CodaCore
+import OSLog
 
 extension KeyboardShortcuts.Name {
     static let codaDictation = Self("codaDictation")
@@ -191,15 +192,39 @@ extension KeyboardShortcuts.Name {
     }
     var modifierShortcutStatus: String {
         if !shortcutPauses.isEmpty { return "Shortcut paused while this Mac is locked, asleep or inactive." }
+        if menuTrackingDepth > 0 { return "Shortcut paused while a menu is open." }
         if ModifierShortcut.voiceOverConflict { return "Control–Option is reserved while VoiceOver is active. Choose a custom shortcut." }
         if accessibility.trusted, !visualReview, modifierMonitor?.available != true { return "Shortcut listener unavailable. Refresh Accessibility status in System settings." }
         return accessibility.trusted ? "Hold \(modifierChordName) alone briefly to dictate. Release a modifier to finish. Other keys cancel the chord; events are never intercepted." : "\(modifierChordName) needs this app’s Accessibility access."
     }
     private var modifierMonitor: ModifierShortcut?
+    private(set) var menuTrackingDepth = 0
+    private var shortcutsEnabledBeforeMenu: Bool?
+    func beginMenuTracking() {
+        menuTrackingDepth += 1
+        guard menuTrackingDepth == 1 else { return }
+        Logger(subsystem: BuildIdentity.channel.bundleIdentifier, category: "MenuInput").notice("Pausing menu input listeners")
+        shortcutsEnabledBeforeMenu = KeyboardShortcuts.isEnabled
+        KeyboardShortcuts.isEnabled = false
+        modifierMonitor?.stop()
+        lifecycle.resetKeys()
+    }
+    func endMenuTracking() {
+        guard menuTrackingDepth > 0 else { return }
+        menuTrackingDepth -= 1
+        guard menuTrackingDepth == 0 else { return }
+        Logger(subsystem: BuildIdentity.channel.bundleIdentifier, category: "MenuInput").notice("Restoring menu input listeners")
+        if let previous = shortcutsEnabledBeforeMenu { KeyboardShortcuts.isEnabled = previous }
+        shortcutsEnabledBeforeMenu = nil
+        guard !visualReview else { return }
+        configureModifierShortcut()
+        // A hold released while the menu was tracking cannot deliver key-up.
+        if mode == .hold, lifecycle.phase == .listening { finish() }
+    }
     private var shortcutPauses = Set<Notification.Name>()
     private func configureModifierShortcut() {
         modifierMonitor?.stop()
-        guard shortcutPauses.isEmpty else { return }
+        guard shortcutPauses.isEmpty, menuTrackingDepth == 0 else { return }
         if modifierShortcut {
             KeyboardShortcuts.disable(.codaDictation)
             let monitor = ModifierShortcut(requiresShift: BuildIdentity.isDevelopment) { [weak self] event in
@@ -393,6 +418,14 @@ extension KeyboardShortcuts.Name {
         KeyboardShortcuts.onKeyDown(for: .codaCancelDictation) { [weak self] in self?.cancel() }
         KeyboardShortcuts.disable(.codaCancelDictation)
         KeyboardShortcuts.onKeyDown(for: .codaCorrectLastDictation) { [weak self] in self?.correctLastDictation() }
+        // AppKit must own input during menu tracking. Pause both the native
+        // modifier listener/poller and Carbon shortcut handlers synchronously.
+        observers.append(NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.beginMenuTracking() }
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: NSMenu.didEndTrackingNotification, object: nil, queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.endMenuTracking() }
+        })
         configureModifierShortcut()
         if cleanupMode == .smart { smartFormatter.warm() }
         for (pause, resume) in [(NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification),
