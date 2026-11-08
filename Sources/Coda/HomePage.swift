@@ -18,11 +18,14 @@ struct HomePage: View {
     @HomeState private var refreshID = 0
     @HomeState private var query = ""
     @HomeState private var searching = false
+    /// The meeting open in the document pane. Dictations never open there; they expand in place.
     @HomeState private var selection: UUID?
+    @HomeState private var expanded: UUID?
     @FocusState private var searchFocused: Bool
-    init(model: AppModel, controller: DictationController, initialSelection: UUID? = nil) {
+    init(model: AppModel, controller: DictationController, initialSelection: UUID? = nil, initialExpanded: UUID? = nil) {
         self.model = model; self.controller = controller
         _selection = HomeState(initialValue: initialSelection)
+        _expanded = HomeState(initialValue: initialExpanded)
     }
     private var readiness: SetupReadiness { _ = refreshID; return controller.readiness(for: model) }
     private var locked: Bool { model.settingsChangesLocked || controller.lifecycle.busy }
@@ -56,13 +59,14 @@ struct HomePage: View {
     }
     var body: some View {
         let all = items
-        let selected = all.first { $0.id == selection } ?? all.first
+        let meetings = all.compactMap { if case .meeting(let m) = $0 { m } else { nil } }
+        let selected = meetings.first { $0.id == selection } ?? meetings.first
         ZStack(alignment: .bottom) {
             HStack(spacing: 0) {
-                timeline(all, selected: selected?.id).frame(width: 340)
+                timeline(all, selected: selected?.id).frame(width: 380)
                 Rectangle().fill(CodaStyle.hairline).frame(width: 1)
                 Group {
-                    if let selected { document(for: selected) } else { firstPage }
+                    if let selected { document(for: .meeting(selected)) } else { firstPage }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(CodaStyle.sheet)
@@ -159,29 +163,69 @@ struct HomePage: View {
         .buttonStyle(.plain).disabled(locked)
         .accessibilityLabel(title + (done ? ", ready" : ", needs setup"))
     }
-    private func row(_ item: Item, selected: Bool) -> some View {
-        Button { selection = item.id } label: {
-            HStack(alignment: .top, spacing: 11) {
-                switch item {
-                case .dictation(let record):
+    @ViewBuilder private func row(_ item: Item, selected: Bool) -> some View {
+        switch item {
+        case .dictation(let record): dictationRow(record)
+        case .meeting(let meeting): meetingRow(meeting, selected: selected)
+        }
+    }
+    private func dictationRow(_ record: DictationRecord) -> some View {
+        let open = expanded == record.id
+        return VStack(alignment: .leading, spacing: 0) {
+            Button { expanded = open ? nil : record.id } label: {
+                HStack(alignment: .top, spacing: 11) {
                     AppIcon(name: record.target, size: 22).padding(.top, 1)
-                    Text(record.text).font(.system(size: 13)).lineLimit(2).lineSpacing(2)
+                    Text(record.text).font(.system(size: 13)).lineLimit(open ? nil : 2).lineSpacing(3)
                         .foregroundStyle(CodaStyle.ink).frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: open)
                     Text(record.created.formatted(date: .omitted, time: .shortened)).font(CodaStyle.captionFont)
                         .foregroundStyle(CodaStyle.faint).monospacedDigit().padding(.top, 2)
-                case .meeting(let meeting):
-                    Image(systemName: "calendar").font(.system(size: 15)).foregroundStyle(CodaStyle.muted)
-                        .frame(width: 22, height: 22)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(meeting.title).font(CodaStyle.serif(15)).foregroundStyle(CodaStyle.ink).lineLimit(2)
-                        HStack(spacing: 5) {
-                            if let duration = durationText(meeting) { Chip(text: duration) }
-                            if let people = peopleText(meeting) { Chip(text: people) }
+                }.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(open ? "Collapse" : "Show the full dictation and actions")
+            if open {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let original = record.rawText, original != record.text {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Before cleanup").font(.system(size: 11, weight: .medium)).foregroundStyle(CodaStyle.faint)
+                            Text(original).font(.system(size: 12)).foregroundStyle(CodaStyle.muted).lineSpacing(2)
+                                .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                         }
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                    Text(meeting.created.formatted(date: .omitted, time: .shortened)).font(CodaStyle.captionFont)
-                        .foregroundStyle(CodaStyle.faint).monospacedDigit().padding(.top, 3)
+                    }
+                    HStack(spacing: 6) {
+                        Button { controller.copyRecord(record) } label: { Label("Copy", systemImage: "doc.on.doc") }
+                            .buttonStyle(CodaSecondaryButtonStyle())
+                        Button("Insert elsewhere…") { controller.armInsertion(record) }
+                            .buttonStyle(CodaSecondaryButtonStyle())
+                        if let original = record.rawText, original != record.text {
+                            Button("Copy original") { controller.copyOriginal(record) }.buttonStyle(CodaQuietButtonStyle())
+                        }
+                    }
                 }
+                .padding(.leading, 33).padding(.top, 10)
+                .transition(.opacity)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 10)
+        .background(open ? CodaStyle.sheet : .clear, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(open ? CodaStyle.hairline : .clear))
+        .animation(.easeInOut(duration: 0.15), value: open)
+    }
+    private func meetingRow(_ meeting: Meeting, selected: Bool) -> some View {
+        Button { selection = meeting.id; expanded = nil } label: {
+            HStack(alignment: .top, spacing: 11) {
+                Image(systemName: "calendar").font(.system(size: 15)).foregroundStyle(CodaStyle.muted)
+                    .frame(width: 22, height: 22)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(meeting.title).font(CodaStyle.serif(15)).foregroundStyle(CodaStyle.ink).lineLimit(2)
+                    HStack(spacing: 5) {
+                        if let duration = durationText(meeting) { Chip(text: duration) }
+                        if let people = peopleText(meeting) { Chip(text: people) }
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Text(meeting.created.formatted(date: .omitted, time: .shortened)).font(CodaStyle.captionFont)
+                    .foregroundStyle(CodaStyle.faint).monospacedDigit().padding(.top, 3)
             }
             .padding(.horizontal, 10).padding(.vertical, 10)
             .background(selected ? CodaStyle.selected : .clear, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
@@ -197,7 +241,7 @@ struct HomePage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 switch item {
-                case .dictation(let record): dictationDocument(record)
+                case .dictation: EmptyView()
                 case .meeting(let meeting): meetingDocument(meeting)
                 }
             }
@@ -211,29 +255,6 @@ struct HomePage: View {
         let day = Calendar.current.isDateInToday(date) ? "Today" : Calendar.current.isDateInYesterday(date) ? "Yesterday"
             : date.formatted(.dateTime.weekday(.wide).month(.wide).day())
         return day + ", " + date.formatted(date: .omitted, time: .shortened)
-    }
-    private func dictationDocument(_ record: DictationRecord) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(dateline(record.created)).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.faint)
-            HStack(spacing: 8) {
-                AppIcon(name: record.target, size: 20)
-                Text(record.target).font(.system(size: 13, weight: .medium)).foregroundStyle(CodaStyle.muted)
-            }.padding(.top, 14)
-            Text(record.text).font(CodaStyle.serif(22, .regular)).lineSpacing(7).textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true).padding(.top, 22)
-            HStack(spacing: 8) {
-                Button { controller.copyRecord(record) } label: { Label("Copy", systemImage: "doc.on.doc") }
-                    .buttonStyle(CodaSecondaryButtonStyle())
-                Button("Insert into another app…") { controller.armInsertion(record) }
-                    .buttonStyle(CodaSecondaryButtonStyle())
-            }.padding(.top, 28)
-            if let original = record.rawText, original != record.text {
-                docHeading("Before cleanup").padding(.top, 40)
-                Text(original).font(.system(size: 14)).foregroundStyle(CodaStyle.muted).lineSpacing(4)
-                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true).padding(.top, 10)
-                Button("Copy original") { controller.copyOriginal(record) }.buttonStyle(CodaQuietButtonStyle()).padding(.top, 10)
-            }
-        }
     }
     private func meetingDocument(_ meeting: Meeting) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -296,8 +317,8 @@ struct HomePage: View {
     }
     private var firstPage: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("A fresh page for your voice.").font(CodaStyle.serif(30)).tracking(-0.6)
-            Text(readiness.canDictate ? "Dictate into any app with your shortcut, or record a meeting. Everything you say lands here."
+            Text("Your meetings open here.").font(CodaStyle.serif(30)).tracking(-0.6)
+            Text(readiness.canDictate ? "Record or import a meeting to get its summary, next steps and transcript. Dictations stay in the list; click one to see all of it."
                  : "Finish the three steps on the left, then speak into any app or record a meeting.")
                 .font(.system(size: 15)).foregroundStyle(CodaStyle.muted).lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true).frame(maxWidth: 440, alignment: .leading)

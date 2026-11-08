@@ -45,7 +45,7 @@ struct ProductUpgradeRenderSuite {
             }
         }
         if let meeting = model.meetings.first {
-            try render(HomePage(model: model, controller: controller, initialSelection: meeting.id), name: "home-meeting", size: CGSize(width: 1140, height: 850))
+            try render(HomePage(model: model, controller: controller, initialSelection: meeting.id, initialExpanded: controller.records.first?.id), name: "home-meeting", size: CGSize(width: 1140, height: 850))
         }
         for step in SetupStep.allCases {
             try render(OnboardingView(model: model, controller: controller, initialStep: step), name: "setup-\(step.rawValue)", size: CGSize(width: 760, height: 610))
