@@ -66,10 +66,10 @@ struct PersonalizationPage: View {
                                 .fixedSize(horizontal: false, vertical: true).frame(minHeight: 30, alignment: .top)
                             Text(example(style)).font(.system(size: 12, design: .monospaced)).foregroundStyle(CodaStyle.ink.opacity(0.85))
                                 .lineLimit(1).padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                                .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
+                                .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
                         }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                             .background(chosen ? CodaStyle.selected : CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
-                            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(chosen ? Color.white.opacity(0.28) : CodaStyle.hairline))
+                            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(chosen ? CodaStyle.mint.opacity(0.55) : CodaStyle.hairline))
                     }.buttonStyle(.plain).disabled(locked).accessibilityAddTraits(preferences.globalStyle == style ? .isSelected : [])
                 }
             }
@@ -126,7 +126,7 @@ struct PersonalizationPage: View {
                 .accessibilityLabel("Spoken snippet trigger")
             TextEditor(text: $expansion).font(.system(size: 14)).scrollContentBackground(.hidden)
                 .padding(10).frame(minHeight: 100, maxHeight: 160)
-                .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
                 .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(CodaStyle.hairline))
                 .accessibilityLabel("Text to insert for this snippet").disabled(locked)
             HStack {

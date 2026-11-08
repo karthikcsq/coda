@@ -3,28 +3,32 @@ import SwiftUI
 // Disambiguate the stable property wrapper from the macOS 27 State macro; CLT omits SwiftUIMacros.
 private typealias StyleState<Value> = SwiftUI.State<Value>
 
-/// Shared visual tokens for Coda's native surfaces. The dictionary page's charcoal
-/// and mint pairing is the anchor; every other surface resolves back to it so the
-/// app reads as one piece of software instead of five unrelated screens.
+/// Shared visual tokens for Coda's native surfaces: warm paper, near-black ink and one
+/// green ink accent. Development swaps to lavender paper and purple ink so the two
+/// channels can never be mistaken for each other.
 enum CodaStyle {
     // Surfaces.
-    static let canvas = BuildIdentity.isDevelopment ? Color(red: 0.14, green: 0.10, blue: 0.21) : Color(red: 0.086, green: 0.086, blue: 0.094)
-    static let chrome = BuildIdentity.isDevelopment ? Color(red: 0.20, green: 0.13, blue: 0.29) : Color(red: 0.063, green: 0.063, blue: 0.071)
-    static let raised = Color.white.opacity(0.035)
-    static let sunken = Color.white.opacity(0.018)
-    static let hover = Color.white.opacity(0.05)
-    static let selected = Color.white.opacity(0.075)
-    static let hairline = Color.white.opacity(0.07)
-    static let strongEdge = Color.white.opacity(0.13)
+    static let canvas = BuildIdentity.isDevelopment ? Color(red: 0.969, green: 0.957, blue: 0.988) : Color(red: 0.984, green: 0.976, blue: 0.961)
+    static let chrome = BuildIdentity.isDevelopment ? Color(red: 0.933, green: 0.914, blue: 0.976) : Color(red: 0.957, green: 0.945, blue: 0.922)
+    /// Pure paper for documents and floating controls that sit on the canvas.
+    static let sheet = Color(red: 0.996, green: 0.992, blue: 0.984)
+    static let raised = Color.black.opacity(0.022)
+    static let sunken = Color.black.opacity(0.03)
+    static let hover = Color.black.opacity(0.04)
+    static let selected = mint.opacity(0.10)
+    static let hairline = Color.black.opacity(0.08)
+    static let strongEdge = Color.black.opacity(0.15)
 
     // Ink. Three steps: primary, secondary, tertiary.
-    static let ink = Color(white: 0.93)
-    static let muted = Color.white.opacity(0.52)
-    static let faint = Color.white.opacity(0.34)
+    static let ink = Color(red: 0.10, green: 0.12, blue: 0.11)
+    static let muted = Color.black.opacity(0.56)
+    static let faint = Color.black.opacity(0.38)
+    /// Text drawn on an accent fill.
+    static let onAccent = Color(red: 0.99, green: 0.98, blue: 0.96)
 
-    // Accents. `mint` leads; `caution` is the only warning colour.
-    static let mint = BuildIdentity.isDevelopment ? Color(red: 0.82, green: 0.68, blue: 1.0) : Color(red: 0.62, green: 0.86, blue: 0.76)
-    static let caution = Color(red: 0.96, green: 0.72, blue: 0.42)
+    // Accents. `mint` is the green ink (named for history); `caution` is the only warning colour.
+    static let mint = BuildIdentity.isDevelopment ? Color(red: 0.42, green: 0.26, blue: 0.70) : Color(red: 0.16, green: 0.35, blue: 0.26)
+    static let caution = Color(red: 0.70, green: 0.42, blue: 0.08)
 
     // One radius ramp instead of ten ad-hoc values.
     static let radiusSmall: CGFloat = 6
@@ -39,8 +43,10 @@ enum CodaStyle {
     static let rowHeight: CGFloat = 30
 
     // Type ramp. Default SF with tight tracking on display sizes; no rounded faces.
-    static let pageTitleFont = Font.system(size: 22, weight: .semibold)
-    static let pageTitleTracking: CGFloat = -0.4
+    static let pageTitleFont = Font.system(size: 28, weight: .semibold, design: .serif)
+    static let pageTitleTracking: CGFloat = -0.5
+    /// Editorial serif for titles and documents.
+    static func serif(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font { .system(size: size, weight: weight, design: .serif) }
     static let sectionFont = Font.system(size: 13, weight: .semibold)
     static let rowTitleFont = Font.system(size: 13, weight: .medium)
     static let bodyFont = Font.system(size: 13)
@@ -53,15 +59,15 @@ enum CodaStyle {
     }
 
     /// Live-capture red. Reserved for recording state so it never reads as an error.
-    static let recording = Color(red: 1.0, green: 0.42, blue: 0.40)
+    static let recording = Color(red: 0.80, green: 0.22, blue: 0.19)
 
-    /// Speaker hues: four muted tones tuned to sit beside mint on charcoal. Index 0 is mint,
+    /// Speaker inks: four deep tones that stay legible on paper. Index 0 is the accent,
     /// so a one-person recording looks exactly like the rest of the app.
     static let speakerPalette: [Color] = [
         mint,
-        Color(red: 0.58, green: 0.76, blue: 0.98),
-        Color(red: 0.80, green: 0.69, blue: 0.98),
-        Color(red: 0.98, green: 0.75, blue: 0.60)
+        Color(red: 0.18, green: 0.36, blue: 0.62),
+        Color(red: 0.48, green: 0.27, blue: 0.58),
+        Color(red: 0.66, green: 0.36, blue: 0.18)
     ]
     static func speakerColor(_ index: Int) -> Color { speakerPalette[abs(index) % speakerPalette.count] }
 
@@ -266,8 +272,8 @@ struct CodaSection<Content: View>: View {
 
 /// Solid light button: the one high-emphasis action on a surface.
 struct CodaPrimaryButtonStyle: ButtonStyle {
-    var tint: Color = Color(white: 0.95)
-    var ink: Color = Color(white: 0.07)
+    var tint: Color = CodaStyle.mint
+    var ink: Color = CodaStyle.onAccent
     @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -276,7 +282,7 @@ struct CodaPrimaryButtonStyle: ButtonStyle {
             .lineLimit(1).fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 12).frame(height: 30)
             .background(tint.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 7))
-            .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
+            .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
             .contentShape(RoundedRectangle(cornerRadius: 7))
             .opacity(isEnabled ? 1 : 0.35)
     }
@@ -290,7 +296,7 @@ struct CodaSecondaryButtonStyle: ButtonStyle {
             .foregroundStyle(CodaStyle.ink)
             .lineLimit(1).fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 12).frame(height: 30)
-            .background(configuration.isPressed ? CodaStyle.selected : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+            .background(configuration.isPressed ? CodaStyle.hover : CodaStyle.sheet, in: RoundedRectangle(cornerRadius: 7))
             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(CodaStyle.hairline))
             .contentShape(RoundedRectangle(cornerRadius: 7))
             .opacity(isEnabled ? 1 : 0.35)
@@ -433,9 +439,9 @@ struct CodaSegmented<Value: Hashable>: View {
                     .padding(.horizontal, 10).frame(maxWidth: .infinity).frame(height: 24)
                     .background {
                         if selected {
-                            RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1))
-                                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.white.opacity(0.06)))
-                                .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+                            RoundedRectangle(cornerRadius: 5).fill(CodaStyle.sheet)
+                                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(CodaStyle.hairline))
+                                .shadow(color: .black.opacity(0.08), radius: 1.5, y: 1)
                                 .matchedGeometryEffect(id: "thumb", in: thumb)
                         }
                     }
@@ -447,7 +453,7 @@ struct CodaSegmented<Value: Hashable>: View {
             }
         }
         .padding(3)
-        .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+        .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CodaStyle.hairline))
         .opacity(isEnabled ? 1 : 0.45)
     }
@@ -467,8 +473,8 @@ struct CodaSwitchStyle: ToggleStyle {
                 HStack(alignment: .center, spacing: 14) {
                     configuration.label.frame(maxWidth: .infinity, alignment: .leading)
                     ZStack(alignment: configuration.isOn ? .trailing : .leading) {
-                        Capsule().fill(configuration.isOn ? CodaStyle.mint : Color.white.opacity(0.14))
-                        Circle().fill(Color.white.opacity(configuration.isOn ? 1 : 0.7)).padding(2)
+                        Capsule().fill(configuration.isOn ? CodaStyle.mint : Color.black.opacity(0.14))
+                        Circle().fill(Color.white).padding(2)
                             .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
                     }
                     .frame(width: 30, height: 18)
@@ -489,9 +495,10 @@ struct CodaKeycap: View {
     init(_ key: String, onAccent: Bool = false) { self.key = key; self.onAccent = onAccent }
     var body: some View {
         Text(key).font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(onAccent ? Color(white: 0.1).opacity(0.6) : CodaStyle.muted)
+            .foregroundStyle(onAccent ? CodaStyle.onAccent.opacity(0.75) : CodaStyle.muted)
             .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 17)
-            .background(onAccent ? Color.black.opacity(0.1) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 4))
+            .background(onAccent ? Color.white.opacity(0.15) : CodaStyle.sheet, in: RoundedRectangle(cornerRadius: 4))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(onAccent ? .clear : CodaStyle.hairline))
             .accessibilityHidden(true)
     }
 }

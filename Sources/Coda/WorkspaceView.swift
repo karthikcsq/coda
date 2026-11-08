@@ -26,13 +26,14 @@ struct WorkspaceView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(CodaStyle.canvas, in: RoundedRectangle(cornerRadius: CodaStyle.radiusShell))
+            .clipShape(RoundedRectangle(cornerRadius: CodaStyle.radiusShell))
             .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusShell).strokeBorder(CodaStyle.hairline))
             .padding(.trailing, 8).padding(.vertical, 8)
             .animation(CodaStyle.motion(reduceMotion, duration: 0.18), value: page)
         }
         .background(CodaStyle.chrome)
         .tint(CodaStyle.mint)
-        .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
+        .preferredColorScheme(.light).environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink)
         .onAppear {
             delegate.reopenMain = { delegate.showMain { openWindow(id: "main") } }
             controller.showDictionaryWindow = { delegate.reopenMain?() }
@@ -52,11 +53,8 @@ struct WorkspaceView: View {
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "waveform").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
-                    .frame(width: 22, height: 22).background(CodaStyle.mint, in: RoundedRectangle(cornerRadius: 6))
-                Text(BuildIdentity.name).font(.system(size: 14, weight: .semibold)).tracking(-0.2)
-            }.padding(.horizontal, 20).frame(height: 56, alignment: .center).accessibilityAddTraits(.isHeader)
+            Text(BuildIdentity.name).font(CodaStyle.serif(22)).tracking(-0.4)
+                .padding(.horizontal, 20).padding(.top, 10).frame(height: 64, alignment: .center).accessibilityAddTraits(.isHeader)
             if BuildIdentity.isDevelopment {
                 Text("DEVELOPMENT").font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(CodaStyle.mint).padding(.horizontal, 20).padding(.bottom, 10)
@@ -264,7 +262,7 @@ struct RecordCard: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(12)
-                        .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                        .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
                     }
                     if let original = cleanedOriginal {
                         VStack(alignment: .leading, spacing: 8) {
@@ -273,7 +271,7 @@ struct RecordCard: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(12)
-                        .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                        .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
                     }
                     HStack(spacing: 8) {
                         if cleanedOriginal != nil {
@@ -321,7 +319,7 @@ struct AppIcon: View {
                 Text(String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased())
                     .font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(CodaStyle.muted)
                     .frame(width: size, height: size)
-                    .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: size * 0.26))
+                    .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: size * 0.26))
                     .overlay(RoundedRectangle(cornerRadius: size * 0.26).strokeBorder(CodaStyle.hairline))
             }
         }.accessibilityHidden(true)
@@ -373,10 +371,10 @@ struct BigKey: View {
             .padding(.horizontal, label.count > 2 ? 10 : 0)
             .frame(minWidth: 40, minHeight: 40)
             .background(
-                RoundedRectangle(cornerRadius: 9).fill(LinearGradient(colors: [Color.white.opacity(0.12), Color.white.opacity(0.06)], startPoint: .top, endPoint: .bottom))
+                RoundedRectangle(cornerRadius: 9).fill(CodaStyle.sheet)
             )
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Color.white.opacity(0.12)))
-            .shadow(color: .black.opacity(0.5), radius: 0, y: 2)
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(CodaStyle.strongEdge))
+            .shadow(color: .black.opacity(0.10), radius: 0, y: 2)
     }
 }
 
