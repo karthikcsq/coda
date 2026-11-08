@@ -77,3 +77,22 @@ The full test run passed 230 tests (131 core, 94 UI/integration, 5 speaker/tool)
 Native NSMenu regression tests dispatch Open and Setup via performActionForItem,
 verify the target/action connection and resulting state, and check busy-state
 availability while Open and Quit remain accessible. Production was not replaced.
+
+
+## Consolidated menu build
+
+The installed Dev bundle was replaced by a separate UI task: its source revision
+was da93831, while the menu-fix branch was 2108bf2. Merged the newer UI commit and
+the native menu implementation before rebuilding. Build packaging now takes a
+shared per-channel lock and refuses installing a checkout that does not contain
+the currently installed Dev revision. This prevents silent cross-checkout
+replacement with older/divergent menu code.
+
+Replaced the noninteractive version row with a normal About command. Popup and
+other borderless windows cannot be retained or raised as the main workspace;
+a regression test covers that exclusion. Added privacy-safe menu lifecycle and
+numeric command dispatch logging for diagnosing real popup interactions.
+
+The combined full run passed 231 tests (131 core, 95 UI/integration, 5
+speaker/tool). Direct popup clicking still needs live confirmation; native
+command unit tests alone do not establish that mouse tracking works.

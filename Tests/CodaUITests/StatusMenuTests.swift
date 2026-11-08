@@ -36,5 +36,6 @@ import Testing
     for command in [StatusMenuController.Command.open, .quit] {
         #expect(status.menu.items.first { $0.action != nil && $0.tag == command.rawValue }?.isEnabled == true)
     }
-    #expect(status.menu.items.filter { $0.action == nil && !$0.isSeparatorItem }.allSatisfy { !$0.isEnabled })
+    #expect(status.menu.items.filter { !$0.isSeparatorItem }.allSatisfy { $0.action != nil })
+    #expect(status.menu.items.first { $0.tag == StatusMenuController.Command.about.rawValue }?.isEnabled == true)
 }

@@ -65,7 +65,9 @@ Shift–Control–Option–C in Development so both channels can run together.
 
 Development is a regular Dock app so opening it from app search can restore its window. Its main window is retained across close/reopen; Production keeps its menu-only application policy.
 
-The menu bar shows a literal “Coda Dev” title for Development and a waveform for Production; both menus include version and source revision. Production links to GitHub Releases.
+Builds are serialized across checkouts. A checkout must include the installed Dev commit before replacing it, so another task cannot silently reinstall an older or divergent menu implementation. Merge the installed revision first.
+
+The menu bar shows a literal “Coda Dev” title for Development and a waveform for Production; both menus use standard macOS commands. About opens a normal About panel; version and source revision also remain in bundle metadata. Production links to GitHub Releases.
 
 There is no background auto-updater. GitHub main is the source of truth; the
 release command publishes it and installs the matching signed local app. If

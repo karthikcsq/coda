@@ -1,11 +1,13 @@
 import AppKit
 import Observation
+import OSLog
 
 /// AppKit owns the status item's menu and dispatches explicit target/action
 /// commands after tracking ends. No SwiftUI scene environment is needed here.
 @MainActor final class StatusMenuController: NSObject, NSMenuDelegate {
-    enum Command: Int { case open, dictate, correct, setup, meeting, cancel, releases, quit }
+    enum Command: Int { case open, dictate, correct, setup, meeting, cancel, releases, quit, about }
     let menu = NSMenu()
+    private let logger = Logger(subsystem: BuildIdentity.channel.bundleIdentifier, category: "StatusMenu")
     private var item: NSStatusItem?
     private let model: AppModel
     private let dictation: DictationController
@@ -40,6 +42,8 @@ import Observation
             Task { @MainActor [weak self] in self?.updateStatus() }
         }
     }
+    func menuWillOpen(_ menu: NSMenu) { logger.notice("Menu opened") }
+    func menuDidClose(_ menu: NSMenu) { logger.notice("Menu closed") }
     func menuNeedsUpdate(_ menu: NSMenu) { rebuild() }
     func rebuild() {
         menu.removeAllItems()
@@ -51,9 +55,7 @@ import Observation
         add(model.recording ? "Stop & Save Meeting" : "Start Meeting", .meeting, enabled: !model.isOccupied || model.recording)
         if dictation.lifecycle.busy { add("Cancel Dictation", .cancel) }
         menu.addItem(.separator())
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        let info = NSMenuItem(title: "\(BuildIdentity.name) \(version) · \(BuildIdentity.revision)", action: nil, keyEquivalent: "")
-        info.isEnabled = false; menu.addItem(info)
+        add("About \(BuildIdentity.name)…", .about)
         if !BuildIdentity.isDevelopment { add("Production Releases…", .releases) }
         add("Quit \(BuildIdentity.name)", .quit)
     }
@@ -64,6 +66,7 @@ import Observation
     }
     @objc private func selected(_ sender: NSMenuItem) {
         guard sender.isEnabled, let command = Command(rawValue: sender.tag) else { return }
+        logger.notice("Menu selected command \(command.rawValue, privacy: .public)")
         // Presenting a window or permission sheet during menu tracking can cause
         // the action to disappear behind the menu. Execute once tracking unwinds.
         DispatchQueue.main.async { [weak self] in self?.perform(command) }
@@ -74,6 +77,7 @@ import Observation
         else { delegate.reopenMain?() }
     }
     private func perform(_ command: Command) {
+        logger.notice("Menu dispatched command \(command.rawValue, privacy: .public)")
         switch command {
         case .open: openMain()
         case .dictate:
@@ -93,6 +97,9 @@ import Observation
             }, start: { model.requestMeetingRecording() }, stop: { model.stopRecording() })
         case .cancel: dictation.cancel()
         case .releases: NSWorkspace.shared.open(URL(string: "https://github.com/karthikcsq/coda/releases")!)
+        case .about:
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.orderFrontStandardAboutPanel(nil)
         case .quit: NSApp.terminate(nil)
         }
     }

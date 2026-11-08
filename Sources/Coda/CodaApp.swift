@@ -58,7 +58,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
     var reopenMain: (() -> Void)?
     private var mainWindow: NSWindow?
     func retainMainWindow(_ window: NSWindow) {
-        guard !(window is NSPanel) else { return }
+        guard !(window is NSPanel), window.styleMask.contains(.titled) else { return }
         // Keep the real window available after the close button removes it from
         // NSApp.windows. Reopening an already-running menu app must show it again.
         window.isReleasedWhenClosed = false

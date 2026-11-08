@@ -15,12 +15,26 @@ case "$CHANNEL" in
     *) echo 'CODA_CHANNEL must be development or production.' >&2; exit 1 ;;
 esac
 ROOT="$PWD"
+# Serialize installations across checkouts and refuse silently downgrading the
+# shared Dev app to a divergent branch while another task is testing it.
+if [[ "${CODA_BUILD_LOCK_HELD:-}" != 1 ]]; then
+    exec python3 scripts/with-build-lock.py "$CHANNEL" "$ROOT/scripts/build-app.sh"
+fi
 if [[ "$CHANNEL" == development ]]; then
     DEFAULT_APP="$HOME/Applications/Coda Dev.app"
 else
     DEFAULT_APP="$ROOT/build/Coda.app"
 fi
 APP="${CODA_APP_OUTPUT:-$DEFAULT_APP}"
+if [[ "$CHANNEL" == development && -f "$APP/Contents/Info.plist" ]]; then
+    INSTALLED_REVISION=$(/usr/libexec/PlistBuddy -c 'Print :CodaSourceRevision' "$APP/Contents/Info.plist" 2>/dev/null || true)
+    if [[ -n "$INSTALLED_REVISION" ]] && git cat-file -e "$INSTALLED_REVISION^{commit}" 2>/dev/null; then
+        if ! git merge-base --is-ancestor "$INSTALLED_REVISION" HEAD; then
+            echo "This checkout would replace Dev with older or divergent source. Merge installed commit $INSTALLED_REVISION before building." >&2
+            exit 1
+        fi
+    fi
+fi
 # Never overwrite an executable while it is running, including development.
 if /usr/bin/pgrep -f "^$APP/Contents/MacOS/Coda$" >/dev/null; then
     echo "Quit $APP_NAME normally before building into $APP." >&2; exit 1
