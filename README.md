@@ -24,7 +24,7 @@ Requires Apple Silicon, macOS 15+, and Swift 6.2+ with a matching macOS SDK. Ful
 git clone https://github.com/karthikcsq/coda.git
 cd coda
 ./scripts/build-app.sh
-open "build/Coda Dev.app"
+open "$HOME/Applications/Coda Dev.app"
 ```
 
 Ordinary builds create **Coda Dev**, with a purple icon/theme and separate data and preferences. Keep the mint Production app running while developing. To publish and install a verified Production update, follow [the release sequence](docs/releasing.md) and run `scripts/release.py` from clean, reviewed `main`.

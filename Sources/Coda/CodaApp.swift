@@ -40,7 +40,13 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         MenuBarExtra {
             RecordingMenu(model: model, dictation: dictation, delegate: delegate)
         } label: {
-            Label(model.recording ? BuildIdentity.name + " • REC" : dictation.lifecycle.phase == .listening ? BuildIdentity.name + " • MIC" : BuildIdentity.name, systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : BuildIdentity.isDevelopment ? "hammer.fill" : "waveform.path")
+            if BuildIdentity.isDevelopment {
+                // A Label's title is hidden by macOS in the status bar. Use a real
+                // text status item so Dev remains identifiable beside Production.
+                Text(model.recording ? "Coda Dev REC" : dictation.lifecycle.phase == .listening ? "Coda Dev MIC" : "Coda Dev")
+            } else {
+                Label(model.recording ? "Coda • REC" : dictation.lifecycle.phase == .listening ? "Coda • MIC" : "Coda", systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : "waveform.path")
+            }
         }
     }
 }
@@ -71,6 +77,12 @@ struct RecordingMenu: View {
         }.disabled(model.isOccupied && !model.recording)
         if dictation.lifecycle.busy { Button("Cancel Dictation") { dictation.cancel() } }
         Divider()
+        Text("\(BuildIdentity.name) \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · \(BuildIdentity.revision)")
+        if !BuildIdentity.isDevelopment {
+            Button("Production Releases…") {
+                NSWorkspace.shared.open(URL(string: "https://github.com/karthikcsq/coda/releases")!)
+            }
+        }
         Button("Quit \(BuildIdentity.name)") { NSApp.terminate(nil) }
     }
 }

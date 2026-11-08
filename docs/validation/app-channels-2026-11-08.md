@@ -26,3 +26,21 @@ Production app. It requires clean main and preserves other ongoing edits. Local
 main has newer UI commits diverging from this branch; merge/review those changes
 before releasing. The original dictation timing/accuracy still needs live speech
 verification. No production data was copied into Development.
+
+## Search registration and visible menu identity
+
+Follow-up fixes install Development at `~/Applications/Coda Dev.app`, register
+it with Launch Services and import Spotlight metadata. The menu bar uses an
+explicit Coda Dev text title because an icon Label's title is hidden by macOS.
+The newer main UI and personal audio features have now been merged; all persistent
+Development stores use its channel directory. Dev defaults to hold-mode
+Shift–Control–Option; the user's existing model assets were copied to its own
+model directory without copying transcripts or histories.
+
+`scripts/test.sh` passed all 217 merged-app
+tests. Seven release/publishing safety tests passed. Release publishing now
+creates versioned GitHub Releases containing the signed ZIP and checksum/source
+manifest, refuses mismatched channel/commit/dirty bundles and refuses reusing a
+version for another commit. An existing complete release can be reused when
+retrying local installation. Automatic in-app update installation is not
+implemented; Production's menu links to the release downloads.

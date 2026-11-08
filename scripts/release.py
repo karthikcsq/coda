@@ -56,6 +56,7 @@ def main():
         run('git', 'push', 'origin', 'HEAD:main')
         if output('git', 'ls-remote', 'origin', 'refs/heads/main').split()[0] != revision:
             raise SystemExit('GitHub main could not be verified; production was not replaced.')
+        run('python3', 'scripts/publish-release.py', str(candidate), revision, temporary)
         print(f'GitHub main verified at {revision}. Requesting normal production quit.', flush=True)
         # The app refuses normal quit while meeting or dictation work is busy.
         # Never send a kill signal or interact with the Development process.

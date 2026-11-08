@@ -1,8 +1,8 @@
 # Build and rollback workflow
 
 - Keep two app channels: Production (`Coda.app`, `app.coda.notebook`) in the
-  primary checkout's `build/`, and Development (`build/Coda Dev.app`,
-  `app.coda.notebook.dev`) in the active development checkout. Ordinary
+  primary checkout's `build/`, and Development (`~/Applications/Coda Dev.app`,
+  `app.coda.notebook.dev`) at a stable searchable install path. Ordinary
   `scripts/build-app.sh` builds Development. Purple surfaces, DEV icon and labels,
   separate preferences and `Application Support/Coda Dev` identify Development.
   Do not accumulate versioned bundles, `build-staged/`, `archive/` snapshots, or
@@ -11,7 +11,7 @@
   Close it normally once the user finishes testing. Development uses
   Shift–Control–Option; Production uses Control–Option.
 - Release only through `scripts/release.py` from clean, reviewed `main`: tests,
-  signed production build and identity check, push and verify GitHub main, normal
+  signed production build and identity check, push and verify GitHub main, publish versioned signed GitHub Release, normal
   idle-only production quit, replace and verify production, then reopen. A failed
   local installation after publishing must be reported as GitHub published with
   local Production still pending. See `docs/releasing.md`.

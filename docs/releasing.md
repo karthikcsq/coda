@@ -19,7 +19,7 @@ normally once the user finishes.
 
 ## Develop
 
-Run `scripts/build-app.sh`, then `open "build/Coda Dev.app"`. Quit Development
+Run `scripts/build-app.sh`, then `open "$HOME/Applications/Coda Dev.app"`. The build registers this stable Applications location with Launch Services and imports Spotlight metadata so app-name search can find it. Quit Development
 normally before rebuilding it. Keep using Production during development. Ordinary
 builds never update Production. Each bundle records `CodaChannel`, the full
 `CodaSourceRevision`, and `CodaSourceDirty` in Info.plist. The Help menu displays
@@ -37,7 +37,7 @@ it cannot be promoted by the release script.
 3. The command fetches GitHub main and refuses a non-fast-forward release, runs
    tests, builds a temporary signed Production candidate and checks its signing
    requirement against the installed Production app. It checks the source stayed
-   unchanged, pushes main and verifies GitHub has that exact commit.
+   unchanged, pushes main and verifies GitHub has that exact commit. It then publishes a versioned GitHub Release containing the signed production ZIP and a SHA-256/source-commit manifest. A version cannot be reused for a different commit; bump `VERSION` for each release.
 4. The command requests a normal Production quit. Coda refuses while meeting or
    dictation work is busy. It never kills an app. If it does not quit, installation
    stops and reports that GitHub is published but local Production is pending.
@@ -50,6 +50,8 @@ it cannot be promoted by the release script.
    commit and local Production result separately. An agent performing a push
    that changes remote main must invoke its confetti tool once after success if
    available. The standalone release command cannot invoke chat tools.
+
+The menu bar shows a literal “Coda Dev” title for Development and a waveform for Production; both menus include version and source revision. Production links to GitHub Releases.
 
 There is no background auto-updater. GitHub main is the source of truth; the
 release command publishes it and installs the matching signed local app. If

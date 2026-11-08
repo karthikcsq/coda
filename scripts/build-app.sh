@@ -15,7 +15,12 @@ case "$CHANNEL" in
     *) echo 'CODA_CHANNEL must be development or production.' >&2; exit 1 ;;
 esac
 ROOT="$PWD"
-APP="${CODA_APP_OUTPUT:-$ROOT/build/$APP_NAME.app}"
+if [[ "$CHANNEL" == development ]]; then
+    DEFAULT_APP="$HOME/Applications/Coda Dev.app"
+else
+    DEFAULT_APP="$ROOT/build/Coda.app"
+fi
+APP="${CODA_APP_OUTPUT:-$DEFAULT_APP}"
 # Never overwrite an executable while it is running, including development.
 if /usr/bin/pgrep -f "^$APP/Contents/MacOS/Coda$" >/dev/null; then
     echo "Quit $APP_NAME normally before building into $APP." >&2; exit 1
@@ -61,4 +66,9 @@ iconutil -c icns "$ROOT/build/Coda.iconset" -o "$APP/Contents/Resources/Coda.icn
 /usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string Coda.icns' "$APP/Contents/Info.plist"
 codesign --force --sign "$SIGNING_IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP"
+# Register installed apps for Spotlight, Siri and Launch Services name lookup.
+if [[ "$APP" == "$HOME/Applications/"* || "$APP" == /Applications/* ]]; then
+    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP"
+    /usr/bin/mdimport "$APP"
+fi
 printf 'Built %s\n' "$APP"
