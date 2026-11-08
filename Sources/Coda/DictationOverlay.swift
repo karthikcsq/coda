@@ -89,8 +89,8 @@ struct DictationHUD: View {
             if listening || (!controller.lifecycle.busy && controller.pendingInsertion != nil) {
                 Button { controller.button() } label: {
                     Image(systemName: listening ? "stop.fill" : "arrow.up.doc")
-                        .font(.system(size: 10, weight: .bold)).foregroundStyle(Color(white: 0.07))
-                        .frame(width: 26, height: 26).background(Color(white: 0.95), in: Circle())
+                        .font(.system(size: 10, weight: .bold)).foregroundStyle(CodaStyle.onAccent)
+                        .frame(width: 26, height: 26).background(CodaStyle.mint, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .help(listening ? "Stop dictation" : "Insert text here")
@@ -98,7 +98,7 @@ struct DictationHUD: View {
             } else if !controller.lifecycle.busy && controller.text.isEmpty {
                 Button { controller.button() } label: {
                     Image(systemName: "mic.fill").font(.system(size: 11))
-                        .frame(width: 26, height: 26).background(Color.white.opacity(0.1), in: Circle())
+                        .frame(width: 26, height: 26).background(CodaStyle.sunken, in: Circle())
                 }
                 .buttonStyle(.plain).help("Start dictation").accessibilityLabel("Start dictation")
             }
@@ -108,10 +108,10 @@ struct DictationHUD: View {
                 .accessibilityLabel(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss dictation; text stays in History")
         }
         .padding(.leading, 10).padding(.trailing, 8).frame(width: 280, height: showsDetail ? 54 : 46)
-        .background(BuildIdentity.isDevelopment ? CodaStyle.chrome : Color(white: 0.07), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.1)))
+        .background(CodaStyle.sheet, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(CodaStyle.sunken))
         .frame(width: 320, height: 64)
-        .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
+        .preferredColorScheme(.light).environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink)
         .accessibilityElement(children: .contain).accessibilityLabel("Coda dictation")
     }
     @ViewBuilder private var indicator: some View {
@@ -128,7 +128,7 @@ struct DictationHUD: View {
         } else if failed {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 13)).foregroundStyle(CodaStyle.caution)
         } else if !controller.text.isEmpty {
-            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
+            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundStyle(CodaStyle.onAccent)
                 .frame(width: 22, height: 22).background(CodaStyle.mint, in: Circle())
         } else {
             Image(systemName: "waveform").font(.system(size: 14)).foregroundStyle(CodaStyle.muted)

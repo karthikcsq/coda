@@ -161,7 +161,7 @@ struct DictionaryWordEditor: View {
                 Button(word?.status == .approved ? "Save" : "Add word", action: save).keyboardShortcut(.defaultAction)
                     .disabled(CustomVocabulary.cleaned(spelling).isEmpty)
             }
-        }.padding(28).frame(width: 460).preferredColorScheme(.dark)
+        }.padding(28).frame(width: 460).preferredColorScheme(.light)
     }
     private func save() {
         let saved = word.map { dictionary.approve($0.id, spelling: spelling, heardAs: variants) } ?? dictionary.add(spelling, heardAs: variants)

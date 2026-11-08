@@ -80,7 +80,7 @@ extension KeyboardShortcuts.Name {
         window.isReleasedWhenClosed = false
         window.level = .floating
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .moveToActiveSpace]
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.appearance = NSAppearance(named: .aqua)
         window.backgroundColor = NSColor(CodaStyle.canvas)
         window.contentViewController = NSHostingController(rootView: CorrectionEditorView(editor: editor))
         window.delegate = self
@@ -114,7 +114,7 @@ struct CorrectionEditorView: View {
         .frame(width: 520)
         .frame(minHeight: editor.draft == nil ? 200 : 420, alignment: .top)
         .background(CodaStyle.canvas)
-        .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
+        .preferredColorScheme(.light).environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink)
         .onAppear { focused = true }
         .onChange(of: editor.draft?.recordID) { focused = true }
     }

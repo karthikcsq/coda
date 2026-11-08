@@ -73,7 +73,7 @@ struct SettingsPanel: View {
                     }.accessibilityIdentifier("coda.settings.scroll")
                 }
             }
-        }.background(CodaStyle.canvas).preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
+        }.background(CodaStyle.canvas).preferredColorScheme(.light).environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink)
         .accessibilityIdentifier("coda.settings.panel")
         .onAppear { refreshStatus() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refreshStatus() }

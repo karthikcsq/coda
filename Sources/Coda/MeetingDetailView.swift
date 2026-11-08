@@ -796,7 +796,7 @@ struct RecordingOptionsView: View {
         }
         .frame(width: 470)
         .background(CodaStyle.canvas)
-        .preferredColorScheme(.dark).foregroundStyle(CodaStyle.ink)
+        .preferredColorScheme(.light).foregroundStyle(CodaStyle.ink)
     }
 
     private var header: some View {
@@ -859,7 +859,7 @@ struct RecordingOptionsView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(Color.black.opacity(0.16))
+        .background(CodaStyle.sunken)
         .overlay(alignment: .top) { Rectangle().fill(CodaStyle.hairline).frame(height: 1) }
     }
 }

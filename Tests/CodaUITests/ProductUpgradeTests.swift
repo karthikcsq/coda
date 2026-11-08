@@ -44,6 +44,9 @@ struct ProductUpgradeRenderSuite {
                 try render(WorkspaceView(model: model, controller: controller, delegate: AppDelegate()), name: "\(page.lowercased())-\(Int(size.width))", size: size)
             }
         }
+        if let meeting = model.meetings.first {
+            try render(HomePage(model: model, controller: controller, initialSelection: meeting.id), name: "home-meeting", size: CGSize(width: 1140, height: 850))
+        }
         for step in SetupStep.allCases {
             try render(OnboardingView(model: model, controller: controller, initialStep: step), name: "setup-\(step.rawValue)", size: CGSize(width: 760, height: 610))
         }
@@ -64,8 +67,8 @@ struct ProductUpgradeRenderSuite {
         #expect(!model.modelConsent && !model.autoSummary && !model.dictationBusy)
     }
     @MainActor private func render<V: View>(_ view: V, name: String, size: CGSize) throws {
-        let host = NSHostingView(rootView: view.environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink).background(CodaStyle.canvas))
-        host.appearance = NSAppearance(named: .darkAqua)
+        let host = NSHostingView(rootView: view.environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink).background(CodaStyle.canvas))
+        host.appearance = NSAppearance(named: .aqua)
         host.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host

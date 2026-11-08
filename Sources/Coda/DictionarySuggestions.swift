@@ -184,7 +184,7 @@ struct DictionarySuggestionCard: View {
                 HStack(spacing: 10) {
                     Button { notice.approve() } label: {
                         Label("Add word", systemImage: "plus").font(.system(size: 12, weight: .semibold))
-                            .padding(.horizontal, 14).frame(height: 32).background(mint, in: Capsule()).foregroundStyle(Color(white: 0.1))
+                            .padding(.horizontal, 14).frame(height: 32).background(mint, in: Capsule()).foregroundStyle(CodaStyle.onAccent)
                     }.buttonStyle(.plain).accessibilityIdentifier("coda.dictionary.notice.add")
                     Button("Dismiss") { notice.dismissWord() }.buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(.secondary)
                         .help("Do not suggest this spelling again")
@@ -197,10 +197,10 @@ struct DictionarySuggestionCard: View {
                 Button("Open dictionary") { notice.review() }.buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(mint)
             }
         }.padding(20).frame(width: 376, height: 248)
-            .background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 20))
+            .background(CodaStyle.sheet, in: RoundedRectangle(cornerRadius: 20))
             .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.12)))
             .padding(8).frame(width: 392, height: 264)
-            .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.93))
+            .preferredColorScheme(.light).environment(\.colorScheme, .light).foregroundStyle(CodaStyle.ink)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: notice.current?.id)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: notice.added)
             .onHover { notice.setHovering($0) }

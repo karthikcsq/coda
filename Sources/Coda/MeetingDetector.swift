@@ -121,6 +121,6 @@ struct MeetingDetectedView: View {
             Label("\(meeting.service) detected", systemImage: "video").font(.headline)
             Text(meeting.participantCount.map { "\($0) participants including you. Review speakers before recording." } ?? "Start the note taker and set the speaker count.").font(.callout).foregroundStyle(.secondary)
             HStack { Button("Not now", action: dismiss); Spacer(); Button("Recording options…", action: record).buttonStyle(.borderedProminent) }
-        }.padding(18).frame(width: 360, height: 150).background(Color(white: 0.12), in: RoundedRectangle(cornerRadius: 14)).preferredColorScheme(.dark)
+        }.padding(18).frame(width: 360, height: 150).background(CodaStyle.sheet, in: RoundedRectangle(cornerRadius: 14)).preferredColorScheme(.light)
     }
 }

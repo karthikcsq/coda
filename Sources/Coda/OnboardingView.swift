@@ -33,7 +33,7 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             HStack {
                 HStack(spacing: 8) {
-                    Image(systemName: "waveform").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
+                    Image(systemName: "waveform").font(.system(size: 11, weight: .bold)).foregroundStyle(CodaStyle.onAccent)
                         .frame(width: 22, height: 22).background(CodaStyle.mint, in: RoundedRectangle(cornerRadius: 6))
                     Text("Coda").font(.system(size: 14, weight: .semibold)).tracking(-0.2)
                 }.accessibilityElement(children: .combine)
@@ -81,7 +81,7 @@ struct OnboardingView: View {
             }.padding(.horizontal, 30).padding(.vertical, 20)
         }
         .frame(width: 760, height: 610)
-        .background(CodaStyle.canvas).foregroundStyle(CodaStyle.ink).preferredColorScheme(.dark)
+        .background(CodaStyle.canvas).foregroundStyle(CodaStyle.ink).preferredColorScheme(.light)
         .interactiveDismissDisabled(locked)
         .animation(CodaStyle.motion(reduceMotion), value: step)
         .onAppear { controller.refreshAccessibility(); controller.practiceShortcutActive = step == .practice }
