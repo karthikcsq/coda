@@ -62,3 +62,18 @@ stopped or replaced.
 The full test run passed 228 tests (131 core, 92 UI/integration, 5 speaker/tool).
 Regression coverage includes repeatedly closing/reopening one retained window
 without creating another and permitting fallback when no window is captured.
+
+## Menu-bar command dispatch
+
+Replaced the SwiftUI MenuBarExtra popup with one AppKit NSStatusItem/NSMenu
+controller. Each enabled row now has an explicit target/action; actions execute
+on the next main-queue turn after menu tracking unwinds. Window opening uses the
+retained main window, and setup, recording, correction, cancellation and normal
+quit call their existing controllers directly. Recording status is observed and
+menu availability is rebuilt on every opening, with busy guards checked again
+when commands run. The version/revision row remains intentionally noninteractive.
+
+The full test run passed 230 tests (131 core, 94 UI/integration, 5 speaker/tool).
+Native NSMenu regression tests dispatch Open and Setup via performActionForItem,
+verify the target/action connection and resulting state, and check busy-state
+availability while Open and Quit remain accessible. Production was not replaced.

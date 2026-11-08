@@ -26,7 +26,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
             WorkspaceView(model: model, controller: dictation, delegate: delegate)
                 .frame(minWidth: 980, minHeight: 680)
                 .background(MainWindowReader { delegate.retainMainWindow($0) })
-                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model)
+                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model); delegate.installStatusMenu(model: model, dictation: dictation)
                     delegate.meetingDetector.start(model: model) {
                         delegate.reopenMain?()
                         dictation.workspaceSection = "Meetings"
@@ -38,17 +38,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
             CommandGroup(replacing: .newItem) { Button("Import Audio…") { model.importAudio() }.keyboardShortcut("o").disabled(model.isOccupied) }
             CodaSettingsCommands(model: model)
         }
-        MenuBarExtra {
-            RecordingMenu(model: model, dictation: dictation, delegate: delegate)
-        } label: {
-            if BuildIdentity.isDevelopment {
-                // A Label's title is hidden by macOS in the status bar. Use a real
-                // text status item so Dev remains identifiable beside Production.
-                Text(model.recording ? "Coda Dev REC" : dictation.lifecycle.phase == .listening ? "Coda Dev MIC" : "Coda Dev")
-            } else {
-                Label(model.recording ? "Coda • REC" : dictation.lifecycle.phase == .listening ? "Coda • MIC" : "Coda", systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : "waveform.path")
-            }
-        }
+
     }
 }
 @MainActor struct MeetingMenuAction {
@@ -58,39 +48,13 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         else if !occupied { start() }
     }
 }
-struct RecordingMenu: View {
-    let model: AppModel
-    @Bindable var dictation: DictationController
-    let delegate: AppDelegate
-    @Environment(\.openWindow) private var openWindow
-    private func openCoda() { delegate.showMain { openWindow(id: "main") } }
-    var body: some View {
-        Button("Open \(BuildIdentity.name)") { openCoda() }
-        Button(dictation.lifecycle.phase == .listening ? "Stop Dictation" : "Start Dictation") {
-            if model.modelConsent && model.dictationModelReady { dictation.button() }
-            else { dictation.showOnboarding = true; openCoda() }
-        }.disabled(model.meetingOperationInProgress || (dictation.lifecycle.busy && dictation.lifecycle.phase != .listening))
-        Button("Correct Last Dictation… (\(dictation.correctionShortcutLabel))") { dictation.correctLastDictation() }
-            .disabled(dictation.lifecycle.busy)
-        Button("Setup Guide") { dictation.showOnboarding = true; openCoda() }.disabled(model.settingsChangesLocked)
-        Button(model.recording ? "Stop & Save Meeting" : "Start Meeting") {
-            MeetingMenuAction.perform(recording: model.recording, occupied: model.isOccupied, open: {
-                model.closeSettings(); dictation.workspaceSection = "Meetings"; openCoda()
-            }, start: { model.requestMeetingRecording() }, stop: { model.stopRecording() })
-        }.disabled(model.isOccupied && !model.recording)
-        if dictation.lifecycle.busy { Button("Cancel Dictation") { dictation.cancel() } }
-        Divider()
-        Text("\(BuildIdentity.name) \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") · \(BuildIdentity.revision)")
-        if !BuildIdentity.isDevelopment {
-            Button("Production Releases…") {
-                NSWorkspace.shared.open(URL(string: "https://github.com/karthikcsq/coda/releases")!)
-            }
-        }
-        Button("Quit \(BuildIdentity.name)") { NSApp.terminate(nil) }
-    }
-}
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let meetingDetector = MeetingDetector()
+    private var statusMenu: StatusMenuController?
+    func installStatusMenu(model: AppModel, dictation: DictationController) {
+        guard statusMenu == nil else { return }
+        statusMenu = StatusMenuController(model: model, dictation: dictation, delegate: self)
+    }
     var reopenMain: (() -> Void)?
     private var mainWindow: NSWindow?
     func retainMainWindow(_ window: NSWindow) {
