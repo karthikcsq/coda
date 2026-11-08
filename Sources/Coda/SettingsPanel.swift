@@ -11,6 +11,7 @@ struct SettingsPanel: View {
     @Bindable var model: AppModel
     @Bindable var controller: DictationController
     @PanelState private var apiKey = ""
+    @PanelState private var showPersonalAudio = false
     @PanelState private var approveAuto = false
     @PanelState private var approveModels = false
     @PanelState private var loginEnabled = SMAppService.mainApp.status == .enabled
@@ -127,13 +128,18 @@ struct SettingsPanel: View {
             row("Learn from corrections", "Suggest names and unfamiliar terms you correct after dictation. Review them in Dictionary before they affect recognition.") {
                 Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
-            row("Learn from my edits", "When you fix a Smart-cleaned dictation, Coda keeps the fix and fine-tunes the local cleanup model on your fixes in the background. A tuned model replaces the open-weight one only if it passes a quality check. Everything stays on this Mac.") {
+            row("Learn from my edits", "Save dictation audio, original text, inserted text and observed edits on this Mac. Smart cleanup learns from your text fixes after a quality check. Personal voice training uses reviewed audio separately. Meetings keep generic Voz.") {
                 Toggle("Learn from my edits", isOn: Binding(get: { controller.personalTuning.enabled }, set: { controller.personalTuning.enabled = $0 }))
                     .labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
+            Button("Personal voice training…") { showPersonalAudio = true }
+                .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked)
+                .sheet(isPresented: $showPersonalAudio) {
+                    PersonalAudioView(tuning: controller.personalAudio, preview: model.isVisualReview)
+                }
             Text(controller.personalTuning.summary).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
-                Button("Tune now") { controller.personalTuning.tuneNow() }
+                Button("Fine-tune cleanup") { controller.personalTuning.tuneNow() }
                     .buttonStyle(CodaSecondaryButtonStyle())
                     .disabled(locked || model.isVisualReview || controller.personalTuning.running || controller.personalTuning.editCount == 0)
                 Button("Use open-weight model") { controller.personalTuning.reset() }

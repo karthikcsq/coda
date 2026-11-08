@@ -65,6 +65,8 @@ extension KeyboardShortcuts.Name {
         if !lifecycle.busy { practiceSession = false }
     }
     private var history: DictationHistory?
+    let personalAudio: PersonalAudioTuning
+    private var trainingStore: DictationTrainingStore?
     private var sessionID: UUID?
     private var retryGeneration: UUID?
     private var retryTimeout: Task<Void, Never>?
@@ -133,7 +135,7 @@ extension KeyboardShortcuts.Name {
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
         let cleanupInput = record.cleanupMode == .smart ? record.rawText : nil
-        let success = await insertion.insertWithFallback(record.text, observeCorrections: record.snippetTrigger != nil ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+        let success = await insertion.insertWithFallback(record.text, observeCorrections: record.snippetTrigger != nil ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -244,15 +246,18 @@ extension KeyboardShortcuts.Name {
     /// Watches the destination field after insertion. Word changes feed dictionary
     /// suggestions; when the text was Smart-cleaned, the edited passage is also kept
     /// for personal fine-tuning (`cleanupInput` is what the cleanup model received).
-    private func observeCorrections(_ target: DictationCorrectionTarget, cleanupInput: String?) {
-        let tuneOnEdits = personalTuning.enabled && cleanupInput != nil
+    private func observeCorrections(_ target: DictationCorrectionTarget, cleanupInput: String?, session: UUID) {
+        let tuneOnEdits = personalTuning.enabled
         guard learnWords || tuneOnEdits, !visualReview else { return }
         wordSuggestions.preferredFrame = insertion.targetDisplayFrame
-        let session = UUID()
         corrections.start(target) { [weak self] changes, original, edited in
             guard let self else { return }
             if learnWords { reviewCorrections(changes, original: original, edited: edited, session: session) }
-            if tuneOnEdits, let cleanupInput {
+            if tuneOnEdits, personalTuning.enabled {
+                do { try trainingStore?.updateFinalText(id: session, text: edited) }
+                catch { message = "Could not save the dictation correction for training." }
+            }
+            if tuneOnEdits, personalTuning.enabled, let cleanupInput {
                 personalTuning.record(CleanupEdit(id: session, input: cleanupInput, inserted: original, edited: edited))
             }
         }
@@ -280,6 +285,9 @@ extension KeyboardShortcuts.Name {
         self.previewMicrophoneAllowed = preview && previewMicrophoneAllowed
         let dictionary = CustomDictionary(preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         self.dictionary = dictionary
+        let audioPreview = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
+        let previewRoot = FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Audio-Preview-" + UUID().uuidString)
+        personalAudio = PersonalAudioTuning(root: audioPreview ? previewRoot : nil, pairsRoot: audioPreview ? previewRoot.appendingPathComponent("pairs") : nil)
         smartFormatter = formatter ?? SmartFormatter()
         let previewRun = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
         preferences = DictationPreferences(preview: previewRun)
@@ -289,7 +297,12 @@ extension KeyboardShortcuts.Name {
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
-        personalTuning.isDictating = { [weak self] in self?.lifecycle.busy ?? false }
+        personalAudio.sourceModel = { [weak self] in
+            guard let model = self?.model else { throw CodaError.message("Coda is not ready for model preparation.") }
+            return try await model.vozDirectoryForPersonalTraining()
+        }
+        personalAudio.isBusy = { [weak self] in self?.lifecycle.busy == true || self?.model?.isOccupied == true || self?.personalTuning.running == true }
+        personalTuning.isDictating = { [weak self] in self?.lifecycle.busy == true || self?.personalAudio.running == true }
         personalTuning.modelChanged = { [weak self] in self?.smartFormatter.reloadModel() }
         wordSuggestions.onReview = { [weak self] in
             self?.model?.closeSettings()
@@ -304,6 +317,7 @@ extension KeyboardShortcuts.Name {
                 ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Preview-" + UUID().uuidString)
                 : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/Dictations")
             let history = try DictationHistory(root: base); self.history = history
+            trainingStore = try DictationTrainingStore(root: base.appendingPathComponent("Training"))
             let loaded = try history.load(); records = loaded.records; selectedRecord = records.first?.id
             if loaded.skipped > 0 { historyWarning = "Some history files could not be read. They were preserved on disk." }
         } catch { historyWarning = "Dictation history is unavailable. New text will remain in memory until you quit." }
@@ -384,7 +398,7 @@ extension KeyboardShortcuts.Name {
     }
     private func begin() {
         guard !visualReview else { message = "Visual review only • microphone stays off"; show(); return }
-        guard let model, !lifecycle.busy, retryTask == nil else { return }
+        guard let model, !lifecycle.busy, !personalAudio.running, retryTask == nil else { return }
         guard !model.isOccupied else { message = "Finish the meeting operation before dictating."; show(); dismissAfterResult(); return }
         guard model.modelConsent, model.dictationModelReady else {
             message = "Prepare Voz in Settings & privacy before dictating. No microphone is running."; show(); dismissAfterResult(); return
@@ -471,7 +485,10 @@ extension KeyboardShortcuts.Name {
             }
             do {
                 let vocabulary = dictionary.vocabulary
-                let result = try await model.transcribeDictation(url, vocabulary: vocabulary)
+                let usePersonalAudio = personalAudio.enabled
+                let result = try await usePersonalAudio
+                    ? personalAudio.transcribe(url, vocabulary: vocabulary)
+                    : model.transcribeDictation(url, vocabulary: vocabulary)
                 try Task.checkCancellation()
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
                 refreshAccessibility()
@@ -490,7 +507,8 @@ extension KeyboardShortcuts.Name {
                         try Task.checkCancellation()
                         guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
                     }
-                    if cleanupMode == .smart {
+                    if cleanupMode == .smart && !usePersonalAudio {
+                        // Personal audio requires separate cleanup validation before Smart runs.
                         cleanupInput = text
                         let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))
                         try Task.checkCancellation()
@@ -513,9 +531,14 @@ extension KeyboardShortcuts.Name {
                     overlay?.hide()
                     return
                 }
+                // Snippet expansions are authored text, not speech, so they never become training pairs.
+                if personalTuning.enabled && !expandedSnippet {
+                    do { try trainingStore?.save(id: id, audio: url, rawText: rawText, insertedText: text) }
+                    catch { cleanupDetail += " Could not save audio and text for training." }
+                }
                 let inserted: Bool
                 if autoInsert {
-                    inserted = await insertion.insertWithFallback(text, observeCorrections: expandedSnippet ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput) })
+                    inserted = await insertion.insertWithFallback(text, observeCorrections: expandedSnippet ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
                 } else { inserted = false }
                 guard lifecycle.complete(id) else { return }
                 message = inserted ? insertion.reason + " Saved in History." : (autoInsert ? insertion.reason : "Saved in History. Automatic insertion is off.")
