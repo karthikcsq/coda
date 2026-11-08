@@ -10,8 +10,8 @@ if [[ "$SIGNING_IDENTITY" == "-" || -z "$SIGNING_IDENTITY" ]]; then
 fi
 CHANNEL="${CODA_CHANNEL:-development}"
 case "$CHANNEL" in
-    development) APP_NAME="Coda Dev"; BUNDLE_ID="app.coda.notebook.dev" ;;
-    production) APP_NAME="Coda"; BUNDLE_ID="app.coda.notebook" ;;
+    development) APP_NAME="Coda Dev"; BUNDLE_ID="app.coda.notebook.dev"; AGENT_APP=false ;;
+    production) APP_NAME="Coda"; BUNDLE_ID="app.coda.notebook"; AGENT_APP=true ;;
     *) echo 'CODA_CHANNEL must be development or production.' >&2; exit 1 ;;
 esac
 ROOT="$PWD"
@@ -50,7 +50,7 @@ cp Vendor/Who/LICENSE.md "$APP/Contents/Resources/Who-LICENSE.md"
 /usr/libexec/PlistBuddy -c "Add :CFBundleName string $APP_NAME" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :CFBundleExecutable string Coda' "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :CFBundlePackageType string APPL' "$APP/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Add :LSUIElement bool true' "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Add :LSUIElement bool $AGENT_APP" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $(cat VERSION)" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $BUILD_NUMBER" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :LSMinimumSystemVersion string 15.0' "$APP/Contents/Info.plist"

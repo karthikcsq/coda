@@ -25,6 +25,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         Window(BuildIdentity.name, id: "main") {
             WorkspaceView(model: model, controller: dictation, delegate: delegate)
                 .frame(minWidth: 980, minHeight: 680)
+                .background(MainWindowReader { delegate.retainMainWindow($0) })
                 .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model)
                     delegate.meetingDetector.start(model: model) {
                         delegate.reopenMain?()
@@ -91,20 +92,34 @@ struct RecordingMenu: View {
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let meetingDetector = MeetingDetector()
     var reopenMain: (() -> Void)?
+    private var mainWindow: NSWindow?
+    func retainMainWindow(_ window: NSWindow) {
+        guard !(window is NSPanel) else { return }
+        // Keep the real window available after the close button removes it from
+        // NSApp.windows. Reopening an already-running menu app must show it again.
+        window.isReleasedWhenClosed = false
+        mainWindow = window
+    }
     func showMain(open: () -> Void) {
         open() // SwiftUI Window's fixed id reuses the same main window.
         NSApp.activate(ignoringOtherApps: true)
         raiseExistingMain()
         DispatchQueue.main.async { [weak self] in self?.raiseExistingMain() }
     }
-    func raiseExistingMain() {
-        guard let window = NSApp.windows.first(where: { $0.title == BuildIdentity.name && !($0 is NSPanel) }) else { return }
+    @discardableResult func raiseExistingMain() -> Bool {
+        guard let window = mainWindow ?? NSApp.windows.first(where: { $0.title == BuildIdentity.name && !($0 is NSPanel) }) else { return false }
+        retainMainWindow(window)
         if window.isMiniaturized { window.deminiaturize(nil) }
         window.makeKeyAndOrderFront(nil)
+        return true
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if mainWindow != nil, raiseExistingMain() {
+            sender.activate(ignoringOtherApps: true)
+            return false // The retained window handled this request.
+        }
         reopenMain?()
-        return false
+        return true // Allow SwiftUI's normal reopen path when no window was captured.
     }
     var model: AppModel?
     var dictation: DictationController?
@@ -128,6 +143,22 @@ struct CodaSettingsCommands: Commands {
                 model.openSettings()
                 NSApp.activate(ignoringOtherApps: true)
             }.keyboardShortcut(",")
+        }
+    }
+}
+
+/// Capture the actual scene window, rather than relying on title lookup or onAppear timing.
+private struct MainWindowReader: NSViewRepresentable {
+    let receive: (NSWindow) -> Void
+    func makeNSView(context: Context) -> WindowView { WindowView(receive: receive) }
+    func updateNSView(_ view: WindowView, context: Context) { view.receive = receive }
+    final class WindowView: NSView {
+        var receive: (NSWindow) -> Void
+        init(receive: @escaping (NSWindow) -> Void) { self.receive = receive; super.init(frame: .zero) }
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let window { receive(window) }
         }
     }
 }

@@ -44,3 +44,21 @@ manifest, refuses mismatched channel/commit/dirty bundles and refuses reusing a
 version for another commit. An existing complete release can be reused when
 retrying local installation. Automatic in-app update installation is not
 implemented; Production's menu links to the release downloads.
+
+## Development reopen recovery
+
+A live sample of the reported spinning Development app showed an idle main run
+loop rather than a blocked launch. Computer Use could not find a window in the
+already-running process. The old reopen handler always suppressed default scene
+reopening and depended on a callback captured from a potentially closed view.
+
+The scene now captures and retains its actual NSWindow, keeps it available after
+close, and restores it directly on reopen. Without a captured window the handler
+allows SwiftUI's default reopen path. Development is packaged as a normal Dock
+app (`LSUIElement=false`); Production retains its existing agent policy. The
+installed Dev process accepted a normal quit before rebuild; Production was not
+stopped or replaced.
+
+The full test run passed 228 tests (131 core, 92 UI/integration, 5 speaker/tool).
+Regression coverage includes repeatedly closing/reopening one retained window
+without creating another and permitting fallback when no window is captured.
