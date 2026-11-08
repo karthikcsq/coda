@@ -118,7 +118,7 @@ struct SettingsPanel: View {
             row("Learn from corrections", "Suggest names and unfamiliar terms you correct after dictation. Review them in Dictionary before they affect recognition.") {
                 Toggle("Learn from corrections", isOn: $controller.learnWords).labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
-            row("Learn from my edits", "Save dictation audio, original text, inserted text and observed edits on this Mac. Smart cleanup learns from your text fixes after a quality check. Speech recognition and meeting models stay generic.") {
+            row("Learn from my edits", "Save dictation audio, original text, inserted text and observed edits on this Mac. Smart cleanup learns from your text fixes after a quality check. Personal voice training uses reviewed audio separately. Meetings keep generic Voz.") {
                 Toggle("Learn from my edits", isOn: Binding(get: { controller.personalTuning.enabled }, set: { controller.personalTuning.enabled = $0 }))
                     .labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }

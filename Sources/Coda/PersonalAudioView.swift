@@ -15,7 +15,7 @@ struct PersonalAudioView: View {
                 Spacer()
                 Button("Done") { dismiss() }
             }
-            Text("Train an experimental English Whisper voice model locally. Meetings keep using generic Voz. Personal voice dictation skips Smart cleanup until that combination is validated.")
+            Text("Fine-tune Voz’s decoder output layer on your recordings locally. Meetings keep using generic Voz. Personal voice dictation skips Smart cleanup until that combination is validated.")
                 .font(.callout).foregroundStyle(.secondary)
             Text("Listen, then type exactly what you said, including repetitions. Save a verbatim transcript only after checking the audio. Polished text is shown for reference and is never automatically used for acoustic training.")
                 .font(.callout)
@@ -31,9 +31,9 @@ struct PersonalAudioView: View {
             Toggle("Use personal voice model for dictation", isOn: $tuning.enabled)
                 .toggleStyle(.switch).tint(CodaStyle.mint)
                 .disabled(preview || tuning.busy || tuning.running || !tuning.installed)
-            Text("Acceptance compares against generic Whisper and your previous personal model. It does not establish an improvement over Voz.").font(.caption).foregroundStyle(.secondary)
+            Text("Acceptance requires better held-out word accuracy than generic Voz and your previous personal Voz model. The encoder stays frozen.").font(.caption).foregroundStyle(.secondary)
             Text(tuning.message).font(.callout).foregroundStyle(.secondary)
-            Text("\(tuning.reviewedCount) reviewed / \(tuning.pairs.count) saved. Training requires at least 15 distinct clips, each up to 30 seconds. Preparation downloads Python packages and public model weights; recordings stay on this Mac.")
+            Text("\(tuning.reviewedCount) reviewed / \(tuning.pairs.count) saved. Training requires at least 15 distinct clips, each up to 15 seconds. Preparation installs Python packages and copies the generic Voz model; recordings stay on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
             if tuning.pairs.isEmpty {
                 ContentUnavailableView("No recordings yet", systemImage: "waveform", description: Text("Enable Learn from my edits, then dictate to collect recordings."))

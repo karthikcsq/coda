@@ -37,11 +37,11 @@ import CodaCore
     #expect(!text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 }
 
-@Test @MainActor func cancellingPersonalInferenceStopsItsWorker() async throws {
+@Test @MainActor func cancellingPersonalTrainingStopsItsWorker() async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
-    try Data("{}".utf8).write(to: root.appendingPathComponent("active.json"))
+    try Data("{\"backend\":\"voz-v0.4.0\",\"model\":\"00000000-0000-0000-0000-000000000001\"}".utf8).write(to: root.appendingPathComponent("active.json"))
     let worker = root.appendingPathComponent("worker.py")
     try """
     import sys, time, pathlib, os
@@ -49,9 +49,7 @@ import CodaCore
     (root / 'started').write_text(str(os.getpid()))
     time.sleep(30)
     """.write(to: worker, atomically: true, encoding: .utf8)
-    let tuning = PersonalAudioTuning(root: root, pairsRoot: root.appendingPathComponent("pairs"), worker: worker, python: URL(fileURLWithPath: "/usr/bin/python3"))
-    tuning.enabled = true
-    let inference = Task { try await tuning.transcribe(root.appendingPathComponent("unused.m4a")) }
+    let inference = Task { try await PersonalAudioTuning.run(URL(fileURLWithPath: "/usr/bin/python3"), [worker.path, "--root", root.path], root: root) }
     for _ in 0..<100 {
         if FileManager.default.fileExists(atPath: root.appendingPathComponent("started").path) { break }
         try await Task.sleep(for: .milliseconds(20))
@@ -65,7 +63,7 @@ import CodaCore
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: root) }
-    try Data("{}".utf8).write(to: root.appendingPathComponent("active.json"))
+    try Data("{\"backend\":\"voz-v0.4.0\",\"model\":\"00000000-0000-0000-0000-000000000001\"}".utf8).write(to: root.appendingPathComponent("active.json"))
     let tuning = PersonalAudioTuning(root: root, pairsRoot: root.appendingPathComponent("pairs"))
     tuning.enabled = true
     tuning.reset()

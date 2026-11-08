@@ -145,6 +145,11 @@ import Voz
         selection = meetings.first?.id
     }
     var dictationModelReady: Bool { Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
+    func vozDirectoryForPersonalTraining() async throws -> URL {
+        guard modelConsent else { throw CodaError.message("Accept Voz model terms before preparing personal training.") }
+        let path = try await Voz.download(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path)
+        return URL(fileURLWithPath: path)
+    }
     func transcribeDictation(_ audio: URL, vocabulary: [String] = []) async throws -> String { try await pipeline.dictate(audio, consent: modelConsent, vocabulary: vocabulary) }
     func prepareDictation() {
         guard !isOccupied, modelConsent else { return }

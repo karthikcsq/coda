@@ -1,20 +1,17 @@
 """Local acoustic fine-tuning. Only independently reviewed verbatim labels train.
-No audio or labels are sent to the Hub. Preparation downloads public weights.
+No audio or labels leave this Mac. Preparation copies the existing Voz bundle.
 """
 import argparse
 import hashlib
 import json
 import os
 from pathlib import Path
-import random
 import re
 import subprocess
 import tempfile
 import wave
 import uuid
 
-BASE = "openai/whisper-base"
-REVISION = "e37978b90ca9030d5170a5c07aadb050351a65bb"
 
 
 def words(text):
@@ -59,15 +56,9 @@ def write_json(path, value):
     temp.replace(path)
 
 
-def promote(root, model, baseline, current, candidate, trained_audio):
+def accepts(baseline, current, candidate):
     import math
-    if not all(math.isfinite(v) for v in (baseline, current, candidate)) or candidate >= min(baseline, current):
-        return False
-    name = str(uuid.uuid4())
-    destination = root / "models" / name
-    model.save_pretrained(destination, safe_serialization=True)
-    write_json(root / "active.json", {"model": name, "trainedAudio": sorted(trained_audio)})
-    return True
+    return all(math.isfinite(v) and v >= 0 for v in (baseline,current,candidate)) and candidate < min(baseline,current)
 
 
 def samples(path):
@@ -84,127 +75,120 @@ def samples(path):
 
 
 def main(args):
+    import numpy as np
     import torch
-    from transformers import WhisperProcessor, WhisperForConditionalGeneration
+    import shutil
+    from voz import decoder, aligned_features, tokenize, patch_projection
     root = Path(args.root)
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
     base = root / "base"
-    if args.command == "prepare":
-        processor = WhisperProcessor.from_pretrained(BASE, revision=REVISION, language="english", task="transcribe")
-        model = WhisperForConditionalGeneration.from_pretrained(BASE, revision=REVISION, use_safetensors=True)
-        processor.save_pretrained(base)
-        model.save_pretrained(base, safe_serialization=True)
-        write_json(root / "prepared.json", {"model": BASE, "revision": REVISION})
-        return
-    os.environ["HF_HUB_OFFLINE"] = "1"
-    processor = WhisperProcessor.from_pretrained(base, local_files_only=True, language="english", task="transcribe")
     active = root / "active.json"
-    model_dir = base
-    if args.command == "transcribe":
-        model_dir = root / "models" / str(uuid.UUID(json.loads(active.read_text())["model"]))
-    model = WhisperForConditionalGeneration.from_pretrained(model_dir, local_files_only=True, use_safetensors=True)
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    model.to(device)
-    model.generation_config.forced_decoder_ids = None
-    model.generation_config.task = "transcribe"
-
-    def features(audio):
-        return processor(audio, sampling_rate=16000, return_tensors="pt").input_features.to(device)
-
-    def transcribe(audio):
-        model.eval()
-        pieces = []
-        # Never silently truncate the app's two-minute recordings.
-        with torch.no_grad():
-            for start in range(0, len(audio), 30 * 16000):
-                tokens = model.generate(features(audio[start:start + 30 * 16000]), task="transcribe", language="english", max_new_tokens=225)
-                pieces.append(processor.batch_decode(tokens, skip_special_tokens=True)[0].strip())
-        return " ".join(pieces)
-
-    if args.command == "transcribe":
-        write_json(Path(args.output), {"text": transcribe(samples(args.audio))})
+    if args.command == "prepare":
+        source = Path(args.source)
+        # Preparation copies the existing Voz bundle; no substitute model download.
+        for name in ["encoder.mlmodelc", "mel.mlmodelc", "decoder.mlmodelc", "meta.json", "vocab.json", "embedding.f16"]:
+            src = source / name
+            if not src.exists():
+                raise ValueError("Prepare the generic Voz model before personal training.")
+            if src.is_dir(): shutil.copytree(src, base / name, dirs_exist_ok=True)
+            else:
+                base.mkdir(parents=True, exist_ok=True, mode=0o700)
+                shutil.copy2(src, base / name)
+        decoder(base / "decoder.mlmodelc")
+        write_json(root / "prepared.json", {"backend": "voz-v0.4.0", "adaptation": "decoder-output-projection"})
         return
-
     source = Path(args.pairs)
     pairs = [json.loads(p.read_text()) for p in source.glob("*.json")]
-    # Only short reviewed clips train; long inference recordings are chunked.
     usable = []
     for pair in pairs:
-        if not pair.get("reviewedTranscript"):
-            continue
-            identifier = str(uuid.UUID(pair["id"])).upper()
-        audio = samples(source / (identifier + ".m4a"))
-        if len(audio) <= 30 * 16000:
+        if not pair.get("reviewedTranscript"): continue
+        identifier = str(uuid.UUID(pair["id"])).upper()
+        pair["audioPath"] = str(source / (identifier + ".m4a"))
+        audio = samples(pair["audioPath"])
+        if len(audio) <= 240000:
             pair["audio"] = audio
             usable.append(pair)
     train, heldout = split_pairs(usable)
-    # An edited label must not let audio seen by the active model become a test
-    # example. Also exclude byte-identical recordings across transcript groups.
-    prior = json.loads(active.read_text()).get("trainedAudio", []) if active.exists() else []
-    def fingerprint(pair):
-        return hashlib.sha256(pair["audio"].tobytes()).hexdigest()
-    trained_audio = {fingerprint(p) for p in train}
-    heldout = [p for p in heldout if fingerprint(p) not in trained_audio and fingerprint(p) not in prior]
-    if len(heldout) < 3:
-        raise ValueError("Review more fresh recordings: fewer than three uncontaminated held-out clips remain.")
-    labels = {}
+    previous = json.loads(active.read_text()) if active.exists() else None
+    def fingerprint(pair): return hashlib.sha256(pair["audio"].tobytes()).hexdigest()
+    train_hashes = {fingerprint(p) for p in train}
+    prior_hashes = set(previous.get("trainedAudio", [])) if previous else set()
+    heldout = [p for p in heldout if fingerprint(p) not in train_hashes | prior_hashes]
+    if len(heldout) < 3: raise ValueError("Review more fresh clips: at least three uncontaminated held-out recordings are needed.")
+
+    def score(directory):
+        with tempfile.TemporaryDirectory(dir=root) as temp:
+            manifest = Path(temp) / "clips.json"
+            output = Path(temp) / "results.json"
+            write_json(manifest, [{"id":p["id"], "audio":p["audioPath"]} for p in heldout])
+            process = subprocess.Popen([args.tool, str(directory), str(manifest), str(output)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                process.wait(timeout=600)
+                if process.returncode != 0:
+                    raise ValueError("The candidate could not run in Voz. Your current model was kept.")
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait(timeout=10)
+            results = json.loads(output.read_text())
+        errors = sum(distance(words(p["reviewedTranscript"]), words(results[p["id"]])) for p in heldout)
+        return errors / max(1,sum(len(words(p["reviewedTranscript"])) for p in heldout))
+
+    baseline = score(base)
+    current = score(root / "models" / str(uuid.UUID(previous["model"]))) if previous else baseline
+    model = decoder(base / "decoder.mlmodelc")
+    vocab = json.loads((base / "vocab.json").read_text())
+    features = []
     for pair in train:
-        ids = processor.tokenizer(pair["reviewedTranscript"], return_tensors="pt").input_ids
-        if ids.shape[-1] > 224:
-            raise ValueError("A reviewed transcript is too long for this training run.")
-        labels[pair["id"]] = ids[:, 1:].to(device)
-
-    def score():
-        errors = total = 0
-        for pair in heldout:
-            ref = words(pair["reviewedTranscript"])
-            errors += distance(ref, words(transcribe(pair["audio"])))
-            total += len(ref)
-        return errors / max(total, 1)
-
-    baseline = score()
-    # Compare to the active personal recognizer too; retraining may not regress it.
-    current = baseline
-    if active.exists():
-        old = model
-        model = WhisperForConditionalGeneration.from_pretrained(root / "models" / str(uuid.UUID(json.loads(active.read_text())["model"])), local_files_only=True).to(device)
-        current = score()
-        del model
-        model = old
-    torch.manual_seed(42)
-    random.seed(42)
+        features.append(aligned_features(base, pair["audio"], tokenize(pair["reviewedTranscript"], vocab), model))
+    original_w = model.weight.detach().clone()
+    original_b = model.bias.detach().clone()
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
-    model.config.use_cache = False
+    torch.manual_seed(42)
     for epoch in range(2):
-        random.shuffle(train)
-        for pair in train:
-            model.train()
+        for hidden, labels, residual in features:
             optimizer.zero_grad(set_to_none=True)
-            loss = model(input_features=features(pair["audio"]), labels=labels[pair["id"]]).loss
-            if not torch.isfinite(loss):
-                raise ValueError("Training produced a nonfinite loss; current model retained.")
+            loss = torch.nn.functional.cross_entropy((model(hidden)+residual)[:,:8193], labels)
+            loss = loss + .1 * ((model.weight-original_w).square().mean() + (model.bias-original_b).square().mean())
+            if not torch.isfinite(loss): raise ValueError("Nonfinite training loss; current Voz model kept.")
             loss.backward()
+            model.weight.grad[-5:] = 0; model.bias.grad[-5:] = 0
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
-    model.config.use_cache = True
-    candidate = score()
-    report = {"baselineWER": baseline, "currentWER": current, "candidateWER": candidate,
-              "trainCount": len(train), "heldoutCount": len(heldout), "installed": False}
-    # Require improvement over both generic Whisper and the current recognizer.
-    # Voz outputs are never used as labels or training data.
-    report["installed"] = promote(root, model, baseline, current, candidate, trained_audio)
-    write_json(root / "report.json", report)
+    name = str(uuid.uuid4())
+    candidate_dir = root / "models" / name
+    shutil.copytree(base, candidate_dir)
+    try:
+        patch_projection(candidate_dir / "decoder.mlmodelc", model.weight.detach().numpy(), model.bias.detach().numpy())
+        write_json(candidate_dir / "CODA_ADAPTATION.json", {"backend":"voz-v0.4.0", "method":"decoder-output-projection",
+            "sourceDecoderSHA256":hashlib.sha256((base / "decoder.mlmodelc/weights/weight.bin").read_bytes()).hexdigest(),
+            "trainingClips":len(train), "heldoutClips":len(heldout)})
+        # The gate runs the candidate through the actual Swift Voz SDK, including
+        # model load, tokenization, timing and window stitching. No Python proxy.
+        candidate = score(candidate_dir)
+        installed = accepts(baseline, current, candidate)
+        if installed:
+            write_json(active, {"backend":"voz-v0.4.0", "model":name, "trainedAudio":sorted(train_hashes)})
+        else: shutil.rmtree(candidate_dir)
+    except BaseException:
+        shutil.rmtree(candidate_dir, ignore_errors=True)
+        raise
+    write_json(root / "report.json", {"baselineWER":baseline, "currentWER":current, "candidateWER":candidate,
+        "trainCount":len(train), "heldoutCount":len(heldout), "installed":installed})
 
 
 if __name__ == "__main__":
     os.umask(0o077)
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["prepare", "train", "transcribe"])
+    parser.add_argument("command", choices=["prepare", "train"])
     parser.add_argument("--root", required=True)
     parser.add_argument("--pairs")
-    parser.add_argument("--audio")
-    parser.add_argument("--output")
+    parser.add_argument("--source")
+    parser.add_argument("--tool")
     args = parser.parse_args()
+    import signal
+    def cancelled(signum, frame):
+        raise KeyboardInterrupt("Audio training cancelled")
+    signal.signal(signal.SIGTERM, cancelled)
     import fcntl
     root = Path(args.root)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)

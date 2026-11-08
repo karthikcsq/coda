@@ -1,80 +1,97 @@
-# Personal dictation audio training
+# Personal Voz audio training
 
-Open Settings > Dictation > Personal voice training. Prepare audio training once
-(downloads the private Python runtime and public Whisper weights), listen to saved
-recordings, enter verbatim transcripts, then choose Fine-tune my voice. Review at
-least 15 distinct English clips of up to 30 seconds. The permanent split must
-contain at least 10 training transcript groups and 3 uncontaminated held-out
-recordings; more reviews may be required. Long recordings remain saved but are
-excluded from this first trainer. Final polished text is shown for reference;
-it is never automatically treated as a verified acoustic label.
+Settings > Dictation > Personal voice training prepares and adapts the same Voz
+v0.4.0 used by Coda. No alternative speech recognizer is downloaded or used.
+Preparation copies the installed generic Voz bundle into private working storage
+and installs an isolated Python environment. It requires accepted Voz model terms
+and Python 3.10+ (Homebrew 3.13 tested). Runtime versions: torch 2.15.0,
+coremltools 9.0, numpy 2.5.4. Model licenses remain unchanged.
 
-This is an experimental, separate Whisper base recognizer for personal English
-dictation. Voz's published SDK provides compiled inference models but no acoustic
-training/export pipeline, so the feature uses independently obtained Whisper
-weights and explicitly reviewed human labels. It does not train on Voz outputs.
-Meetings continue calling the existing generic Voz pipeline. The optional personal
-voice selection is remembered across launches. Use generic Voz disables it without
-deleting recordings. Delete recording and pair removes that saved audio/label.
+Listen to a saved recording and enter exactly what was spoken. Only explicitly
+reviewed transcripts train. Polished final text and raw recognition are reference
+material, never automatically used as acoustic labels. At least 15 distinct
+transcripts are required, with 10 training groups and 3 uncontaminated held-out
+clips; additional recordings may be needed to satisfy the fixed split. This
+first trainer uses clips up to 15 seconds and labels up to 64 Voz pieces. Longer
+recordings remain saved. Any unrepresentable characters cause an explicit error.
+The public sidecar has token pieces without SentencePiece scores; labels use
+longest matching pieces, preserving exact text, rather than claiming canonical
+SentencePiece segmentation. Runtime inference uses the unmodified Voz tokenizer.
 
-## Storage and execution
+## What is trained
+
+This is parameter-efficient adaptation of Voz's existing decoder output
+projection (weights and token biases), not full encoder fine-tuning. The encoder,
+mel frontend, prediction LSTMs, embedding and duration head stay frozen. All
+features and reference-prefix logits come from the installed compiled Voz models.
+A TDT Viterbi path aligns the reviewed pieces to those acoustic frames. Training
+uses two epochs of cross-entropy on that fixed path, learning rate 1e-5, gradient
+clipping and a penalty for deviation from the original projection.
+
+Core ML's quantized CPU kernels have rounding differences from float arithmetic.
+The trainer recovers approximate head features by a regularized linear solve and
+keeps native starting logits as a detached residual while optimizing projection
+deltas. No substitute decoder network generates alignment logits.
+
+Only the existing projection's int8 weight, fp16 scale and fp16 bias payloads are
+updated in a private copy. Duration rows are preserved byte for byte. This relies
+on the pinned Voz export's weight layout: named MIL blobs, shapes and payloads
+are checked using Apple's blob reader. Unsupported layouts fail before activation.
+This is a Coda-specific export adapter, not a claim that Apple's public update API
+can train arbitrary compiled ML Programs. Each candidate gets a fresh directory
+to avoid reusing a compiled specialization from another set of weights.
+
+## Native validation and model selection
+
+CodaVozTool loads each generic, candidate and previous personal model using the
+actual Voz Swift SDK. It transcribes held-out recordings through the normal model
+loader, decoder and window stitching. The candidate must strictly lower normalized
+word error against BOTH generic Voz and the previous personal Voz model. A tie or
+failure keeps the existing selection. The active pointer changes atomically only
+after a complete candidate bundle passes. Every accepted derivative carries a
+CODA_ADAPTATION.json describing modifications and its source decoder checksum.
+Rejected candidate bundles are removed. Cancellation terminates the evaluation
+child and cleans staging where possible.
+
+Transcript groups retain their split when recordings are added. Audio fingerprints
+exclude duplicates and clips used to train the active model from held-out scoring,
+including after transcript edits. This small personal test set is a regression
+gate, not proof of improvement on every future recording.
+
+Dictation loads the accepted directory through Voz(modelDirectory:), caches that
+instance and preserves vocabulary hints. Meetings continue using LocalPipeline's
+separate generic Voz instance and original model cache. Personal dictation skips
+Smart cleanup pending validation of that model combination. Use generic Voz turns
+off personalization without deleting the accepted model or saved recordings. The
+choice is remembered across app launches. Earlier experimental model assets are
+not migrated or loaded; this feature uses a separate PersonalVoz directory and
+backend marker.
+
+## Storage
 
 With Learn from my edits enabled, successful nonempty dictations are saved under
-`~/Library/Application Support/Coda/Dictations/Training/`: UUID audio and private
-JSON containing raw recognition, inserted text, latest observed edits and optional
+~/Library/Application Support/Coda/Dictations/Training/: UUID audio and private
+JSON with raw recognition, inserted text, latest observed field edits and optional
 reviewedTranscript. Field observation lasts up to 60 seconds in accessible editors.
-Disabling learning stops collection but keeps existing pairs. Cancelled or failed
-recognition is not retained. The review screen can play and delete each pair.
+Failed/cancelled recognition is not retained. Disabling learning stops collection
+but keeps existing pairs. The review panel plays and deletes individual pairs.
 
-`~/Library/Application Support/Coda/PersonalAudio/` contains the isolated runtime,
-base weights, accepted models, active pointer, and latest evaluation report.
-Preparation requires an installed Python 3.10+ (Homebrew 3.13 is supported).
-Tested runtime versions: torch 2.15.0, transformers 4.57.6, numpy 2.5.4. Whisper
-base revision: e37978b90ca9030d5170a5c07aadb050351a65bb. Preparation downloads public
-packages/weights; training and inference load only local files and upload no audio
-or text. Models are source assets, never committed. The app bundles worker.py.
+~/Library/Application Support/Coda/PersonalVoz/ contains runtime, private base copy,
+accepted models, active pointer and evaluation report. Preparation may download
+public Python packages or generic Voz if needed. Audio training and native
+evaluation run locally; no audio or labels are uploaded. No models or recordings
+are committed to Git. Generic cache files are never patched.
 
-The trainer uses MPS when available, CPU otherwise, two epochs with batch size one,
-learning rate 1e-5 and gradient clipping. Labels exceeding 224 tokens are rejected.
-Repeated normalized transcripts stay in the same partition across runs. Audio
-fingerprints exclude test recordings already used by the active model or duplicated
-across current training/test labels, including after a transcript edit.
+## Verification
 
-The gate requires strictly lower normalized held-out word error than both generic
-Whisper and the current personal model. It does NOT establish superiority over
-Voz. A new directory is saved completely before switching the active pointer
-atomically. Failure or a rejected candidate preserves the pointer. Prior accepted
-weights remain on disk for recovery. Reset disables the personal model. Training
-can be cancelled in the panel. A process lock prevents overlapping workers; app
-operations avoid starting audio and cleanup training simultaneously.
-
-Personal audio dictation skips Smart cleanup pending separate validation, but
-retains the configured rules and explicit dictionary corrections. Long inference
-recordings use sequential 30-second chunks; words crossing chunk boundaries may
-be less accurate. Each dictation starts a worker and reloads the personal model,
-so latency differs from Voz's persistent Neural Engine implementation.
-
-## Evidence and limits
-
-- https://huggingface.co/openai/whisper-base and
-  https://huggingface.co/docs/transformers/model_doc/whisper document the model,
-  processor, generation and fine-tuning interfaces.
-- https://aclanthology.org/2021.emnlp-main.737/ discusses speaker adaptation and
-  forgetting of other speakers. Regressions are possible, not inevitable.
-- https://arxiv.org/abs/2407.13300 documents ASR correction overcorrection risks.
-  Improved transcription changes cleanup's inputs; it does not inherently overfit
-  cleanup. Overtraining on a small correction set is a separate risk.
-
-Verification: five Python split/gate tests, Swift persistence/review tests, native
-workspace and voice-panel renders, and saved-model offline inference passed.
-A real two-epoch training run used 30 macOS-synthesized English recordings in a
-private temporary folder (25 training, 5 held out). The candidate regressed from
-0% to 2.78% WER and was correctly rejected. This is execution evidence, not evidence
-of improvement on the user's voice. No private user dictations were trained.
-A separate test-only model exercised saved-model loading through the Swift worker.
-
-Final verification also passed all 85 CodaCore tests, the worker cancellation test,
-and the generic/personal selection preservation test. Signed bundle packaging was
-not performed: `security find-identity -v -p codesigning` returned zero valid
-identities. The existing build script requires a certificate and deliberately
-refuses ad-hoc signing. No running app was replaced.
+- Six Python tests passed, including a native compiled-model projection update,
+  unchanged duration output and unchanged generic source bytes.
+- All 85 core tests and six native tests/renders passed.
+- A real two-epoch smoke run used 30 synthesized recordings: 24 training and six
+  held out. Both generic and adapted Voz scored 0% WER. The tie was rejected.
+  This verifies execution and the gate, not improvement on the user's voice.
+- A modified Voz bundle also passed offline inference through Coda's personal
+  recognizer actor. Cancellation and returning to generic were tested.
+- Signing remains unavailable: macOS reports zero valid code-signing identities.
+  The existing build script requires a certificate and refuses ad-hoc signing.
+  No running app was replaced.

@@ -2,9 +2,10 @@
 import PackageDescription
 let package = Package(
     name: "Coda", platforms: [.macOS(.v15)],
-    products: [.executable(name: "Coda", targets: ["Coda"]), .library(name: "CodaCore", targets: ["CodaCore"])],
+    products: [.executable(name: "CodaVozTool", targets: ["CodaVozTool"]), .executable(name: "Coda", targets: ["Coda"]), .library(name: "CodaCore", targets: ["CodaCore"])],
     dependencies: [.package(url: "https://github.com/Desert-Ant-Labs/desert-ant-core.git", exact: "4.1.0"), .package(url: "https://github.com/apple/swift-numerics", exact: "1.1.1"), .package(path: "Vendor/KeyboardShortcuts")],
     targets: [
+        .executableTarget(name: "CodaVozTool", dependencies: [.product(name: "Voz", package: "desert-ant-core")]),
         .target(name: "CodaCore"),
         .target(name: "CodaWho", dependencies: [.product(name: "DesertAnt", package: "desert-ant-core"), .product(name: "AudioIO", package: "desert-ant-core"), .product(name: "RealModule", package: "swift-numerics")], path: "Vendor/Who", exclude: ["LICENSE.md", "CODA-PATCH.md"]),
         .executableTarget(name: "Coda", dependencies: ["CodaCore", "CodaWho", .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"), .product(name: "Voz", package: "desert-ant-core")]),

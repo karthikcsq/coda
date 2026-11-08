@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import CodaCore
+import Voz
 
 /// Owns only the dictation acoustic model. Meeting inference never reads it.
 @MainActor @Observable final class PersonalAudioTuning {
@@ -11,28 +12,40 @@ import CodaCore
     private(set) var message = "Review recordings before training your voice model."
     private let persistSelection: Bool
     var enabled = false {
-        didSet { if persistSelection { UserDefaults.standard.set(enabled, forKey: "personalAudioEnabled") } }
+        didSet { if persistSelection { UserDefaults.standard.set(enabled, forKey: "personalVozEnabled") } }
     }
     var busy: Bool { isBusy() }
     var isBusy: () -> Bool = { false }
-    var installed: Bool { FileManager.default.fileExists(atPath: root.appendingPathComponent("active.json").path) }
+    struct Selection: Decodable { var backend: String; var model: String }
+    private var selection: Selection? {
+        guard let data = try? Data(contentsOf: root.appendingPathComponent("active.json")),
+              let value = try? JSONDecoder().decode(Selection.self, from: data),
+              value.backend == "voz-v0.4.0", UUID(uuidString: value.model) != nil else { return nil }
+        return value
+    }
+    var installed: Bool { selection != nil }
+    var sourceModel: () async throws -> URL = { throw CodaError.message("Prepare Voz and accept its model terms first.") }
+    private let recognizer = PersonalVozRecognizer()
+    private var evaluationTool: URL? {
+        let project = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let candidates = [Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/CodaVozTool"),
+            project.appendingPathComponent(".build/out/Products/Debug/CodaVozTool"), project.appendingPathComponent(".build/debug/CodaVozTool")]
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
     var prepared: Bool { FileManager.default.fileExists(atPath: root.appendingPathComponent("prepared.json").path) }
     var reviewedCount: Int { pairs.filter { $0.reviewedTranscript != nil }.count }
     private var operation: Task<Void, Never>?
     func cancel() { operation?.cancel() }
-    private let pythonOverride: URL?
-    private let workerOverride: URL?
-    private var python: URL { pythonOverride ?? root.appendingPathComponent("runtime/bin/python3") }
-    private var worker: URL? { workerOverride ?? Bundle.main.url(forResource: "personal_audio_worker", withExtension: "py") ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("scripts/personal-audio/worker.py") }
+    private var python: URL { root.appendingPathComponent("runtime/bin/python3") }
+    private var worker: URL? { Bundle.main.url(forResource: "personal_audio_worker", withExtension: "py") ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("scripts/personal-audio/worker.py") }
 
-    init(root: URL? = nil, pairsRoot: URL? = nil, worker: URL? = nil, python: URL? = nil) {
-        pythonOverride = python; workerOverride = worker
+    init(root: URL? = nil, pairsRoot: URL? = nil) {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda")
         persistSelection = root == nil
-        self.root = root ?? support.appendingPathComponent("PersonalAudio")
+        self.root = root ?? support.appendingPathComponent("PersonalVoz")
         store = try? DictationTrainingStore(root: pairsRoot ?? support.appendingPathComponent("Dictations/Training"))
         refresh()
-        enabled = persistSelection && installed && UserDefaults.standard.bool(forKey: "personalAudioEnabled")
+        enabled = persistSelection && installed && UserDefaults.standard.bool(forKey: "personalVozEnabled")
     }
     func refresh() {
         do { pairs = try store?.load() ?? [] }
@@ -56,40 +69,42 @@ import CodaCore
     func start(prepare: Bool) {
         guard !running, !isBusy(), let worker else { return }
         running = true
-        message = prepare ? "Downloading the local training runtime and Whisper base…" : "Training and evaluating your voice model locally…"
+        message = prepare ? "Preparing the local runtime and a personal copy of Voz…" : "Training and evaluating your voice model locally…"
         operation = Task {
             defer { running = false; operation = nil; refresh() }
             do {
                 try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                let source = prepare ? try await sourceModel() : nil
                 if prepare {
                     let candidates = ["/opt/homebrew/bin/python3.13", "/opt/homebrew/bin/python3.12", "/opt/homebrew/bin/python3.11", "/usr/local/bin/python3.12", "/usr/bin/python3"]
                     guard let system = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { throw CodaError.message("Install Python 3.10 or newer to prepare audio training.") }
                     try await Self.run(URL(fileURLWithPath: system), ["-m", "venv", root.appendingPathComponent("runtime").path], root: root)
-                    try await Self.run(python, ["-m", "pip", "install", "torch==2.15.0", "transformers==4.57.6", "numpy==2.5.4"], root: root)
+                    try await Self.run(python, ["-m", "pip", "install", "torch==2.15.0", "coremltools==9.0", "numpy==2.5.4"], root: root)
                 }
                 var args = [worker.path, prepare ? "prepare" : "train", "--root", root.path]
-                if !prepare, let store { args += ["--pairs", store.root.path] }
+                if let source { args += ["--source", source.path] }
+                else {
+                    guard let store, let tool = evaluationTool else { throw CodaError.message("The bundled Voz evaluation tool is unavailable.") }
+                    args += ["--pairs", store.root.path, "--tool", tool.path]
+                }
                 try await Self.run(python, args, root: root, offline: !prepare)
-                if prepare { message = "Whisper base is ready. Review at least 15 distinct clips of up to 30 seconds." }
+                if prepare { message = "Voz is ready. Review at least 15 distinct clips of up to 15 seconds." }
                 else {
                     struct Report: Decodable { var installed: Bool; var baselineWER: Double; var candidateWER: Double }
                     let report = try JSONDecoder().decode(Report.self, from: Data(contentsOf: root.appendingPathComponent("report.json")))
-                    message = String(format: "Held-out Whisper word error: %.1f%% → %.1f%%. %@", report.baselineWER * 100, report.candidateWER * 100, report.installed ? "Personal model saved; enable it to try dictation." : "No improvement; current model kept.")
+                    message = String(format: "Held-out Voz word error: %.1f%% → %.1f%%. %@", report.baselineWER * 100, report.candidateWER * 100, report.installed ? "Personal model saved; enable it to try dictation." : "No improvement; current model kept.")
                 }
             } catch is CancellationError { message = "Cancelled. Your current model was kept." }
             catch { message = error.localizedDescription }
         }
     }
-    func transcribe(_ audio: URL) async throws -> String {
-        guard enabled, installed, let worker else { throw CodaError.message("Personal voice model is unavailable.") }
-        let output = root.appendingPathComponent(UUID().uuidString + ".json")
-        defer { try? FileManager.default.removeItem(at: output) }
-        try await Self.run(python, [worker.path, "transcribe", "--root", root.path, "--audio", audio.path, "--output", output.path], root: root, offline: true)
-        try Task.checkCancellation()
-        struct Result: Decodable { var text: String }
-        return try JSONDecoder().decode(Result.self, from: Data(contentsOf: output)).text
+    func transcribe(_ audio: URL, vocabulary: [String] = []) async throws -> String {
+        guard enabled, let selection else { throw CodaError.message("Personal Voz model is unavailable.") }
+        let directory = root.appendingPathComponent("models").appendingPathComponent(selection.model)
+        return try await recognizer.transcribe(audio, directory: directory, modelID: selection.model, vocabulary: vocabulary)
     }
-    nonisolated private static func run(_ executable: URL, _ arguments: [String], root: URL, offline: Bool = false) async throws {
+
+    nonisolated static func run(_ executable: URL, _ arguments: [String], root: URL, offline: Bool = false) async throws {
         let operation = Task.detached(priority: .utility) {
             let log = root.appendingPathComponent(UUID().uuidString + ".log")
             FileManager.default.createFile(atPath: log.path, contents: nil, attributes: [.posixPermissions: 0o600])
@@ -128,5 +143,23 @@ import CodaCore
         } onCancel: {
             operation.cancel()
         }
+    }
+}
+
+
+private actor PersonalVozRecognizer {
+    private var model: Voz?
+    private var modelID: String?
+    func transcribe(_ audio: URL, directory: URL, modelID: String, vocabulary: [String]) async throws -> String {
+        try Task.checkCancellation()
+        if self.modelID != modelID {
+            model = try Voz(modelDirectory: directory)
+            self.modelID = modelID
+        }
+        guard let model else { throw CodaError.message("Personal Voz could not load.") }
+        let result = try await model.transcribe(audio, vocabulary: vocabulary)
+        try Task.checkCancellation()
+        guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw DictationFailure.noWords }
+        return result.text
     }
 }

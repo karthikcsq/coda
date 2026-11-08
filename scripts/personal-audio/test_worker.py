@@ -22,42 +22,17 @@ class PolicyTests(unittest.TestCase):
             split_pairs([{"reviewedTranscript": "same phrase"}] * 20)
 
 
-class PromotionTests(unittest.TestCase):
-    def test_rejection_preserves_active_and_never_saves(self):
-        import tempfile
-        from pathlib import Path
-        from worker import promote
-        class Model:
-            def save_pretrained(self, *args, **kwargs):
-                raise AssertionError('Rejected model must not save')
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / 'active.json').write_text('original')
-            for candidate in [0.1, 0.2, float('nan')]:
-                self.assertFalse(promote(root, Model(), 0.1, 0.15, candidate, set()))
-            self.assertEqual((root / 'active.json').read_text(), 'original')
-
-    def test_acceptance_saves_before_switch_and_failed_save_preserves_active(self):
-        import tempfile, json
-        from pathlib import Path
-        from worker import promote
-        class Model:
-            def save_pretrained(self, destination, **kwargs):
-                destination.mkdir(parents=True)
-                (destination / 'config.json').write_text('{}')
-        class Failure:
-            def save_pretrained(self, *args, **kwargs):
-                raise OSError('disk full')
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.assertTrue(promote(root, Model(), 0.2, 0.15, 0.1, {'audiohash'}))
-            active = (root / 'active.json').read_text()
-            metadata = json.loads(active)
-            self.assertEqual(metadata['trainedAudio'], ['audiohash'])
-            self.assertTrue((root / 'models' / metadata['model'] / 'config.json').exists())
-            with self.assertRaises(OSError):
-                promote(root, Failure(), 0.2, 0.15, 0.1, set())
-            self.assertEqual((root / 'active.json').read_text(), active)
+class GateTests(unittest.TestCase):
+    def test_requires_improvement_over_generic_and_personal_voz(self):
+        from worker import accepts
+        self.assertTrue(accepts(.2,.15,.1))
+        self.assertFalse(accepts(.2,.15,.15))
+        self.assertFalse(accepts(.2,.1,.15))
+        self.assertFalse(accepts(.1,.2,.15))
+    def test_nonfinite_or_negative_scores_never_install(self):
+        from worker import accepts
+        for score in [float('nan'),float('inf'),-.1]:
+            self.assertFalse(accepts(.2,.2,score))
 
 if __name__ == '__main__':
     unittest.main()

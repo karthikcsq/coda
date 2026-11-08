@@ -262,6 +262,10 @@ extension KeyboardShortcuts.Name {
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
+        personalAudio.sourceModel = { [weak self] in
+            guard let model = self?.model else { throw CodaError.message("Coda is not ready for model preparation.") }
+            return try await model.vozDirectoryForPersonalTraining()
+        }
         personalAudio.isBusy = { [weak self] in self?.lifecycle.busy == true || self?.model?.isOccupied == true || self?.personalTuning.running == true }
         personalTuning.isDictating = { [weak self] in self?.lifecycle.busy == true || self?.personalAudio.running == true }
         personalTuning.modelChanged = { [weak self] in self?.smartFormatter.reloadModel() }
@@ -435,7 +439,7 @@ extension KeyboardShortcuts.Name {
                 let vocabulary = dictionary.vocabulary
                 let usePersonalAudio = personalAudio.enabled
                 let result = try await usePersonalAudio
-                    ? personalAudio.transcribe(url)
+                    ? personalAudio.transcribe(url, vocabulary: vocabulary)
                     : model.transcribeDictation(url, vocabulary: vocabulary)
                 try Task.checkCancellation()
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }

@@ -58,12 +58,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Optional personal audio model
+## Optional personal Voz adaptation
 
-Personal audio training downloads OpenAI Whisper base from
-https://huggingface.co/openai/whisper-base (Apache 2.0), independently of Voz.
-Whisper project: https://github.com/openai/whisper (MIT). Model weights and their
-metadata remain in the user's local application-support folder. No Whisper
-weights are bundled in this repository. Runtime dependencies downloaded on
-request: PyTorch (BSD-style), Transformers (Apache 2.0), NumPy (BSD-style), and
-transitive dependencies with their installed license notices.
+Personal audio training adapts the decoder output projection in the user's
+existing Voz v0.4.0 model. It does not bundle or download another recognizer.
+Voz and derivative weights remain subject to the Desert Ant Labs terms above.
+Runtime packages installed on request: PyTorch (BSD-style), coremltools
+(BSD 3-Clause), NumPy (BSD-style), and their transitive dependencies. Package
+license notices remain in the isolated Python environment. Modified private model
+bundles are labeled with Coda's adaptation metadata and never committed here.
