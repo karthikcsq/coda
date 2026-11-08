@@ -9,6 +9,7 @@ import OSLog
     let menu = NSMenu()
     private let logger = Logger(subsystem: BuildIdentity.channel.bundleIdentifier, category: "StatusMenu")
     private var item: NSStatusItem?
+    private var tracking = false
     private let model: AppModel
     private let dictation: DictationController
     private weak var delegate: AppDelegate?
@@ -20,10 +21,22 @@ import OSLog
         menu.delegate = self
         if install {
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            self.item = item; item.menu = menu
+            self.item = item
+            item.button?.target = self
+            item.button?.action = #selector(showMenu(_:))
+            item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
             updateStatus()
         }
         rebuild()
+    }
+    @objc private func showMenu(_ sender: NSStatusBarButton) {
+        if tracking { menu.cancelTracking(); return }
+        rebuild()
+        tracking = true
+        defer { tracking = false }
+        // Track the ordinary AppKit popup directly instead of relying on the
+        // status item's automatic menu attachment and its remote presentation.
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY - 4), in: sender)
     }
     private func updateStatus() {
         withObservationTracking {
@@ -44,7 +57,7 @@ import OSLog
     }
     func menuWillOpen(_ menu: NSMenu) { logger.notice("Menu opened") }
     func menuDidClose(_ menu: NSMenu) { logger.notice("Menu closed") }
-    func menuNeedsUpdate(_ menu: NSMenu) { rebuild() }
+    func menuNeedsUpdate(_ menu: NSMenu) { if !tracking { rebuild() } }
     func rebuild() {
         menu.removeAllItems()
         add("Open \(BuildIdentity.name)", .open)
