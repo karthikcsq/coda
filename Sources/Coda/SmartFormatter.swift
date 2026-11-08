@@ -36,6 +36,10 @@ struct SmartFormatResult: Sendable {
         self.model = model ?? base.appendingPathComponent("model")
         self.script = script ?? Bundle.main.url(forResource: "smart_cleanup_worker", withExtension: "py")
     }
+    var isInstalled: Bool {
+        guard let script else { return false }
+        return FileManager.default.isExecutableFile(atPath: python.path) && FileManager.default.fileExists(atPath: script.path) && FileManager.default.fileExists(atPath: model.path)
+    }
     func warm() {
         guard process == nil else { return }
         guard let script, FileManager.default.isExecutableFile(atPath: python.path), FileManager.default.fileExists(atPath: script.path), FileManager.default.fileExists(atPath: model.path) else {

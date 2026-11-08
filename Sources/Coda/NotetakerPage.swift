@@ -26,10 +26,10 @@ struct NotetakerPage: View {
                 if model.meetings.isEmpty {
                     emptyLibrary
                 } else {
-                    CodaSearchField(prompt: "Search meetings", text: $model.search, width: 280)
+                    CodaSearchField(prompt: "Search titles, transcripts, people", text: $model.search, width: 330)
                     if model.filteredMeetings.isEmpty {
                         CodaEmptyState(icon: "magnifyingglass", title: "No matching meetings",
-                                       message: "Try part of a meeting title.")
+                                       message: "Try a name or a word from the conversation.")
                     } else {
                         // Grouped by day, so a date appears once instead of above every row.
                         LazyVStack(alignment: .leading, spacing: 24) {
@@ -59,7 +59,7 @@ struct NotetakerPage: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Notetaker").font(CodaStyle.pageTitleFont).fixedSize()
+            Text("Meetings").font(CodaStyle.pageTitleFont).fixedSize()
             Text(libraryLine).font(CodaStyle.secondaryFont).foregroundStyle(.secondary).lineLimit(1)
         }
     }
@@ -67,7 +67,7 @@ struct NotetakerPage: View {
     /// Honest totals only: counts and transcribed length from what is saved locally.
     private var libraryLine: String {
         let count = model.meetings.count
-        guard count > 0 else { return "Record or import a conversation. Everything stays on this Mac." }
+        guard count > 0 else { return "Record or import a conversation. Transcription runs on your Mac." }
         var parts = [count == 1 ? "1 meeting" : "\(count) meetings"]
         let audio = model.meetings.compactMap(\.transcribedDuration).reduce(0, +)
         if audio > 0 { parts.append(MeetingFormat.duration(audio)) }
@@ -158,7 +158,7 @@ struct NotetakerPage: View {
         VStack(spacing: 20) {
             CodaEmblem(symbol: "waveform")
             VStack(spacing: 8) {
-                Text("No meetings yet").font(.system(size: 18, weight: .semibold, design: .rounded))
+                Text("No meetings yet").font(.system(size: 18, weight: .semibold))
                 Text("Start a recording or import audio. Coda saves the audio first, then transcribes and labels speakers on this Mac.")
                     .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center).lineSpacing(3)

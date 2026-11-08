@@ -6,6 +6,8 @@ import Voz
 @preconcurrency import ApplicationServices
 
 @MainActor @Observable final class AppModel {
+    let summaryCredentials: SummaryCredentials
+    private let previewModelPrepared: Bool
     private var visualReview = false
     var isVisualReview: Bool { visualReview }
     var dictationBusy = false
@@ -28,6 +30,8 @@ import Voz
     private(set) var recordingStartFailure: RecordingStartFailure?
     var includeSystem = true
     var recordingSpeakerCount = 0
+    /// Optional names for a fixed speaker count, in first-to-speak order.
+    var recordingSpeakerNames: [String] = []
     var useDetectedSpeakerCount = true
     var detectedMeeting: DetectedMeeting?
     var recordingDetectedMeeting: DetectedMeeting?
@@ -64,7 +68,7 @@ import Voz
     private var activeRecording: Meeting?
     var selected: Meeting? { meetings.first { $0.id == selection } }
     var isOccupied: Bool { visualReview || busy || recording || startingCapture || dictationBusy }
-    var filteredMeetings: [Meeting] { meetings.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) } }
+    var filteredMeetings: [Meeting] { meetings.filter { $0.matchesSearch(search) } }
     var meetingOperationInProgress: Bool { recording || busy || startingCapture }
 
     func openMeeting(_ id: UUID) {
@@ -80,6 +84,7 @@ import Voz
     func requestMeetingRecording() {
         guard !isOccupied else { return }
         recordingSpeakerCount = 0
+        recordingSpeakerNames = []
         useDetectedSpeakerCount = true
         recordingDetectedMeeting = detectedMeeting
         showingMeetingDetail = true
@@ -113,7 +118,9 @@ import Voz
         }
     }
 
-    init(preview: Bool = ProcessInfo.processInfo.arguments.contains("--ui-preview")) {
+    init(preview: Bool = ProcessInfo.processInfo.arguments.contains("--ui-preview"), previewModelPrepared: Bool = false) {
+        self.previewModelPrepared = preview && previewModelPrepared
+        summaryCredentials = SummaryCredentials(preview: preview)
         visualReview = preview
         root = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-UI-Preview-" + UUID().uuidString) : BuildIdentity.dataRoot.appendingPathComponent("Meetings", isDirectory: true)
         pipeline = LocalPipeline(cache: root.deletingLastPathComponent().appendingPathComponent("Models"))
@@ -139,12 +146,28 @@ import Voz
                 Segment(id: "s4", start: 24, end: 27, speakers: [0, 1], text: "Yes, let's start with that.")
             ]
             sample.summary = MeetingSummary(brief: SummaryItem(text: "A planning check-in that settled the first release: a local meeting notebook, with collaboration later.", evidence: ["s1", "s3"]), takeaways: [SummaryItem(text: "The first release ships recording, a clear transcript and next steps; collaboration waits until the local notebook is finished.", evidence: ["s1", "s3"]), SummaryItem(text: "Onboarding copy still needs review, and no deadline has been set.", evidence: ["s2"])], overview: [SummaryItem(text: "The first release focuses on a local meeting notebook.", evidence: ["s1", "s3"], topic: "Release scope")], decisions: [SummaryItem(text: "Finish the local notebook before adding collaboration.", evidence: ["s3"])], actions: [SummaryItem(text: "Review onboarding copy.", evidence: ["s2"], owner: "Sam")], openQuestions: [SummaryItem(text: "When onboarding review is due; no deadline was set.", evidence: ["s2"])])
+            chats[sample.id] = [ChatMessage(role: .user, text: "What do we still need to decide?"),
+                                ChatMessage(role: .assistant, text: "Only the **onboarding review deadline** is open. Sam agreed to review the onboarding copy [00:08], but no date was set [00:08]. The release scope itself is settled: finish the local notebook before collaboration [00:16].")]
             meetings = [sample]; try? store?.save(sample)
             status = "Synthetic UI preview • no audio, models, or network used"
         }
         selection = meetings.first?.id
     }
-    var dictationModelReady: Bool { Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
+    var dictationModelReady: Bool { visualReview ? previewModelPrepared : Voz.isDownloaded(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path) }
+    private var warmingDictation: Task<Void, Never>?
+    func warmDictation() {
+        guard !visualReview, modelConsent, dictationModelReady, warmingDictation == nil else { return }
+        warmingDictation = Task {
+            defer { warmingDictation = nil }
+            try? await pipeline.prepareVoz(consent: true) { _, _ in }
+        }
+    }
+    func cancelDictationWarmup() { warmingDictation?.cancel() }
+    func vozDirectoryForPersonalTraining() async throws -> URL {
+        guard modelConsent else { throw CodaError.message("Accept Voz model terms before preparing personal training.") }
+        let path = try await Voz.download(cacheRoot: root.deletingLastPathComponent().appendingPathComponent("Models").path)
+        return URL(fileURLWithPath: path)
+    }
     func transcribeDictation(_ audio: URL, vocabulary: [String] = []) async throws -> String { try await pipeline.dictate(audio, consent: modelConsent, vocabulary: vocabulary) }
     func prepareDictation() {
         guard !isOccupied, modelConsent else { return }
@@ -169,11 +192,20 @@ import Voz
     }
     func renameSpeaker(_ speaker: Int, name: String) {
         guard !isOccupied, var meeting = selected else { return }
-        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        meeting.speakerNames[String(speaker)] = name.isEmpty ? nil : name
-        // A previous summary may use the prior name; avoid retaining stale attribution.
-        meeting.summary = nil
+        // The summary keeps its content; only the speaker's name changes in it.
+        meeting.renameSpeaker(speaker, to: name)
         do { try save(meeting) } catch { self.error = "Could not save the speaker name." }
+    }
+    /// Relabels without reprocessing: the transcript text and summary content stay as they are.
+    func swapSpeakers(_ first: Int, _ second: Int) {
+        guard !isOccupied, var meeting = selected else { return }
+        meeting.swapSpeakers(first, second)
+        do { try save(meeting) } catch { self.error = "Could not save the speaker change." }
+    }
+    func reassignSegment(_ id: String, to speakers: [Int]) {
+        guard !isOccupied, var meeting = selected else { return }
+        meeting.reassignSegment(id, to: speakers)
+        do { try save(meeting) } catch { self.error = "Could not save the speaker change." }
     }
     func renameMeeting(_ title: String) {
         guard !isOccupied, var meeting = selected, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -215,7 +247,7 @@ import Voz
                     Task { @MainActor in guard self?.operationID == id, self?.busy == true else { return }; self?.status = text; self?.progress = fraction }
                 }
                 try Task.checkCancellation()
-                var updated = meeting; updated.segments = segments; updated.summary = nil; updated.speakerNames = [:]
+                var updated = meeting; updated.segments = segments; updated.speakerNames = meeting.retainedNames(for: segments); updated.setSummary(nil)
                 try save(updated)
                 status = "Transcript saved locally"
                 if autoSummary { try await summarize(updated, consent: autoSummary) }
@@ -224,11 +256,15 @@ import Voz
         }
     }
     private func configuration() throws -> Configuration {
-        // Only runtime reads this explicitly selected file. Never log contents or expose the key in the UI.
-        let contents: String
-        do { contents = try String(contentsOfFile: envPath, encoding: .utf8) }
-        catch { throw CodaError.missingKey }
-        return Configuration(contents: contents)
+        var keychainError: Error?
+        do { if let saved = try summaryCredentials.configuration() { return saved } }
+        catch { keychainError = error }
+        do {
+            let contents = try String(contentsOfFile: envPath, encoding: .utf8)
+            let fallback = Configuration(contents: contents)
+            try fallback.validate()
+            return fallback
+        } catch { throw keychainError ?? CodaError.missingKey }
     }
     private func summarize(_ meeting: Meeting, consent: Bool) async throws {
         try Task.checkCancellation()
@@ -238,7 +274,7 @@ import Voz
         progress = nil
         let result = try await Summarizer().summarize(meeting, configuration: config, consent: consent)
         try Task.checkCancellation()
-        var updated = meeting; updated.summary = result
+        var updated = meeting; updated.setSummary(result)
         try save(updated); status = "Summary saved • review against the transcript"
     }
     func sendSummary() {
@@ -251,10 +287,62 @@ import Voz
             catch { status = "Transcript saved • summary unavailable"; self.error = safeMessage(error) }
         }
     }
-    func cancel() { operationID = nil; operation?.cancel(); status = "Cancelling • an in-flight model operation may need to finish" }
+    // MARK: Chat about the summary (Codex CLI)
+
+    /// Kept in memory only: conversations are not written to disk and end when Coda quits.
+    var chats: [UUID: [ChatMessage]] = [:]
+    private(set) var chatPending: Set<UUID> = []
+    var chatErrors: [UUID: String] = [:]
+    var showChatConsent = false
+    /// Per meeting, per launch: the first question about a meeting asks before anything leaves this Mac.
+    private var chatConsented: Set<UUID> = []
+    private var queuedQuestion: (meeting: UUID, text: String)?
+    private var chatTasks: [UUID: Task<Void, Never>] = [:]
+    var chatBackend: any ChatBackend = CodexCLIBackend()
+
+    func askChat(_ question: String) {
+        guard let meeting = selected, !chatPending.contains(meeting.id) else { return }
+        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        guard !visualReview else { status = "Visual review only • chat is disabled"; return }
+        guard chatConsented.contains(meeting.id) else {
+            queuedQuestion = (meeting.id, text); showChatConsent = true; return
+        }
+        let id = meeting.id
+        let history = chats[id] ?? []
+        chats[id, default: []].append(ChatMessage(role: .user, text: text))
+        chatErrors[id] = nil
+        chatPending.insert(id)
+        let backend = chatBackend
+        chatTasks[id] = Task {
+            defer { chatPending.remove(id); chatTasks[id] = nil }
+            do {
+                let answer = try await MeetingChat.ask(text, about: meeting, history: history, backend: backend)
+                chats[id, default: []].append(ChatMessage(role: .assistant, text: answer))
+            } catch is CancellationError {
+            } catch { chatErrors[id] = safeMessage(error) }
+        }
+    }
+    func confirmChatConsent() {
+        guard let queued = queuedQuestion else { return }
+        queuedQuestion = nil
+        chatConsented.insert(queued.meeting)
+        if selection == queued.meeting { askChat(queued.text) }
+    }
+    func declineChatConsent() { queuedQuestion = nil }
+    func cancelChat() {
+        guard let id = selection else { return }
+        chatTasks[id]?.cancel()
+    }
+    func clearChat() {
+        guard let id = selection, !chatPending.contains(id) else { return }
+        chats[id] = nil; chatErrors[id] = nil
+    }
+    func cancel() { operationID = nil; operation?.cancel(); cancelDictationWarmup(); status = "Cancelling • an in-flight model operation may need to finish" }
     func startRecording() {
         guard !isOccupied else { return }
         let speakerCount = resolvedRecordingSpeakerCount
+        let plannedNames = recordingSpeakerCount > 0 ? Array(recordingSpeakerNames.prefix(recordingSpeakerCount)) : []
         let recordingIncludesSystem = includeSystem
         recordingStartFailure = nil
         showingMeetingDetail = true
@@ -265,6 +353,7 @@ import Voz
             do {
                 var meeting = Meeting(title: "Meeting " + Date().formatted(date: .abbreviated, time: .shortened), audioFile: UUID().uuidString + ".m4a")
                 meeting.expectedSpeakerCount = speakerCount
+                if plannedNames.contains(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) { meeting.plannedSpeakerNames = plannedNames }
                 let capture = MeetingCapture()
                 capture.onFailure = { [weak self = self] in Task { @MainActor in self?.captureFailed() } }
                 try await capture.start(url: root.appendingPathComponent(meeting.audioFile), includeSystem: recordingIncludesSystem)
@@ -300,6 +389,7 @@ import Voz
     }
     func deleteSelected() {
         guard !isOccupied, let meeting = selected else { return }
+        chatTasks[meeting.id]?.cancel(); chats[meeting.id] = nil; chatErrors[meeting.id] = nil; chatConsented.remove(meeting.id)
         do { try store?.remove(meeting); meetings.removeAll { $0.id == meeting.id }; selection = meetings.first?.id }
         catch { self.error = "Could not delete this meeting completely. Check local storage." }
     }

@@ -11,13 +11,13 @@ import Observation
     private let openSettings: () -> Bool
     public init(check: @escaping () -> Bool, prompt: @escaping () -> Void, openSettings: @escaping () -> Bool) {
         self.check = check; self.prompt = prompt; self.openSettings = openSettings; trusted = check()
-        if !trusted { guidance = "This Coda process cannot currently use Accessibility. If the system toggle is already on, quit and reopen Coda after saving your work. Rebuilt ad-hoc apps may need their permission reviewed by macOS." }
+        if !trusted { guidance = "Allow Coda in System Settings to insert your dictation into other apps. You can still copy results without this access." }
     }
     public func refresh() {
         let previous = trusted
         trusted = check()
         if trusted { guidance = "Access enabled. Focus your destination and start a new dictation. Existing text remains available to Copy." }
-        else if previous { guidance = "This running Coda process cannot use Accessibility. If the macOS toggle is already on, quit and reopen Coda; a rebuilt app may have a different signature." }
+        else if previous { guidance = "Accessibility access is off. Review Coda in System Settings. If it is already enabled, save your work and reopen Coda." }
     }
     public func requestFromUserAction() {
         refresh()
@@ -27,7 +27,7 @@ import Observation
         refresh()
         guard !trusted else { return }
         guidance = openSettings()
-            ? "Review Coda in Accessibility, then return here. If the toggle is already on, do not repeat it: save your work and restart this build. Only you can approve macOS permission changes."
+            ? "Enable Coda in Accessibility, then return here. If it is already enabled, save your work and reopen Coda. Only you can approve this access in macOS."
             : "macOS could not open the pane. Open System Settings → Privacy & Security → Accessibility and turn on Coda."
     }
 }

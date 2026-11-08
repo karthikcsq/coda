@@ -6,12 +6,25 @@ import CodaWho
 actor LocalPipeline {
     private var voz: Voz?
     private var who: Who?
+    private let vozLoader: SharedResourceLoader<Voz, Double?>
     private let cache: String
-    init(cache: URL) { self.cache = cache.path }
+    init(cache: URL) {
+        self.cache = cache.path
+        let cacheRoot = cache.path
+        vozLoader = SharedResourceLoader { progress in
+            try await Voz(cacheRoot: cacheRoot) { progress($0.fraction) }
+        }
+    }
+    private func loadVoz(progress: @escaping @Sendable (String, Double?) -> Void) async throws -> Voz {
+        let prepared = try await vozLoader.get { progress("Preparing speech recognition", $0) }
+        try Task.checkCancellation()
+        voz = prepared
+        return prepared
+    }
     func prepareVoz(consent: Bool, progress: @escaping @Sendable (String, Double?) -> Void) async throws {
         guard consent else { throw CodaError.message("Accept model terms before preparing Voz.") }
         try Task.checkCancellation()
-        if voz == nil { voz = try await Voz(cacheRoot: cache) { progress("Preparing Voz", $0.fraction) } }
+        _ = try await loadVoz(progress: progress)
         try Task.checkCancellation()
     }
     func dictate(_ audio: URL, consent: Bool, vocabulary: [String] = []) async throws -> String {
@@ -19,7 +32,7 @@ actor LocalPipeline {
         try Task.checkCancellation()
         // The prepared cache is required: no first-use downloads during a dictation session.
         if voz == nil {
-            do { voz = try await Voz(cacheRoot: cache) }
+            do { voz = try await loadVoz { _, _ in } }
             catch is CancellationError { throw CancellationError() }
             catch { throw DictationFailure.modelLoad(DictationFailure.diagnosticCode(error)) }
         }
@@ -37,7 +50,7 @@ actor LocalPipeline {
         try Task.checkCancellation()
         if voz == nil {
             progress("Preparing Voz • first use downloads the model", nil)
-            voz = try await Voz(cacheRoot: cache) { value in progress("Downloading Voz", value.fraction) }
+            voz = try await loadVoz(progress: progress)
         }
         try Task.checkCancellation()
         guard let voz else { throw CodaError.message("Voz could not load.") }

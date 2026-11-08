@@ -84,6 +84,12 @@ public struct Meeting: Codable, Identifiable, Sendable {
     public var summary: MeetingSummary?
     /// Nil preserves automatic speaker discovery, including for older saved meetings.
     public var expectedSpeakerCount: Int?
+    /// The summary exactly as generated, and the speaker labels it was generated with. Renaming a
+    /// speaker rewrites `summary` from these, so names follow edits without summarizing again.
+    public var summarySource: MeetingSummary?
+    public var summarySpeakerLabels: [String: String]?
+    /// Names typed before recording, in the order people are expected to first speak.
+    public var plannedSpeakerNames: [String]?
     public init(title: String, audioFile: String) {
         id = UUID(); self.title = title; created = Date(); self.audioFile = audioFile
         segments = []; speakerNames = [:]
@@ -110,7 +116,10 @@ public enum CodaError: Error, LocalizedError, Equatable {
     }
 }
 public enum Alignment {
-    /// Greatest overlap wins. Near-ties preserve ambiguity; silence is never attributed to the nearest voice.
+    /// Greatest overlap wins. Near-ties preserve ambiguity. A word within `edgeTolerance` of one voice's turn joins it;
+    /// words farther from every turn are never attributed to the nearest voice.
+    /// How far outside a speaker turn a recognized word may start or end and still be that speaker's.
+    public static let edgeTolerance = 0.5
     public static func align(words: [Word], turns: [SpeakerTurn]) -> [Segment] {
         var result: [Segment] = []
         for word in words.sorted(by: { $0.start < $1.start }) where word.start.isFinite && word.end.isFinite && word.end >= word.start && word.start >= 0 {
@@ -120,7 +129,16 @@ public enum Alignment {
                 if amount > 0 { overlap[turn.speaker] = max(overlap[turn.speaker, default: 0], amount) }
             }
             let best = overlap.values.max() ?? 0
-            let speakers = overlap.filter { $0.value >= best * 0.8 }.keys.sorted()
+            var speakers = overlap.filter { $0.value >= best * 0.8 }.keys.sorted()
+            // A recognized word just outside a turn edge belongs to that turn; real silence stays unattributed.
+            if speakers.isEmpty {
+                let gaps = turns.filter { $0.start.isFinite && $0.end.isFinite && $0.end > $0.start }
+                    .map { (speaker: $0.speaker, gap: max($0.start - word.end, word.start - $0.end)) }
+                if let nearest = gaps.map(\.gap).min(), nearest <= edgeTolerance {
+                    // Equidistant voices stay ambiguous, as near-tied overlaps do.
+                    speakers = Set(gaps.filter { $0.gap - nearest < 1e-9 }.map(\.speaker)).sorted()
+                }
+            }
             if let last = result.last, last.speakers == speakers, word.start - last.end < 1.2, word.end - last.start < 22 {
                 result[result.count - 1].text += " " + word.text
                 result[result.count - 1].end = max(last.end, word.end)
@@ -164,5 +182,16 @@ public enum Export {
         lines.append(markdown ? "## Transcript" : "Transcript")
         for segment in meeting.segments { lines.append("[\(timestamp(segment.start))] \(meeting.speakerLabel(segment.speakers)): \(segment.text)") }
         return lines.joined(separator: "\n") + "\n"
+    }
+}
+
+
+extension Meeting {
+    /// Local search includes the words and speaker names, not just a recording's title.
+    public func matchesSearch(_ query: String) -> Bool {
+        let terms = query.split(whereSeparator: \.isWhitespace).map(String.init)
+        guard !terms.isEmpty else { return true }
+        let fields = [title] + segments.map(\.text) + Array(speakerNames.values)
+        return terms.allSatisfy { term in fields.contains { $0.localizedCaseInsensitiveContains(term) } }
     }
 }

@@ -76,6 +76,8 @@ final class Model: @unchecked Sendable {
     }
 
     let meta: Meta
+    /// Diagnostics only (nil in the app): every lane, the voiced lanes' embeddings, and the final labels.
+    var inspect: (@Sendable (_ lanes: [Lane], _ voiced: [Int], _ voices: [[Float]], _ labels: [Int]) -> Void)?
     var sampleRate: Int { frontend.geometry.sampleRate }
     private let frontend: Frontend
     private let decision: Decision
@@ -83,6 +85,8 @@ final class Model: @unchecked Sendable {
     private let sessions: [String: any InferenceSession]
     /// Shortest window first, as a piece picks the first that holds it.
     private let windows: [Meta.WindowInfo]
+    private var lastVoiced: [Int] = []
+    private var lastVoices: [[Float]] = []
     /// The voice path, or nil for an artifact that ships none, whose pieces then keep their own speakers.
     private let voiceFrontend: Frontend?
     private let embedding: Embedding?
@@ -189,6 +193,7 @@ final class Model: @unchecked Sendable {
             return Diarization(turns: lanes.flatMap(\.turns), duration: seconds)
         }
         let labels = try await joined(lanes, audio: audio, melFrames: melFrames, voiceFrontend: voiceFrontend, embedding: embedding, voice: voice, join: join, speakerCount: speakerCount)
+        if let inspect { inspect(lanes, lastVoiced, lastVoices, labels) }
         var turns: [LabelledTurn] = []
         for (lane, label) in zip(lanes, labels) {
             turns += lane.turns.map { LabelledTurn(start: $0.start, end: $0.end, label: label) }
@@ -233,8 +238,10 @@ final class Model: @unchecked Sendable {
                 voiced.append(g)
             }
         }
+        if inspect != nil { lastVoiced = voiced; lastVoices = voices }
         var labels = [Int](repeating: -1, count: lanes.count)
-        let clustered = AverageLinkage.cluster(voices, cosine: join.cosine, speakerCount: speakerCount)
+        let clustered = AverageLinkage.cluster(voices, cosine: join.cosine, speakerCount: speakerCount,
+                                               weights: voiced.map { lanes[$0].solo.reduce(0, +) })
         for (g, label) in zip(voiced, clustered) { labels[g] = label }
         if speakerCount != nil && voiced.isEmpty && !lanes.isEmpty {
             throw WhoError.predictionFailed("not enough clear speech to apply the speaker count; try Automatic")

@@ -24,6 +24,8 @@ swift build -c release
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 BIN="$(swift build -c release --show-bin-path)"
 cp "$BIN/Coda" "$APP/Contents/MacOS/Coda"
+cp "$BIN/CodaVozTool" "$APP/Contents/MacOS/CodaVozTool"
+codesign --force --sign "$SIGNING_IDENTITY" "$APP/Contents/MacOS/CodaVozTool"
 # Include dependency privacy/resource bundles used by SwiftPM's runtime bundle lookup.
 for bundle in "$BIN"/*.bundle; do
     if [ -d "$bundle" ]; then cp -R "$bundle" "$APP/Contents/Resources/"; fi
@@ -34,6 +36,8 @@ cp scripts/smart-cleanup/punctuation.py "$APP/Contents/Resources/punctuation.py"
 cp scripts/smart-cleanup/spoken_numbers.py "$APP/Contents/Resources/spoken_numbers.py"
 cp scripts/smart-cleanup/model_cleanup.py "$APP/Contents/Resources/model_cleanup.py"
 cp scripts/smart-cleanup/finetune/tuning.py scripts/smart-cleanup/finetune/auto_tune.py scripts/smart-cleanup/finetune/regression.jsonl "$APP/Contents/Resources/"
+cp scripts/personal-audio/voz.py "$APP/Contents/Resources/voz.py"
+cp scripts/personal-audio/worker.py "$APP/Contents/Resources/personal_audio_worker.py"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 cp Vendor/Who/LICENSE.md "$APP/Contents/Resources/Who-LICENSE.md"
 /usr/libexec/PlistBuddy -c 'Clear dict' "$APP/Contents/Info.plist"

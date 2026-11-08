@@ -162,7 +162,7 @@ struct DictionarySuggestionCard: View {
             }
             if let word = notice.current {
                 VStack(alignment: .leading, spacing: 7) {
-                    Text(word.word).font(.system(size: 24, weight: .medium, design: .rounded)).lineLimit(2).minimumScaleFactor(0.75)
+                    Text(word.word).font(.system(size: 24, weight: .medium)).lineLimit(2).minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if let original = word.original {
                         HStack(spacing: 6) {
