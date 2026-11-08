@@ -8,8 +8,8 @@ private typealias StyleState<Value> = SwiftUI.State<Value>
 /// app reads as one piece of software instead of five unrelated screens.
 enum CodaStyle {
     // Surfaces.
-    static let canvas = Color(red: 0.10, green: 0.10, blue: 0.10)
-    static let chrome = Color(white: 0.13)
+    static let canvas = BuildIdentity.isDevelopment ? Color(red: 0.14, green: 0.10, blue: 0.21) : Color(red: 0.10, green: 0.10, blue: 0.10)
+    static let chrome = BuildIdentity.isDevelopment ? Color(red: 0.20, green: 0.13, blue: 0.29) : Color(white: 0.13)
     static let raised = Color.white.opacity(0.04)
     static let sunken = Color.white.opacity(0.02)
     static let hover = Color.white.opacity(0.055)
@@ -22,7 +22,7 @@ enum CodaStyle {
     static let muted = Color.white.opacity(0.57)
 
     // Accents. `mint` leads; `caution` is the only warning colour.
-    static let mint = Color(red: 0.62, green: 0.86, blue: 0.76)
+    static let mint = BuildIdentity.isDevelopment ? Color(red: 0.82, green: 0.68, blue: 1.0) : Color(red: 0.62, green: 0.86, blue: 0.76)
     static let caution = Color(red: 0.96, green: 0.72, blue: 0.42)
 
     // One radius ramp instead of ten ad-hoc values.
@@ -64,7 +64,7 @@ enum CodaStyle {
     static func speakerColor(_ index: Int) -> Color { speakerPalette[abs(index) % speakerPalette.count] }
 
     static let heroGradient = LinearGradient(
-        colors: [Color(red: 0.10, green: 0.17, blue: 0.16), Color(red: 0.12, green: 0.13, blue: 0.13)],
+        colors: BuildIdentity.isDevelopment ? [Color(red: 0.29, green: 0.17, blue: 0.40), Color(red: 0.17, green: 0.11, blue: 0.25)] : [Color(red: 0.10, green: 0.17, blue: 0.16), Color(red: 0.12, green: 0.13, blue: 0.13)],
         startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 

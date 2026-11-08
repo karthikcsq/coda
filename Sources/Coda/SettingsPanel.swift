@@ -178,7 +178,7 @@ struct SettingsPanel: View {
             }
             DisclosureGroup("Supported languages and storage") {
                 Text("Bulgarian, Czech, Danish, German, Greek, English, Spanish, Estonian, Finnish, French, Croatian, Hungarian, Italian, Lithuanian, Latvian, Maltese, Dutch, Polish, Portuguese, Romanian, Russian, Slovak, Slovenian, Swedish, Ukrainian. Unsupported languages can produce incorrect text.").font(.system(size: 12))
-                Text("History: ~/Library/Application Support/Coda/Meetings\nDictations: ~/Library/Application Support/Coda/Dictations\nModels: ~/Library/Application Support/Coda/Models").font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                Text("History: \(BuildIdentity.dataRoot.path)/Meetings\nDictations: \(BuildIdentity.dataRoot.path)/Dictations\nModels: \(BuildIdentity.dataRoot.path)/Models").font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
             }
         }
     }

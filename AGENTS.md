@@ -1,8 +1,20 @@
 # Build and rollback workflow
 
-- Keep one runnable app bundle: `build/Coda.app`. Build updates there with
-  `scripts/build-app.sh`. Do not accumulate versioned app bundles, `build-staged/`,
-  `archive/` source snapshots, or duplicate `ui-review/` checkouts.
+- Keep two app channels: Production (`Coda.app`, `app.coda.notebook`) in the
+  primary checkout's `build/`, and Development (`build/Coda Dev.app`,
+  `app.coda.notebook.dev`) in the active development checkout. Ordinary
+  `scripts/build-app.sh` builds Development. Purple surfaces, DEV icon and labels,
+  separate preferences and `Application Support/Coda Dev` identify Development.
+  Do not accumulate versioned bundles, `build-staged/`, `archive/` snapshots, or
+  duplicate `ui-review/` checkouts.
+- Release only through `scripts/release.py` from clean, reviewed `main`: tests,
+  signed production build and identity check, push and verify GitHub main, normal
+  idle-only production quit, replace and verify production, then reopen. A failed
+  local installation after publishing must be reported as GitHub published with
+  local Production still pending. See `docs/releasing.md`.
+- When asked to release/update Production, that includes pushing the verified
+  release commit to GitHub and installing that same commit locally. Development
+  work alone does not authorize publishing or replacing Production.
 - Use local Git commits for recoverable checkpoints and rollback. Commit source,
   tests and useful verification notes; never commit generated app bundles, model
   assets, recordings, private transcripts or credentials. Do not push without

@@ -155,6 +155,9 @@ extension KeyboardShortcuts.Name {
     }
     var modifierShortcutStatus: String {
         if !shortcutPauses.isEmpty { return "Shortcut paused while this Mac is locked, asleep or inactive." }
+        if BuildIdentity.isDevelopment, !NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty {
+            return "Production owns Control–Option. Choose a different custom shortcut for Development."
+        }
         if ModifierShortcut.voiceOverConflict { return "Control–Option is reserved while VoiceOver is active. Choose a custom shortcut." }
         if accessibility.trusted, !visualReview, modifierMonitor?.available != true { return "Shortcut listener unavailable. Refresh Accessibility status in System settings." }
         return accessibility.trusted ? "Hold Control + Option alone briefly to dictate. Release either to finish. Other keys cancel the chord; events are never intercepted." : "Control–Option needs Coda’s existing Accessibility access."
@@ -166,7 +169,15 @@ extension KeyboardShortcuts.Name {
         guard shortcutPauses.isEmpty else { return }
         if modifierShortcut {
             KeyboardShortcuts.disable(.codaDictation)
-            let monitor = ModifierShortcut { [weak self] event in
+            // The production modifier chord must not trigger two microphones.
+            if BuildIdentity.isDevelopment, !NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty {
+                message = "Production owns Control–Option. Choose a custom Development shortcut."
+                return
+            }
+            let monitor = ModifierShortcut(canListen: {
+                AXIsProcessTrusted() && !ModifierShortcut.voiceOverConflict &&
+                    (!BuildIdentity.isDevelopment || NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty)
+            }) { [weak self] event in
                 guard let self else { return }
                 switch event {
                 case .down: self.handle(self.lifecycle.keyDown(mode: self.mode))
@@ -266,7 +277,7 @@ extension KeyboardShortcuts.Name {
         do {
             let base = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
                 ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Preview-" + UUID().uuidString)
-                : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/Dictations")
+                : BuildIdentity.dataRoot.appendingPathComponent("Dictations")
             let history = try DictationHistory(root: base); self.history = history
             let loaded = try history.load(); records = loaded.records; selectedRecord = records.first?.id
             if loaded.skipped > 0 { historyWarning = "Some history files could not be read. They were preserved on disk." }
@@ -319,7 +330,7 @@ extension KeyboardShortcuts.Name {
     }
     func useSuggestedShortcut() {
         guard !visualReview else { return }
-        let candidate = KeyboardShortcuts.Shortcut(.d, modifiers: [.control, .option, .command])
+        let candidate = KeyboardShortcuts.Shortcut(.d, modifiers: BuildIdentity.isDevelopment ? [.control, .shift, .command] : [.control, .option, .command])
         guard !candidate.isTakenBySystem else { message = "The suggested shortcut is used by macOS. Choose another in the recorder."; return }
         modifierShortcut = false
         KeyboardShortcuts.setShortcut(candidate, for: .codaDictation)

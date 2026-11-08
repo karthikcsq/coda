@@ -83,7 +83,7 @@ struct DictationHUD: View {
                 ProgressView().controlSize(.small).frame(width: 28)
             } else { Image(systemName: "waveform").font(.system(size: 19, weight: .light)).frame(width: 28) }
             VStack(alignment: .leading, spacing: 3) {
-                Text(statusTitle)
+                Text(BuildIdentity.isDevelopment ? "Dev · " + statusTitle : statusTitle)
                     .font(CodaStyle.rowTitleFont).lineLimit(1)
                 Text(statusDetail)
                     .font(.system(size: 10)).foregroundStyle(CodaStyle.muted).lineLimit(2)
@@ -108,7 +108,7 @@ struct DictationHUD: View {
                 .help(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss; text stays in History")
                 .accessibilityLabel(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss dictation; text stays in History")
         }.padding(.horizontal, 15).frame(width: 320, height: 64)
-        .background(Color(white: 0.075), in: Capsule())
+        .background(BuildIdentity.isDevelopment ? CodaStyle.chrome : Color(white: 0.075), in: Capsule())
         .overlay(Capsule().strokeBorder(CodaStyle.strongEdge))
         .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(Color(white: 0.9))
         .accessibilityElement(children: .contain).accessibilityLabel("Coda dictation")

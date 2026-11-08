@@ -20,8 +20,10 @@ Requires Apple Silicon, macOS 15+, and Swift 6.2+ with a matching macOS SDK. Ful
 git clone https://github.com/karthikcsq/coda.git
 cd coda
 ./scripts/build-app.sh
-open build/Coda.app
+open "build/Coda Dev.app"
 ```
+
+Ordinary builds create **Coda Dev**, with a purple icon/theme and separate data and preferences. Keep the mint Production app running while developing. To publish and install a verified Production update, follow [the release sequence](docs/releasing.md) and run `scripts/release.py` from clean, reviewed `main`.
 
 Open the `.app` bundle rather than `swift run` when recording, so macOS permissions are associated with Coda. The build uses a dedicated local certificate signing identity; this is a development build, not a notarized distribution. On another Mac, set `CODA_SIGNING_IDENTITY` to your own code-signing identity. See `SIGNING.md` for setup and update verification. The app can also be opened as a Swift package in Xcode.
 
@@ -102,7 +104,7 @@ Tests use synthetic transcript data, generated silent PCM buffers, and a stub HT
 - `Sources/CodaCore`: alignment, persistence, exports, config, summary networking/parsing, and testable native capture/finalization.
 - `Sources/Coda`: SwiftUI notebook, app state, and real Voz/Who adapter.
 - `Tests/CodaCoreTests`: offline behavior and native audio-writer/mixer regression tests.
-- `scripts/build-app.sh`: native release app packaging and local signing.
+- `scripts/build-app.sh`: Development packaging and local signing; `scripts/release.py` publishes and installs Production.
 
 ## Contributing
 

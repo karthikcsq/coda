@@ -115,7 +115,7 @@ import Voz
 
     init(preview: Bool = ProcessInfo.processInfo.arguments.contains("--ui-preview")) {
         visualReview = preview
-        root = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-UI-Preview-" + UUID().uuidString) : FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Coda/Meetings", isDirectory: true)
+        root = preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-UI-Preview-" + UUID().uuidString) : BuildIdentity.dataRoot.appendingPathComponent("Meetings", isDirectory: true)
         pipeline = LocalPipeline(cache: root.deletingLastPathComponent().appendingPathComponent("Models"))
         modelConsent = UserDefaults.standard.bool(forKey: "modelConsent-v1.0")
         autoSummary = UserDefaults.standard.bool(forKey: "autoSummary")
@@ -127,7 +127,7 @@ import Voz
             self.store = store; meetings = report.meetings
             if report.unreadableCount > 0 { error = "Some history files could not be read. They were preserved on disk; other meetings are available." }
         }
-        catch { store = nil; self.error = "Local history could not be loaded. Existing files were preserved. Check access to ~/Library/Application Support/Coda/Meetings." }
+        catch { store = nil; self.error = "Local history could not be loaded. Existing files were preserved. Check access to \(BuildIdentity.dataRoot.path)/Meetings." }
         if preview {
             modelConsent = false; autoSummary = false; envPath = "/no-credentials-in-ui-preview/.env"
             var sample = Meeting(title: "Launch planning · synthetic preview", audioFile: "no-audio.m4a")

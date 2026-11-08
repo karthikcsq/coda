@@ -21,7 +21,7 @@ import CodaCore
         self.preview = preview
         learningEnabled = preview ? true : UserDefaults.standard.object(forKey: "dictationLearnWords") as? Bool ?? true
         let root = root ?? (preview ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Dictionary-Preview-" + UUID().uuidString)
-            : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/Dictionary"))
+            : BuildIdentity.dataRoot.appendingPathComponent("Dictionary"))
         do {
             let storage = try CustomDictionaryStore(root: root)
             words = try storage.load(); store = storage

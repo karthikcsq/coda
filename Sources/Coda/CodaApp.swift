@@ -22,7 +22,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         return AppModel()
     }
     var body: some Scene {
-        Window("Coda", id: "main") {
+        Window(BuildIdentity.name, id: "main") {
             WorkspaceView(model: model, controller: dictation, delegate: delegate)
                 .frame(minWidth: 980, minHeight: 680)
                 .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model)
@@ -40,7 +40,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         MenuBarExtra {
             RecordingMenu(model: model, dictation: dictation, delegate: delegate)
         } label: {
-            Label(model.recording ? "Coda • REC" : dictation.lifecycle.phase == .listening ? "Coda • MIC" : "Coda", systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : "waveform.path")
+            Label(model.recording ? BuildIdentity.name + " • REC" : dictation.lifecycle.phase == .listening ? BuildIdentity.name + " • MIC" : BuildIdentity.name, systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : BuildIdentity.isDevelopment ? "hammer.fill" : "waveform.path")
         }
     }
 }
@@ -58,7 +58,7 @@ struct RecordingMenu: View {
     @Environment(\.openWindow) private var openWindow
     private func openCoda() { delegate.showMain { openWindow(id: "main") } }
     var body: some View {
-        Button("Open Coda") { openCoda() }
+        Button("Open \(BuildIdentity.name)") { openCoda() }
         Button(model.recording ? "Stop & Save Meeting" : "Start Meeting") {
             MeetingMenuAction.perform(recording: model.recording, occupied: model.isOccupied, open: {
                 model.closeSettings(); dictation.workspaceSection = "Meetings"; openCoda()
@@ -66,7 +66,7 @@ struct RecordingMenu: View {
         }.disabled(model.isOccupied && !model.recording)
         if dictation.lifecycle.busy { Button("Cancel Dictation") { dictation.cancel() } }
         Divider()
-        Button("Quit Coda") { NSApp.terminate(nil) }
+        Button("Quit \(BuildIdentity.name)") { NSApp.terminate(nil) }
     }
 }
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -79,7 +79,7 @@ struct RecordingMenu: View {
         DispatchQueue.main.async { [weak self] in self?.raiseExistingMain() }
     }
     func raiseExistingMain() {
-        guard let window = NSApp.windows.first(where: { $0.title == "Coda" && !($0 is NSPanel) }) else { return }
+        guard let window = NSApp.windows.first(where: { $0.title == BuildIdentity.name && !($0 is NSPanel) }) else { return }
         if window.isMiniaturized { window.deminiaturize(nil) }
         window.makeKeyAndOrderFront(nil)
     }
@@ -90,7 +90,7 @@ struct RecordingMenu: View {
     var model: AppModel?
     var dictation: DictationController?
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let model, !model.isVisualReview, model.isOccupied else { return .terminateNow }
+        guard let model, !model.isVisualReview, model.isOccupied || dictation?.lifecycle.busy == true else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = "Finish the current operation before quitting"
         alert.informativeText = model.recording ? "Stop recording so Coda can save your audio first." : "Cancel processing or wait for it to finish."

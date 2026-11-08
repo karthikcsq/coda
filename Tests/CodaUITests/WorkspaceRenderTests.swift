@@ -14,7 +14,8 @@ private enum RenderTarget {
     ]
     /// docs/images in the checkout, derived from this file's location.
     static var imageDirectory: URL {
-        URL(fileURLWithPath: #filePath)
+        if let path = ProcessInfo.processInfo.environment["CODA_RENDER_OUTPUT"] { return URL(fileURLWithPath: path) }
+        return URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("docs/images", isDirectory: true)
     }

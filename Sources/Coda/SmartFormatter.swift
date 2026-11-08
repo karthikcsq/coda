@@ -31,7 +31,7 @@ struct SmartFormatResult: Sendable {
     private let script: URL?
     private let model: URL
     init(python: URL? = nil, script: URL? = nil, model: URL? = nil) {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/SmartCleanup/v1")
+        let base = BuildIdentity.dataRoot.appendingPathComponent("SmartCleanup/v1")
         self.python = python ?? base.appendingPathComponent("runtime/bin/python")
         self.model = model ?? base.appendingPathComponent("model")
         self.script = script ?? Bundle.main.url(forResource: "smart_cleanup_worker", withExtension: "py")

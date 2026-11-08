@@ -29,6 +29,7 @@ struct WorkspaceView: View {
             .animation(CodaStyle.motion(reduceMotion, duration: 0.18), value: page)
         }
         .background(CodaStyle.chrome)
+        .tint(CodaStyle.mint)
         .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)
         .onAppear {
             delegate.reopenMain = { delegate.showMain { openWindow(id: "main") } }
@@ -44,8 +45,12 @@ struct WorkspaceView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 9) {
                 Image(systemName: "waveform.path").font(.system(size: 20, weight: .medium)).foregroundStyle(CodaStyle.mint)
-                Text("coda").font(.system(size: 23, weight: .semibold, design: .rounded))
+                Text(BuildIdentity.isDevelopment ? "coda dev" : "coda").font(.system(size: 23, weight: .semibold, design: .rounded))
             }.padding(.horizontal, 22).frame(height: 76, alignment: .center).accessibilityAddTraits(.isHeader)
+            if BuildIdentity.isDevelopment {
+                Text("DEVELOPMENT").font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(CodaStyle.mint).padding(.horizontal, 22).padding(.bottom, 12)
+            }
             VStack(spacing: 3) {
                 navigation("Dictation", icon: "waveform", section: "Dictation", hint: "Start dictating and see recent results")
                 navigation("Dictionary", icon: "character.book.closed", section: "Dictionary", hint: "Custom words and suggestions to review")
@@ -60,6 +65,7 @@ struct WorkspaceView: View {
                     .buttonStyle(CodaNavRowStyle(selected: model.showSettings))
                     .accessibilityLabel("Settings")
                 Menu {
+                    Text("\(BuildIdentity.name) · \(BuildIdentity.revision)")
                     Text("Coda runs transcription locally.")
                     Text("Use your shortcut with a text field focused.")
                     Text("Meeting summaries are optional.")

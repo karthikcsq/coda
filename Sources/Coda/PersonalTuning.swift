@@ -39,7 +39,7 @@ import CodaCore
     private let idleDelay: Duration
 
     init(root: URL? = nil, script: URL? = nil, idleDelay: Duration = .seconds(120)) {
-        let base = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda/SmartCleanup")
+        let base = root ?? BuildIdentity.dataRoot.appendingPathComponent("SmartCleanup")
         self.root = base
         python = base.appendingPathComponent("v1/runtime/bin/python")
         self.script = script ?? Bundle.main.url(forResource: "auto_tune", withExtension: "py")
