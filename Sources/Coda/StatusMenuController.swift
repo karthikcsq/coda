@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import OSLog
+@preconcurrency import KeyboardShortcuts
 
 /// AppKit owns the status item's menu and dispatches explicit target/action
 /// commands after tracking ends. No SwiftUI scene environment is needed here.
@@ -36,7 +37,9 @@ import OSLog
         defer { tracking = false }
         // Track the ordinary AppKit popup directly instead of relying on the
         // status item's automatic menu attachment and its remote presentation.
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY - 4), in: sender)
+        MenuShortcutSuspension.perform {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY - 4), in: sender)
+        }
     }
     private func updateStatus() {
         withObservationTracking {
@@ -115,5 +118,17 @@ import OSLog
             NSApp.orderFrontStandardAboutPanel(nil)
         case .quit: NSApp.terminate(nil)
         }
+    }
+}
+
+/// KeyboardShortcuts' tracking-mode observer drains/reposts the whole AppKit
+/// event queue. Menu clicks must go directly to AppKit instead. Restore exactly
+/// the prior shortcut state after tracking exits, including cancellation.
+@MainActor enum MenuShortcutSuspension {
+    @discardableResult static func perform<Result>(_ tracking: () throws -> Result) rethrows -> Result {
+        let wasEnabled = KeyboardShortcuts.isEnabled
+        KeyboardShortcuts.isEnabled = false
+        defer { KeyboardShortcuts.isEnabled = wasEnabled }
+        return try tracking()
     }
 }

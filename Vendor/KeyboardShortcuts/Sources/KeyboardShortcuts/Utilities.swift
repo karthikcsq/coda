@@ -103,35 +103,32 @@ final class RunLoopLocalEventMonitor {
 		self.runLoopMode = runLoopMode
 		self.callback = callback
 
-		self.observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeSources.rawValue, true, 0) { _, _ in
-			// Pull all events from the queue and handle the ones matching the given types.
-			// Non-matching events are left untouched, maintaining their order in the queue.
-
-			var eventsToHandle = [NSEvent]()
-
-			// Retrieve all events from the event queue to preserve their order (instead of using the `matching` parameter).
-			while let eventToHandle = NSApp.nextEvent(matching: .any, until: nil, inMode: .default, dequeue: true) {
-				eventsToHandle.append(eventToHandle)
-			}
-
-			// Iterate over the gathered events, instead of doing it directly in the `while` loop, to avoid potential infinite loops caused by re-retrieving undiscarded events.
-			for eventToHandle in eventsToHandle {
-				var handledEvent: NSEvent?
-
-				if !events.contains(NSEvent.EventTypeMask(rawValue: 1 << eventToHandle.type.rawValue)) {
-					handledEvent = eventToHandle
-				} else if let callbackEvent = callback(eventToHandle) {
-					handledEvent = callbackEvent
-				}
-
-				guard let handledEvent else {
-					continue
-				}
-
-				NSApp.postEvent(handledEvent, atStart: false)
-			}
-		}
+        self.observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeSources.rawValue, true, 0) { _, _ in
+            Self.processPendingEvents(
+                matching: events,
+                peek: { NSApp.nextEvent(matching: .any, until: .distantPast, inMode: runLoopMode, dequeue: false) },
+                take: { NSApp.nextEvent(matching: .any, until: .distantPast, inMode: runLoopMode, dequeue: true) },
+                callback: callback,
+                restoreAtFront: { NSApp.postEvent($0, atStart: true) }
+            )
+        }
 	}
+
+    // Never dequeue a mouse or other unrelated event. AppKit's menu tracker
+    // must see it directly; draining/reposting it can prevent hit testing.
+    static func processPendingEvents(matching mask: NSEvent.EventTypeMask,
+        peek: () -> NSEvent?, take: () -> NSEvent?, callback: (NSEvent) -> NSEvent?,
+        restoreAtFront: (NSEvent) -> Void) {
+        var intercepted: [NSEvent] = []
+        while let event = peek(), mask.contains(NSEvent.EventTypeMask(rawValue: 1 << event.type.rawValue)) {
+            guard let event = take() else { break }
+            intercepted.append(event)
+        }
+        // Restore unhandled leading keys at the front in original order, so
+        // their position relative to the untouched mouse event is preserved.
+        let unhandled = intercepted.compactMap(callback)
+        for event in unhandled.reversed() { restoreAtFront(event) }
+    }
 
 	deinit {
 		stop()

@@ -96,3 +96,21 @@ numeric command dispatch logging for diagnosing real popup interactions.
 The combined full run passed 231 tests (131 core, 95 UI/integration, 5
 speaker/tool). Direct popup clicking still needs live confirmation; native
 command unit tests alone do not establish that mouse tracking works.
+
+
+## Menu mouse-event interception
+
+The vendored KeyboardShortcuts tracking-mode observer dequeued every application
+event with `.any` and reposted nonkeyboard events. This path is activated by menu
+tracking; directly invoking menu actions in tests did not exercise it. Native
+mouse selection still failed after changing popup presentation.
+
+The keyboard observer now peeks and consumes only matching leading key events,
+leaving mouse and unrelated events untouched for AppKit. Unhandled keys are
+restored at the front in original order. Coda suspends shortcut interception
+through its popup tracking scope and restores the prior enabled state after
+selection or cancellation. The vendor patch history and license remain intact.
+
+All 233 tests passed (131 core, 97 UI/integration, 5 speaker/tool), including the
+new event-queue regression and shortcut-state restoration tests. Manual click
+confirmation on the rebuilt installed app remains required.
