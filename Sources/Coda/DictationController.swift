@@ -45,6 +45,7 @@ extension KeyboardShortcuts.Name {
     var pendingInsertion: UUID?
     var workspaceSection = "Dictation"
     private var history: DictationHistory?
+    let personalAudio: PersonalAudioTuning
     private var trainingStore: DictationTrainingStore?
     private var sessionID: UUID?
     private var retryGeneration: UUID?
@@ -250,6 +251,9 @@ extension KeyboardShortcuts.Name {
     init(preview: Bool, formatter: SmartFormatter? = nil) {
         let dictionary = CustomDictionary(preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         self.dictionary = dictionary
+        let audioPreview = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
+        let previewRoot = FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Audio-Preview-" + UUID().uuidString)
+        personalAudio = PersonalAudioTuning(root: audioPreview ? previewRoot : nil, pairsRoot: audioPreview ? previewRoot.appendingPathComponent("pairs") : nil)
         smartFormatter = formatter ?? SmartFormatter()
         let previewRun = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
         personalTuning = PersonalTuning(root: previewRun ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Tuning-Preview-" + UUID().uuidString) : nil)
@@ -258,7 +262,8 @@ extension KeyboardShortcuts.Name {
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
-        personalTuning.isDictating = { [weak self] in self?.lifecycle.busy ?? false }
+        personalAudio.isBusy = { [weak self] in self?.lifecycle.busy == true || self?.model?.isOccupied == true || self?.personalTuning.running == true }
+        personalTuning.isDictating = { [weak self] in self?.lifecycle.busy == true || self?.personalAudio.running == true }
         personalTuning.modelChanged = { [weak self] in self?.smartFormatter.reloadModel() }
         wordSuggestions.onReview = { [weak self] in
             self?.model?.closeSettings()
@@ -347,7 +352,7 @@ extension KeyboardShortcuts.Name {
     }
     private func begin() {
         guard !visualReview else { message = "Visual review only • microphone stays off"; show(); return }
-        guard let model, !lifecycle.busy, retryTask == nil else { return }
+        guard let model, !lifecycle.busy, !personalAudio.running, retryTask == nil else { return }
         guard !model.isOccupied else { message = "Finish the meeting operation before dictating."; show(); dismissAfterResult(); return }
         guard model.modelConsent, model.dictationModelReady else {
             message = "Prepare Voz in Settings & privacy before dictating. No microphone is running."; show(); dismissAfterResult(); return
@@ -428,7 +433,10 @@ extension KeyboardShortcuts.Name {
             }
             do {
                 let vocabulary = dictionary.vocabulary
-                let result = try await model.transcribeDictation(url, vocabulary: vocabulary)
+                let usePersonalAudio = personalAudio.enabled
+                let result = try await usePersonalAudio
+                    ? personalAudio.transcribe(url)
+                    : model.transcribeDictation(url, vocabulary: vocabulary)
                 try Task.checkCancellation()
                 guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
                 refreshAccessibility()
@@ -440,7 +448,8 @@ extension KeyboardShortcuts.Name {
                     guard acceptSoundAlikeReview(decisions, proposals: proposals, raw: result, for: id) else { return }
                 }
                 var cleanupInput: String?
-                if cleanupMode == .smart {
+                if cleanupMode == .smart && !usePersonalAudio {
+                    // Personal audio requires separate cleanup validation before Smart runs.
                     // Smart cleanup starts from the dictionary-corrected words.
                     cleanupInput = text
                     let formatted = await smartFormatter.format(text, timeout: SmartFormatter.cleanupTimeout(for: text))

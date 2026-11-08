@@ -9,6 +9,7 @@ public struct DictationTrainingPair: Codable, Equatable, Sendable {
     public var insertedText: String
     public var finalText: String
     public var userEdited: Bool
+    public var reviewedTranscript: String? = nil
     public var audioFile: String
 }
 
@@ -35,10 +36,26 @@ public struct DictationTrainingStore: Sendable {
     }
     public func updateFinalText(id: UUID, text: String) throws {
         let file = root.appendingPathComponent(id.uuidString + ".json")
+        // Older history entries and sessions collected with learning off have no pair.
+        guard FileManager.default.fileExists(atPath: file.path) else { return }
         var pair = try JSONDecoder().decode(DictationTrainingPair.self, from: Data(contentsOf: file))
         pair.finalText = text
         pair.userEdited = text != pair.insertedText
         try write(pair)
+    }
+    public func review(id: UUID, transcript: String?) throws {
+        let file = root.appendingPathComponent(id.uuidString + ".json")
+        var pair = try JSONDecoder().decode(DictationTrainingPair.self, from: Data(contentsOf: file))
+        let text = transcript?.trimmingCharacters(in: .whitespacesAndNewlines)
+        pair.reviewedTranscript = text?.isEmpty == false ? text : nil
+        try write(pair)
+    }
+    public func remove(id: UUID) throws {
+        // Derive filenames from the ID, never trust paths from saved metadata.
+        for ext in ["json", "m4a"] {
+            let file = root.appendingPathComponent(id.uuidString + "." + ext)
+            if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+        }
     }
     public func load() throws -> [DictationTrainingPair] {
         try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)

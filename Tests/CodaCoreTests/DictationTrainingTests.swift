@@ -24,3 +24,22 @@ import Testing
     let permissions = try FileManager.default.attributesOfItem(atPath: root.appendingPathComponent(pair.audioFile).path)[.posixPermissions] as? Int
     #expect(permissions == 0o600)
 }
+
+@Test func acousticLabelsRequireExplicitReviewAndSurviveObservedEdits() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let store = try DictationTrainingStore(root: root)
+    let audio = root.appendingPathComponent("source.m4a")
+    try Data([1]).write(to: audio)
+    let id = UUID()
+    try store.save(id: id, audio: audio, rawText: "machine output", insertedText: "Polished text.")
+    #expect(try store.load().first?.reviewedTranscript == nil)
+    try store.review(id: id, transcript: "  actual spoken words  ")
+    try store.updateFinalText(id: id, text: "A later rewrite")
+    #expect(try store.load().first?.reviewedTranscript == "actual spoken words")
+    try store.review(id: id, transcript: nil)
+    #expect(try store.load().first?.reviewedTranscript == nil)
+    try store.remove(id: id)
+    #expect(try store.load().isEmpty)
+    #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent(id.uuidString + ".m4a").path))
+}

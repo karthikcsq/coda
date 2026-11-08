@@ -10,6 +10,7 @@ private typealias PanelState<Value> = SwiftUI.State<Value>
 struct SettingsPanel: View {
     @Bindable var model: AppModel
     @Bindable var controller: DictationController
+    @PanelState private var showPersonalAudio = false
     @PanelState private var approveAuto = false
     @PanelState private var approveModels = false
     @PanelState private var loginEnabled = SMAppService.mainApp.status == .enabled
@@ -121,6 +122,11 @@ struct SettingsPanel: View {
                 Toggle("Learn from my edits", isOn: Binding(get: { controller.personalTuning.enabled }, set: { controller.personalTuning.enabled = $0 }))
                     .labelsHidden().toggleStyle(.switch).disabled(locked || model.isVisualReview)
             }
+            Button("Personal voice training…") { showPersonalAudio = true }
+                .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked)
+                .sheet(isPresented: $showPersonalAudio) {
+                    PersonalAudioView(tuning: controller.personalAudio, preview: model.isVisualReview)
+                }
             Text(controller.personalTuning.summary).font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Button("Fine-tune cleanup") { controller.personalTuning.tuneNow() }

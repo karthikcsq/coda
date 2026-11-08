@@ -57,3 +57,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Optional personal audio model
+
+Personal audio training downloads OpenAI Whisper base from
+https://huggingface.co/openai/whisper-base (Apache 2.0), independently of Voz.
+Whisper project: https://github.com/openai/whisper (MIT). Model weights and their
+metadata remain in the user's local application-support folder. No Whisper
+weights are bundled in this repository. Runtime dependencies downloaded on
+request: PyTorch (BSD-style), Transformers (Apache 2.0), NumPy (BSD-style), and
+transitive dependencies with their installed license notices.
