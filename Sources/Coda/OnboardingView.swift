@@ -176,7 +176,7 @@ struct OnboardingView: View {
                         .frame(width: 170).disabled(locked || model.isVisualReview || controller.modifierShortcut)
                 }
                 HStack(spacing: 10) {
-                    Button("Use Control + Option") { controller.modifierShortcut = true; controller.mode = .hold }
+                    Button("Use \(controller.modifierChordName)") { controller.modifierShortcut = true; controller.mode = .hold }
                         .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked || model.isVisualReview)
                     Button("Use custom shortcut") { controller.modifierShortcut = false }
                         .buttonStyle(CodaQuietButtonStyle()).disabled(locked || model.isVisualReview)

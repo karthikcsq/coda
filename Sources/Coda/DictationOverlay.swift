@@ -108,7 +108,7 @@ struct DictationHUD: View {
                 .accessibilityLabel(controller.lifecycle.busy ? "Cancel dictation" : "Dismiss dictation; text stays in History")
         }
         .padding(.leading, 10).padding(.trailing, 8).frame(width: 280, height: showsDetail ? 54 : 46)
-        .background(Color(white: 0.07), in: RoundedRectangle(cornerRadius: 14))
+        .background(BuildIdentity.isDevelopment ? CodaStyle.chrome : Color(white: 0.07), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.1)))
         .frame(width: 320, height: 64)
         .preferredColorScheme(.dark).environment(\.colorScheme, .dark).foregroundStyle(CodaStyle.ink)

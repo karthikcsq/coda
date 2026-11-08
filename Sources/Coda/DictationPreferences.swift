@@ -32,8 +32,7 @@ import CodaCore
     init(root: URL? = nil, preview: Bool = false, settings initial: DictationPreferenceSettings? = nil) {
         self.preview = preview
         if preview { settings = initial ?? DictationPreferenceSettings(); return }
-        let root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Coda/DictationPreferences")
+        let root = root ?? BuildIdentity.dataRoot.appendingPathComponent("DictationPreferences")
         do {
             let storage = try DictationPreferenceStore(root: root)
             store = storage

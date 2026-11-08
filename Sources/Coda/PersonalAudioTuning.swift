@@ -40,7 +40,7 @@ import Voz
     private var worker: URL? { Bundle.main.url(forResource: "personal_audio_worker", withExtension: "py") ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("scripts/personal-audio/worker.py") }
 
     init(root: URL? = nil, pairsRoot: URL? = nil) {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Coda")
+        let support = BuildIdentity.dataRoot
         persistSelection = root == nil
         self.root = root ?? support.appendingPathComponent("PersonalVoz")
         store = try? DictationTrainingStore(root: pairsRoot ?? support.appendingPathComponent("Dictations/Training"))
