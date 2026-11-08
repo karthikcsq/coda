@@ -85,7 +85,7 @@ struct SettingsPanel: View {
         group("Dictation", "Available from the menu bar. Listening starts only when you ask.", icon: "waveform") {
             row("Keyboard shortcut", "Choose a combination that does not overlap with Wispr or your other apps.") {
                 Picker("Shortcut", selection: $controller.modifierShortcut) {
-                    Text("Control + Option").tag(true)
+                    Text(controller.modifierChordName).tag(true)
                     Text("Custom shortcut").tag(false)
                 }.labelsHidden().frame(width: 170).disabled(locked || model.isVisualReview)
             }

@@ -11,10 +11,11 @@ window, sidebar, overlay and menu identify it as Development. It uses its own
 macOS permissions, preferences, histories, vocabulary, models and tuning data in
 `~/Library/Application Support/Coda Dev`. Do not copy personal production data
 into Development automatically. Prepare models and grant permissions in Dev as
-needed. It starts without a configured shortcut; its suggested custom shortcut
-is Control–Shift–Command–D. Control–Option is unavailable in Dev while Production
-is running, so the same gesture cannot activate two recorders. Use a different
-custom shortcut for each channel.
+needed. Development defaults to the modifier gesture Shift–Control–Option; Production
+uses Control–Option. Releasing any required modifier finishes hold-mode
+dictation. Its suggested custom shortcut is Control–Shift–Command–D. Open Dev
+and bring its window forward when handing a test to the user, then quit it
+normally once the user finishes.
 
 ## Develop
 

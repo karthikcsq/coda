@@ -112,3 +112,30 @@ import CodaCore
     controller.resumeShortcut(for: lock)
     #expect(!controller.modifierShortcutStatus.hasPrefix("Shortcut paused"))
 }
+
+@Test @MainActor func developmentChordRequiresShiftAndFinishesOnShiftRelease() async {
+    var state = ModifierShortcut.KeyboardState()
+    var actions: [ModifierChord.Action] = []
+    let monitor = ModifierShortcut(readState: { state }, canListen: { true }, requiresShift: true,
+        activationDelay: .milliseconds(1)) { actions.append($0) }
+    defer { monitor.stop() }
+    monitor.stop(); monitor.poll()
+    state.flags = [.control, .option]; monitor.poll()
+    try? await Task.sleep(for: .milliseconds(20))
+    #expect(actions.isEmpty)
+    state.flags.insert(.shift); monitor.poll()
+    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+    while actions.isEmpty && ContinuousClock.now < deadline { try? await Task.sleep(for: .milliseconds(10)) }
+    #expect(actions == [.down])
+    state.flags.remove(.shift); monitor.poll()
+    #expect(actions == [.down, .up])
+    state.flags.insert(.shift); monitor.poll()
+    try? await Task.sleep(for: .milliseconds(20))
+    #expect(actions == [.down, .up])
+}
+
+@Test @MainActor func productionAndDevelopmentModifierGesturesAreDistinct() {
+    let state = ModifierShortcut.KeyboardState(flags: [.control, .option, .shift])
+    #expect(!state.chordHeld)
+    #expect(state.chordHeld(requiringShift: true))
+}

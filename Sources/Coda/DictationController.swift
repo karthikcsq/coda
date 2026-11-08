@@ -155,12 +155,9 @@ extension KeyboardShortcuts.Name {
     }
     var modifierShortcutStatus: String {
         if !shortcutPauses.isEmpty { return "Shortcut paused while this Mac is locked, asleep or inactive." }
-        if BuildIdentity.isDevelopment, !NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty {
-            return "Production owns Control–Option. Choose a different custom shortcut for Development."
-        }
         if ModifierShortcut.voiceOverConflict { return "Control–Option is reserved while VoiceOver is active. Choose a custom shortcut." }
         if accessibility.trusted, !visualReview, modifierMonitor?.available != true { return "Shortcut listener unavailable. Refresh Accessibility status in System settings." }
-        return accessibility.trusted ? "Hold Control + Option alone briefly to dictate. Release either to finish. Other keys cancel the chord; events are never intercepted." : "Control–Option needs Coda’s existing Accessibility access."
+        return accessibility.trusted ? "Hold \(modifierChordName) alone briefly to dictate. Release a modifier to finish. Other keys cancel the chord; events are never intercepted." : "\(modifierChordName) needs this app’s Accessibility access."
     }
     private var modifierMonitor: ModifierShortcut?
     private var shortcutPauses = Set<Notification.Name>()
@@ -169,15 +166,7 @@ extension KeyboardShortcuts.Name {
         guard shortcutPauses.isEmpty else { return }
         if modifierShortcut {
             KeyboardShortcuts.disable(.codaDictation)
-            // The production modifier chord must not trigger two microphones.
-            if BuildIdentity.isDevelopment, !NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty {
-                message = "Production owns Control–Option. Choose a custom Development shortcut."
-                return
-            }
-            let monitor = ModifierShortcut(canListen: {
-                AXIsProcessTrusted() && !ModifierShortcut.voiceOverConflict &&
-                    (!BuildIdentity.isDevelopment || NSRunningApplication.runningApplications(withBundleIdentifier: "app.coda.notebook").isEmpty)
-            }) { [weak self] event in
+            let monitor = ModifierShortcut(requiresShift: BuildIdentity.isDevelopment) { [weak self] event in
                 guard let self else { return }
                 switch event {
                 case .down: self.handle(self.lifecycle.keyDown(mode: self.mode))
@@ -193,7 +182,8 @@ extension KeyboardShortcuts.Name {
         didSet { if !visualReview { UserDefaults.standard.set(autoInsert, forKey: "dictationAutoInsert") } }
     }
     var permissionGranted: Bool { AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
-    var shortcutLabel: String { modifierShortcut ? "⌃⌥ Control + Option" : KeyboardShortcuts.getShortcut(for: .codaDictation)?.description ?? "Choose a shortcut" }
+    var modifierChordName: String { BuildIdentity.isDevelopment ? "Shift + Control + Option" : "Control + Option" }
+    var shortcutLabel: String { modifierShortcut ? (BuildIdentity.isDevelopment ? "⇧⌃⌥ " : "⌃⌥ ") + modifierChordName : KeyboardShortcuts.getShortcut(for: .codaDictation)?.description ?? "Choose a shortcut" }
     private var visualReview = false
     private weak var model: AppModel?
     private let insertion = DictationInsertion()
@@ -262,7 +252,7 @@ extension KeyboardShortcuts.Name {
         personalTuning = PersonalTuning(root: previewRun ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Tuning-Preview-" + UUID().uuidString) : nil)
         wordSuggestions = DictionarySuggestions(dictionary: dictionary, preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
         cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
-        mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? "toggle") ?? .toggle
+        mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? (BuildIdentity.isDevelopment ? "hold" : "toggle")) ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
         super.init()
         personalTuning.isDictating = { [weak self] in self?.lifecycle.busy ?? false }
@@ -273,7 +263,7 @@ extension KeyboardShortcuts.Name {
             self?.showDictionaryWindow?()
         }
         visualReview = preview
-        modifierShortcut = UserDefaults.standard.bool(forKey: "dictationModifierShortcut")
+        modifierShortcut = UserDefaults.standard.object(forKey: "dictationModifierShortcut") as? Bool ?? BuildIdentity.isDevelopment
         do {
             let base = preview || ProcessInfo.processInfo.arguments.contains("--ui-preview")
                 ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Preview-" + UUID().uuidString)

@@ -6,9 +6,10 @@ import CodaCore
     struct KeyboardState {
         var flags: NSEvent.ModifierFlags = []
         var otherKey = false
-        var chordHeld: Bool {
-            flags.contains([.control, .option])
-                && flags.intersection([.command, .shift, .function]).isEmpty && !otherKey
+        var chordHeld: Bool { chordHeld(requiringShift: false) }
+        func chordHeld(requiringShift: Bool) -> Bool {
+            flags.contains(requiringShift ? [.control, .option, .shift] : [.control, .option])
+                && flags.intersection(requiringShift ? [.command, .function] : [.command, .shift, .function]).isEmpty && !otherKey
         }
     }
     private var global: Any?
@@ -20,6 +21,7 @@ import CodaCore
     private let action: (ModifierChord.Action) -> Void
     private let readState: () -> KeyboardState
     private let canListen: () -> Bool
+    private let requiresShift: Bool
     private let activationDelay: Duration
     var available = false
     static var voiceOverConflict: Bool {
@@ -28,9 +30,11 @@ import CodaCore
     }
     init(readState: @escaping () -> KeyboardState = { physicalState() },
          canListen: @escaping () -> Bool = { AXIsProcessTrusted() && !voiceOverConflict },
+         requiresShift: Bool = false,
          activationDelay: Duration = .milliseconds(30),
          action: @escaping (ModifierChord.Action) -> Void) {
         self.action = action; self.readState = readState
+        self.requiresShift = requiresShift
         self.canListen = canListen; self.activationDelay = activationDelay
     }
     private static func physicalState() -> KeyboardState {
@@ -83,8 +87,8 @@ import CodaCore
         update(event.modifierFlags, otherKey: event.type == .keyDown)
     }
     private func update(_ flags: NSEvent.ModifierFlags, otherKey: Bool) {
-        let event = chord.update(control: flags.contains(.control), option: flags.contains(.option),
-            extraModifier: !flags.intersection([.command, .shift, .function]).isEmpty, otherKey: otherKey)
+        let event = chord.update(control: flags.contains(.control) && (!requiresShift || flags.contains(.shift)), option: flags.contains(.option),
+            extraModifier: !flags.intersection(requiresShift ? [.command, .function] : [.command, .shift, .function]).isEmpty, otherKey: otherKey)
         if event == .arm {
             let token = UUID(); generation = token; pending?.cancel()
             let delay = activationDelay
@@ -92,7 +96,7 @@ import CodaCore
                 do { try await Task.sleep(for: delay) } catch { return }
                 guard let self, token == generation, !Task.isCancelled else { return }
                 // Recheck physical flags so quick releases during scheduling never start capture.
-                guard readState().chordHeld, canListen() else { self.interrupt(); return }
+                guard readState().chordHeld(requiringShift: requiresShift), canListen() else { self.interrupt(); return }
                 action(chord.activate())
             }
         } else if event != .none { pending?.cancel(); generation = UUID(); action(event) }

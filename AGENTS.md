@@ -7,6 +7,9 @@
   separate preferences and `Application Support/Coda Dev` identify Development.
   Do not accumulate versioned bundles, `build-staged/`, `archive/` snapshots, or
   duplicate `ui-review/` checkouts.
+- Open Development only for an explicit test handoff and bring its window forward.
+  Close it normally once the user finishes testing. Development uses
+  Shift–Control–Option; Production uses Control–Option.
 - Release only through `scripts/release.py` from clean, reviewed `main`: tests,
   signed production build and identity check, push and verify GitHub main, normal
   idle-only production quit, replace and verify production, then reopen. A failed
