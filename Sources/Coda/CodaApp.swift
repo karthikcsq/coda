@@ -25,8 +25,7 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         Window(BuildIdentity.name, id: "main") {
             WorkspaceView(model: model, controller: dictation, delegate: delegate)
                 .frame(minWidth: 980, minHeight: 680)
-                .background(MainWindowReader { delegate.retainMainWindow($0) })
-                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model); delegate.installStatusMenu(model: model, dictation: dictation)
+                .onAppear { delegate.model = model; delegate.dictation = dictation; dictation.attach(model)
                     delegate.meetingDetector.start(model: model) {
                         delegate.reopenMain?()
                         dictation.workspaceSection = "Meetings"
@@ -38,7 +37,12 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
             CommandGroup(replacing: .newItem) { Button("Import Audio…") { model.importAudio() }.keyboardShortcut("o").disabled(model.isOccupied) }
             CodaSettingsCommands(model: model)
         }
-
+        MenuBarExtra {
+            RecordingMenu(model: model, dictation: dictation, delegate: delegate)
+        } label: {
+            Label(model.recording ? BuildIdentity.name + " • REC" : dictation.lifecycle.phase == .listening ? BuildIdentity.name + " • MIC" : BuildIdentity.name, systemImage: model.recording || dictation.lifecycle.phase == .listening ? "record.circle.fill" : BuildIdentity.isDevelopment ? "waveform.circle.fill" : "waveform.path")
+                .help(BuildIdentity.name)
+        }
     }
 }
 @MainActor struct MeetingMenuAction {
@@ -48,47 +52,53 @@ private typealias ViewState<Value> = SwiftUI.State<Value>
         else if !occupied { start() }
     }
 }
+struct RecordingMenu: View {
+    let model: AppModel
+    @Bindable var dictation: DictationController
+    let delegate: AppDelegate
+    @Environment(\.openWindow) private var openWindow
+    private func openCoda() { delegate.showMain { openWindow(id: "main") } }
+    var body: some View {
+        Button("Open \(BuildIdentity.name)") { openCoda() }
+        Button(dictation.lifecycle.phase == .listening ? "Stop Dictation" : "Start Dictation") {
+            if model.modelConsent && model.dictationModelReady { dictation.button() }
+            else { dictation.showOnboarding = true; openCoda() }
+        }.disabled(model.meetingOperationInProgress || (dictation.lifecycle.busy && dictation.lifecycle.phase != .listening))
+        Button("Correct Last Dictation… (\(dictation.correctionShortcutLabel))") { dictation.correctLastDictation() }
+            .disabled(dictation.lifecycle.busy)
+        Button("Setup Guide") { dictation.showOnboarding = true; openCoda() }.disabled(model.settingsChangesLocked)
+        Button(model.recording ? "Stop & Save Meeting" : "Start Meeting") {
+            MeetingMenuAction.perform(recording: model.recording, occupied: model.isOccupied, open: {
+                model.closeSettings(); dictation.workspaceSection = "Meetings"; openCoda()
+            }, start: { model.requestMeetingRecording() }, stop: { model.stopRecording() })
+        }.disabled(model.isOccupied && !model.recording)
+        if dictation.lifecycle.busy { Button("Cancel Dictation") { dictation.cancel() } }
+        Divider()
+        Button("Quit \(BuildIdentity.name)") { NSApp.terminate(nil) }
+    }
+}
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let meetingDetector = MeetingDetector()
-    private var statusMenu: StatusMenuController?
-    func installStatusMenu(model: AppModel, dictation: DictationController) {
-        guard statusMenu == nil else { return }
-        statusMenu = StatusMenuController(model: model, dictation: dictation, delegate: self)
-    }
     var reopenMain: (() -> Void)?
-    private var mainWindow: NSWindow?
-    func retainMainWindow(_ window: NSWindow) {
-        guard !(window is NSPanel), window.styleMask.contains(.titled) else { return }
-        // Keep the real window available after the close button removes it from
-        // NSApp.windows. Reopening an already-running menu app must show it again.
-        window.isReleasedWhenClosed = false
-        mainWindow = window
-    }
     func showMain(open: () -> Void) {
         open() // SwiftUI Window's fixed id reuses the same main window.
         NSApp.activate(ignoringOtherApps: true)
         raiseExistingMain()
         DispatchQueue.main.async { [weak self] in self?.raiseExistingMain() }
     }
-    @discardableResult func raiseExistingMain() -> Bool {
-        guard let window = mainWindow ?? NSApp.windows.first(where: { $0.title == BuildIdentity.name && !($0 is NSPanel) }) else { return false }
-        retainMainWindow(window)
+    func raiseExistingMain() {
+        guard let window = NSApp.windows.first(where: { $0.title == BuildIdentity.name && !($0 is NSPanel) }) else { return }
         if window.isMiniaturized { window.deminiaturize(nil) }
         window.makeKeyAndOrderFront(nil)
-        return true
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if mainWindow != nil, raiseExistingMain() {
-            sender.activate(ignoringOtherApps: true)
-            return false // The retained window handled this request.
-        }
         reopenMain?()
-        return true // Allow SwiftUI's normal reopen path when no window was captured.
+        return false
     }
     var model: AppModel?
     var dictation: DictationController?
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let model, !model.isVisualReview, model.isOccupied || dictation?.lifecycle.busy == true else { return .terminateNow }
+        guard let model, !model.isVisualReview, model.isOccupied else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = "Finish the current operation before quitting"
         alert.informativeText = model.recording ? "Stop recording so Coda can save your audio first." : "Cancel processing or wait for it to finish."
@@ -107,22 +117,6 @@ struct CodaSettingsCommands: Commands {
                 model.openSettings()
                 NSApp.activate(ignoringOtherApps: true)
             }.keyboardShortcut(",")
-        }
-    }
-}
-
-/// Capture the actual scene window, rather than relying on title lookup or onAppear timing.
-private struct MainWindowReader: NSViewRepresentable {
-    let receive: (NSWindow) -> Void
-    func makeNSView(context: Context) -> WindowView { WindowView(receive: receive) }
-    func updateNSView(_ view: WindowView, context: Context) { view.receive = receive }
-    final class WindowView: NSView {
-        var receive: (NSWindow) -> Void
-        init(receive: @escaping (NSWindow) -> Void) { self.receive = receive; super.init(frame: .zero) }
-        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            if let window { receive(window) }
         }
     }
 }

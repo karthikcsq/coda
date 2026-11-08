@@ -114,3 +114,25 @@ selection or cancellation. The vendor patch history and license remain intact.
 All 233 tests passed (131 core, 97 UI/integration, 5 speaker/tool), including the
 new event-queue regression and shortcut-state restoration tests. Manual click
 confirmation on the rebuilt installed app remains required.
+
+
+## Restore original menu/window implementation, preserve new features
+
+At the user's request, restored the working SwiftUI MenuBarExtra, RecordingMenu
+and AppDelegate implementation from bbeb1a0. Changes to that original code are
+limited to channel display identity (circled-waveform icon for Dev) and the newer Correct Last Dictation menu
+command. Development again uses the same LSUIElement menu-app policy as
+Production. Removed the experimental AppKit popup controller, retained-window
+bridge and their tests; restored the vendored shortcut event monitor unchanged.
+Earlier menu-fix diagnoses and experiments above are historical and superseded.
+
+The current Home/two-pane UI, correction editor, personal voice training,
+learning, dictionaries, dictation startup/tail improvements, Development gesture,
+channel storage and release/install safeguards remain in the current source.
+This is not a checkout or rebuild of the entire old application revision.
+
+Restoration verification: all 226 remaining app tests passed (131 core, 90
+UI/integration, 5 speaker/tool), plus the menu routing smoke check. The menu
+source was compared directly with bbeb1a0; the only differences are channel names,
+a distinct circled-waveform Dev icon, and the new correction command. No feature
+controller, current workspace page, user data or permission grant was reverted.

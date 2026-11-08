@@ -10,7 +10,7 @@ if [[ "$SIGNING_IDENTITY" == "-" || -z "$SIGNING_IDENTITY" ]]; then
 fi
 CHANNEL="${CODA_CHANNEL:-development}"
 case "$CHANNEL" in
-    development) APP_NAME="Coda Dev"; BUNDLE_ID="app.coda.notebook.dev"; AGENT_APP=false ;;
+    development) APP_NAME="Coda Dev"; BUNDLE_ID="app.coda.notebook.dev"; AGENT_APP=true ;;
     production) APP_NAME="Coda"; BUNDLE_ID="app.coda.notebook"; AGENT_APP=true ;;
     *) echo 'CODA_CHANNEL must be development or production.' >&2; exit 1 ;;
 esac

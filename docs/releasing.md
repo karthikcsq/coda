@@ -63,11 +63,11 @@ Shift–Control–Option–C in Development so both channels can run together.
    that changes remote main must invoke its confetti tool once after success if
    available. The standalone release command cannot invoke chat tools.
 
-Development is a regular Dock app so opening it from app search can restore its window. Its main window is retained across close/reopen; Production keeps its menu-only application policy.
+Both channels use the original Coda menu-bar application policy and original SwiftUI menu/window handling. Development differs in its display name, visual theme, shortcut and isolated storage.
 
 Builds are serialized across checkouts. A checkout must include the installed Dev commit before replacing it, so another task cannot silently reinstall an older or divergent menu implementation. Merge the installed revision first.
 
-The menu bar shows a literal “Coda Dev” title for Development and a waveform for Production; both menus use standard macOS commands. About opens a normal About panel; version and source revision also remain in bundle metadata. Production links to GitHub Releases.
+The menu bar uses the original icon-style label for both channels: a circled waveform for Development and a plain waveform for Production; both channels use the original Coda command menu. Version and source revision remain in bundle metadata. Production links to GitHub Releases.
 
 There is no background auto-updater. GitHub main is the source of truth; the
 release command publishes it and installs the matching signed local app. If
