@@ -28,7 +28,7 @@ import CodaCore
     }
     init(readState: @escaping () -> KeyboardState = { physicalState() },
          canListen: @escaping () -> Bool = { AXIsProcessTrusted() && !voiceOverConflict },
-         activationDelay: Duration = .milliseconds(180),
+         activationDelay: Duration = .milliseconds(30),
          action: @escaping (ModifierChord.Action) -> Void) {
         self.action = action; self.readState = readState
         self.canListen = canListen; self.activationDelay = activationDelay

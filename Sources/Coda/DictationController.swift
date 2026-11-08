@@ -312,7 +312,11 @@ extension KeyboardShortcuts.Name {
         guard shortcutPauses.remove(reason) != nil, shortcutPauses.isEmpty, !visualReview else { return }
         configureModifierShortcut()
     }
-    func attach(_ model: AppModel) { self.model = model }
+    func attach(_ model: AppModel) {
+        self.model = model
+        // Construct the hosting view while idle, off the shortcut's critical path.
+        if !visualReview, overlay == nil { overlay = DictationOverlay(controller: self) }
+    }
     func useSuggestedShortcut() {
         guard !visualReview else { return }
         let candidate = KeyboardShortcuts.Shortcut(.d, modifiers: [.control, .option, .command])
@@ -359,13 +363,13 @@ extension KeyboardShortcuts.Name {
         sessionID = id
         model.dictationBusy = true; text = ""; rawText = ""; level = 0
         failureTitle = "Dictation failed"; captureStats = DictationCaptureStats()
-        insertion.captureTarget(); targetName = insertion.targetName
         message = "Preparing microphone…"; show()
         // Escape is scoped to a live Coda operation, never registered while idle.
         KeyboardShortcuts.enable(.codaCancelDictation)
         task = Task { [weak self] in
             guard let self else { return }
-            let allowed = await AVCaptureDevice.requestAccess(for: .audio)
+            // Avoid an asynchronous permission round trip on every authorized press.
+            let allowed = permissionGranted ? true : await AVCaptureDevice.requestAccess(for: .audio)
             guard lifecycle.accepts(id), !Task.isCancelled else { return }
             guard allowed else {
                 lifecycle.fail(id); model.dictationBusy = false
@@ -376,14 +380,16 @@ extension KeyboardShortcuts.Name {
             do {
                 let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Dictation-" + UUID().uuidString)
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-                let url = directory.appendingPathComponent("speech.m4a")
+                let url = directory.appendingPathComponent("speech.wav")
                 audioURL = url
-                let recorder = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 48_000, AVNumberOfChannelsKey: 1, AVEncoderBitRateKey: 96_000])
+                let recorder = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 48_000, AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false])
                 recorder.delegate = self; recorder.isMeteringEnabled = true
                 guard lifecycle.accepts(id), !Task.isCancelled, recorder.record() else { throw CodaError.emptyAudio }
                 self.recorder = recorder
                 guard lifecycle.listening(id) else { recorder.stop(); cleanupAudio(); return }
                 started = Date(); message = "Listening • Esc to cancel"
+                // AX queries can block on the destination app. Capture audio first.
+                insertion.captureTarget(); targetName = insertion.targetName
                 meterTask = Task { [weak self] in
                     while !Task.isCancelled {
                         try? await Task.sleep(for: .milliseconds(90))
@@ -406,14 +412,8 @@ extension KeyboardShortcuts.Name {
     }
     private func finish() {
         guard let id = lifecycle.processing(), let url = audioURL, let model else { return }
-        captureStats.seconds = recorder?.currentTime ?? 0
-        recorder?.updateMeters()
-        if let peak = recorder?.peakPower(forChannel: 0), peak.isFinite {
-            captureStats.peakDB = max(captureStats.peakDB ?? -160, Double(peak))
-        }
-        recorder?.stop(); recorder = nil; meterTask?.cancel(); meterTask = nil; level = 0
-        captureStats.bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-        message = "Transcribing locally… • Esc to cancel"
+        meterTask?.cancel(); meterTask = nil
+        message = "Finishing recording… • Esc to cancel"
         task = Task { [weak self] in
             guard let self else { return }
             defer {
@@ -422,6 +422,19 @@ extension KeyboardShortcuts.Name {
                 KeyboardShortcuts.disable(.codaCancelDictation)
             }
             do {
+                // Let the final syllable and input-device buffers reach the file.
+                // The processing phase prevents another shortcut from starting a session.
+                try await Task.sleep(for: .milliseconds(500))
+                try Task.checkCancellation()
+                guard lifecycle.accepts(id), lifecycle.phase == .processing else { return }
+                captureStats.seconds = recorder?.currentTime ?? 0
+                recorder?.updateMeters()
+                if let peak = recorder?.peakPower(forChannel: 0), peak.isFinite {
+                    captureStats.peakDB = max(captureStats.peakDB ?? -160, Double(peak))
+                }
+                recorder?.stop(); recorder = nil; level = 0
+                captureStats.bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                message = "Transcribing locally… • Esc to cancel"
                 let vocabulary = dictionary.vocabulary
                 let result = try await model.transcribeDictation(url, vocabulary: vocabulary)
                 try Task.checkCancellation()
