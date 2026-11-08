@@ -83,12 +83,12 @@ extension KeyboardShortcuts.Name {
             self.overlay?.hide()
         }
     }
-    private func saveRecord(_ record: DictationRecord) {
+    @discardableResult private func saveRecord(_ record: DictationRecord) -> Bool {
         if let index = records.firstIndex(where: { $0.id == record.id }) { records[index] = record }
         else { records.insert(record, at: 0) }
         selectedRecord = record.id
-        do { guard let history else { throw CodaError.emptyAudio }; try history.save(record) }
-        catch { historyWarning = "Could not save dictation history to disk. Keep this window open and copy any text you need." }
+        do { guard let history else { throw CodaError.emptyAudio }; try history.save(record); return true }
+        catch { historyWarning = "Could not save dictation history to disk. Keep this window open and copy any text you need."; return false }
     }
     private func saveSession(outcome: DictationRecord.Outcome, detail: String) {
         guard let sessionID else { return }
@@ -96,21 +96,21 @@ extension KeyboardShortcuts.Name {
     }
     func copyRecord(_ record: DictationRecord) {
         guard !visualReview else { message = "Visual review • clipboard unchanged"; return }
-        guard !record.text.isEmpty else { return }
-        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(record.text, forType: .string)
+        guard !record.finalText.isEmpty else { return }
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(record.finalText, forType: .string)
         message = "Copied • paste wherever you choose"
     }
     func copyOriginal(_ record: DictationRecord) {
         guard let original = record.rawText else { return }
-        var copy = record; copy.text = original; copyRecord(copy)
+        var copy = record; copy.text = original; copy.correctedText = nil; copyRecord(copy)
     }
     func armInsertion(_ record: DictationRecord) {
         guard !visualReview else { message = "Visual review • insertion disabled"; return }
-        guard !lifecycle.busy, retryTask == nil, model?.isOccupied != true, !record.text.isEmpty else { return }
+        guard !lifecycle.busy, retryTask == nil, model?.isOccupied != true, !record.finalText.isEmpty else { return }
         corrections.stop()
         stopCorrectionReview()
         wordSuggestions.close()
-        pendingInsertion = record.id; text = record.text; targetName = "Choose a destination"
+        pendingInsertion = record.id; text = record.finalText; targetName = "Choose a destination"
         message = "Click your destination field, then press your shortcut or Insert text here. No recording will start."
         KeyboardShortcuts.enable(.codaCancelDictation)
         retryTimeout?.cancel()
@@ -135,7 +135,9 @@ extension KeyboardShortcuts.Name {
         guard let self else { return }
         defer { retryTask = nil; KeyboardShortcuts.disable(.codaCancelDictation) }
         let cleanupInput = record.cleanupMode == .smart ? record.rawText : nil
-        let success = await insertion.insertWithFallback(record.text, observeCorrections: record.snippetTrigger != nil ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
+        // A user correction is authored text: insert it, but do not learn from edits to it.
+        let corrected = record.correctedText != nil
+        let success = await insertion.insertWithFallback(record.finalText, observeCorrections: record.snippetTrigger != nil || corrected ? nil : { [weak self] in self?.observeCorrections($0, cleanupInput: cleanupInput, session: id) })
         record.outcome = success ? .inserted : insertion.deliveryAttempted ? .deliveryUnconfirmed : .copyRequired
         record.target = targetName
         record.detail = insertion.reason
@@ -281,6 +283,54 @@ extension KeyboardShortcuts.Name {
         }
     }
 
+    // MARK: Marking a dictation wrong
+
+    let correctionEditor: CorrectionEditor
+    var correctionShortcutLabel: String { KeyboardShortcuts.getShortcut(for: .codaCorrectLastDictation)?.description ?? "No shortcut" }
+    /// Global shortcut target: opens the editor for the newest inserted dictation.
+    func correctLastDictation() {
+        // Opening a window mid-session would take focus from the destination field.
+        guard !lifecycle.busy, pendingInsertion == nil, retryTask == nil else {
+            if !visualReview { NSSound.beep() }
+            message = "Finish the current dictation before correcting it."
+            return
+        }
+        correctionEditor.present(MarkedCorrection.latestInserted(records))
+    }
+    func correct(_ record: DictationRecord) {
+        guard !lifecycle.busy, pendingInsertion == nil, retryTask == nil else { return }
+        correctionEditor.present(record)
+    }
+    /// Saves the user's intended text beside the inserted text, then feeds the
+    /// existing learners: dictionary suggestions, the audio training pair's final
+    /// text and, for Smart cleanup, the cleanup edit store. Returns an error to show.
+    @discardableResult
+    func saveCorrection(id: UUID, text input: String) -> String? {
+        guard let record = records.first(where: { $0.id == id }) else { return "This dictation is no longer in History." }
+        switch MarkedCorrection.apply(input, to: record) {
+        case .empty: return "Enter the text you meant, or press Cancel."
+        case .unchanged: return nil
+        case .saved(let updated, let learn):
+            // The passive field observer must not overwrite an explicit correction.
+            corrections.stop()
+            guard saveRecord(updated) else { return "Could not save the correction to disk. It is kept in History until you quit." }
+            let final = updated.finalText
+            message = learn ? "Correction saved. Coda will learn from it." : "Correction removed. The inserted text is kept."
+            guard updated.snippetTrigger == nil else { return nil } // Snippets are authored text.
+            if learn, learnWords {
+                wordSuggestions.preferredFrame = nil
+                let changes = CorrectionCandidates.extract(original: record.text, edited: final, isCommon: { CustomDictionary.isCommon($0) })
+                reviewCorrections(changes, original: record.text, edited: final, session: id)
+            }
+            do { try trainingStore?.updateFinalText(id: id, text: final); personalAudio.refresh() }
+            catch { message = "Correction saved. Could not update the training copy." }
+            if learn, personalTuning.enabled, record.cleanupMode == .smart, let input = record.rawText {
+                personalTuning.record(CleanupEdit(id: id, input: input, inserted: record.text, edited: final))
+            }
+            return nil
+        }
+    }
+
     override convenience init() { self.init(preview: false) }
     init(preview: Bool, formatter: SmartFormatter? = nil, previewMicrophoneAllowed: Bool = false) {
         self.previewMicrophoneAllowed = preview && previewMicrophoneAllowed
@@ -294,6 +344,7 @@ extension KeyboardShortcuts.Name {
         preferences = DictationPreferences(preview: previewRun)
         personalTuning = PersonalTuning(root: previewRun ? FileManager.default.temporaryDirectory.appendingPathComponent("Coda-Tuning-Preview-" + UUID().uuidString) : nil)
         wordSuggestions = DictionarySuggestions(dictionary: dictionary, preview: preview || ProcessInfo.processInfo.arguments.contains("--ui-preview"))
+        correctionEditor = CorrectionEditor(preview: preview)
         cleanupMode = DictationCleanupMode(rawValue: UserDefaults.standard.string(forKey: "dictationCleanupMode") ?? "light") ?? .light
         mode = DictationMode(rawValue: UserDefaults.standard.string(forKey: "dictationMode") ?? (BuildIdentity.isDevelopment ? "hold" : "toggle")) ?? .toggle
         autoInsert = UserDefaults.standard.object(forKey: "dictationAutoInsert") as? Bool ?? true
@@ -305,6 +356,10 @@ extension KeyboardShortcuts.Name {
         personalAudio.isBusy = { [weak self] in self?.lifecycle.busy == true || self?.model?.isOccupied == true || self?.personalTuning.running == true }
         personalTuning.isDictating = { [weak self] in self?.lifecycle.busy == true || self?.personalAudio.running == true }
         personalTuning.modelChanged = { [weak self] in self?.smartFormatter.reloadModel() }
+        correctionEditor.onSave = { [weak self] id, text in
+            guard let self else { return "Coda is not ready." }
+            return self.saveCorrection(id: id, text: text)
+        }
         wordSuggestions.onReview = { [weak self] in
             self?.model?.closeSettings()
             self?.workspaceSection = "Dictionary"
@@ -337,6 +392,7 @@ extension KeyboardShortcuts.Name {
         KeyboardShortcuts.setShortcut(.init(.escape, modifiers: []), for: .codaCancelDictation)
         KeyboardShortcuts.onKeyDown(for: .codaCancelDictation) { [weak self] in self?.cancel() }
         KeyboardShortcuts.disable(.codaCancelDictation)
+        KeyboardShortcuts.onKeyDown(for: .codaCorrectLastDictation) { [weak self] in self?.correctLastDictation() }
         configureModifierShortcut()
         if cleanupMode == .smart { smartFormatter.warm() }
         for (pause, resume) in [(NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification),

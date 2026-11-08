@@ -104,6 +104,9 @@ struct SettingsPanel: View {
                 Text("Checks enabled macOS shortcuts; other apps’ custom bindings cannot all be detected.")
                     .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
             }
+            row("Correct last dictation", "Opens an editor for the text Coda most recently inserted, so you can type what you meant.") {
+                KeyboardShortcuts.Recorder("", name: .codaCorrectLastDictation).frame(width: 170).disabled(locked || model.isVisualReview)
+            }
             Rectangle().fill(CodaStyle.hairline).frame(height: 1)
             row("Shortcut behavior", "Press to start and stop, or hold to talk.") {
                 Picker("Shortcut behavior", selection: $controller.mode) { Text("Toggle").tag(DictationMode.toggle); Text("Hold").tag(DictationMode.hold) }.labelsHidden().frame(width: 170).disabled(locked)

@@ -11,6 +11,12 @@ public struct DictationRecord: Codable, Identifiable, Equatable, Sendable {
     public var target: String
     public var outcome: Outcome
     public var detail: String
+    /// What the user said they meant, entered after marking the dictation wrong.
+    /// `text` and `rawText` keep what Coda produced and inserted.
+    public var correctedText: String?
+    public var correctedAt: Date?
+    /// The text the user wants: their correction when present, otherwise what Coda produced.
+    public var finalText: String { correctedText ?? text }
     public init(id: UUID = UUID(), created: Date = .now, text: String, target: String, outcome: Outcome, detail: String, rawText: String? = nil, cleanupMode: DictationCleanupMode? = nil, snippetTrigger: String? = nil) {
         self.rawText = rawText; self.cleanupMode = cleanupMode; self.snippetTrigger = snippetTrigger
         self.id = id; self.created = created; self.text = text; self.target = target; self.outcome = outcome; self.detail = detail
