@@ -18,157 +18,184 @@ struct HomePage: View {
     @HomeState private var refreshID = 0
     private var readiness: SetupReadiness { _ = refreshID; return controller.readiness(for: model) }
     private var locked: Bool { model.settingsChangesLocked || controller.lifecycle.busy }
+    private var modelReady: Bool { model.modelConsent && model.dictationModelReady }
+    private var shortcutReady: Bool { readiness.shortcutAssigned && (!readiness.modifierShortcut || readiness.accessibilityAllowed) }
+    private var stepsDone: Int { [modelReady, readiness.microphoneAllowed, shortcutReady].filter { $0 }.count }
+    private var greeting: String {
+        switch Calendar.current.component(.hour, from: .now) {
+        case 5..<12: "Good morning"
+        case 12..<18: "Good afternoon"
+        default: "Good evening"
+        }
+    }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
-                HStack {
-                    Label("YOUR WORKSPACE", systemImage: "waveform.path")
-                        .font(.system(size: 11, weight: .medium)).tracking(1.5).foregroundStyle(CodaStyle.muted)
-                    Spacer()
-                    Button("Setup guide") { controller.showOnboarding = true }
-                        .buttonStyle(CodaQuietButtonStyle()).disabled(locked)
-                }
-                hero
-                readinessStrip
-                HStack(alignment: .top, spacing: 16) {
-                    workflow(icon: "waveform", title: "Dictate anywhere", description: "Speak into your favorite apps. Keep your wording, skip the typing.", action: readiness.canDictate ? "Open dictation" : "Set up dictation") {
-                        if readiness.canDictate { model.closeSettings(); controller.workspaceSection = "Dictation" }
-                        else { controller.showOnboarding = true }
-                    }
-                    workflow(icon: "person.2.wave.2", title: "Remember the conversation", description: "Record a meeting. Review who said what, then find the next step.", action: "New meeting") {
-                        model.closeSettings(); controller.workspaceSection = "Meetings"; model.requestMeetingRecording()
-                    }
-                }
+            VStack(alignment: .leading, spacing: 32) {
+                header
+                if !readiness.canDictate { setupChecklist }
+                else if !controller.accessibility.trusted { insertionNotice }
+                actions
                 recentWork
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "lock.shield").foregroundStyle(CodaStyle.mint)
-                    Text("Speech recognition runs on your Mac. Meeting summaries and chat use hosted AI when you choose. The speech SDK sends licensing metadata.")
-                        .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
-                }
-            }.padding(36).frame(maxWidth: 1100).frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 7) {
+                    Image(systemName: "lock").font(.system(size: 10))
+                    Text("Speech recognition runs on your Mac. Summaries and chat use hosted AI only when you choose. The speech SDK sends licensing metadata.")
+                        .fixedSize(horizontal: false, vertical: true)
+                }.font(CodaStyle.captionFont).foregroundStyle(CodaStyle.faint)
+            }.codaPageInsets()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             controller.refreshAccessibility(); refreshID += 1
         }
     }
-    private var hero: some View {
-        HStack(alignment: .center, spacing: 26) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(readiness.canDictate ? "Ready when\nyou are." : "Good work starts\nwith your voice.")
-                    .font(.system(size: 38, weight: .medium, design: .rounded)).tracking(-1.1)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(readiness.canDictate ? "A thought, a message, a conversation.\nCoda helps you carry it forward." : "Your dictation companion and meeting notebook.\nA few simple steps, then you're ready to speak.")
-                    .font(.system(size: 14)).foregroundStyle(CodaStyle.ink.opacity(0.72)).lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 12) {
-                    Button { controller.showOnboarding = true } label: {
-                        Label(readiness.canDictate ? "Try a dictation" : "Get started", systemImage: readiness.canDictate ? "mic" : "arrow.right")
-                    }.buttonStyle(CodaPrimaryButtonStyle()).disabled(locked)
-                    if readiness.canDictate {
-                        Text(controller.shortcutLabel).font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.mint)
-                    } else { Text("Set up at your own pace").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted) }
-                }.padding(.top, 6)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            VoiceIllustration().frame(width: 210, height: 200).accessibilityHidden(true)
-        }
-        .padding(30).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CodaStyle.heroGradient, in: RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(CodaStyle.mint.opacity(0.13)))
-    }
-    private var readinessStrip: some View {
-        HStack(spacing: 20) {
-            readinessItem("Speech model", ready: model.modelConsent && model.dictationModelReady)
-            readinessItem("Microphone", ready: readiness.microphoneAllowed)
-            readinessItem("Shortcut", ready: readiness.shortcutAssigned && (!readiness.modifierShortcut || readiness.accessibilityAllowed))
-            Spacer(minLength: 0)
-            if !readiness.canDictate {
-                Button("Continue setup") { controller.showOnboarding = true }
-                    .buttonStyle(CodaQuietButtonStyle()).disabled(locked)
-            } else if !controller.accessibility.trusted {
-                Button("Enable insertion") { controller.showOnboarding = true }.buttonStyle(CodaQuietButtonStyle()).disabled(locked)
+    private var header: some View {
+        HStack(alignment: .bottom, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(greeting).font(.system(size: 26, weight: .semibold)).tracking(-0.6)
+                if readiness.canDictate {
+                    HStack(spacing: 6) {
+                        Text("Press").foregroundStyle(CodaStyle.muted)
+                        CodaKeycap(controller.shortcutLabel)
+                        Text("in any text field to dictate.").foregroundStyle(CodaStyle.muted)
+                    }.font(CodaStyle.bodyFont)
+                } else {
+                    Text("Dictation and meeting notes that stay on your Mac.")
+                        .font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
+                }
             }
-        }.padding(.horizontal, 4)
+            Spacer(minLength: 0)
+        }
     }
-    private func readinessItem(_ title: String, ready: Bool) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: ready ? "checkmark.circle.fill" : "circle.dashed")
-                .foregroundStyle(ready ? CodaStyle.mint : CodaStyle.muted)
-            Text(title).foregroundStyle(ready ? CodaStyle.ink : CodaStyle.muted)
-        }.font(CodaStyle.secondaryFont).accessibilityLabel(title + (ready ? ", ready" : ", needs setup"))
+    private var setupChecklist: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Finish setting up").font(.system(size: 14, weight: .semibold))
+                    Text("About two minutes. Nothing records until you press your shortcut.")
+                        .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
+                }
+                Spacer(minLength: 12)
+                Text("\(stepsDone) of 3").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).monospacedDigit()
+                Button { controller.showOnboarding = true } label: {
+                    HStack(spacing: 6) { Text(stepsDone == 0 ? "Get started" : "Continue"); Image(systemName: "arrow.right").font(.system(size: 11, weight: .semibold)) }
+                }.buttonStyle(CodaPrimaryButtonStyle()).disabled(locked)
+            }.padding(18)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(CodaStyle.hairline)
+                    Rectangle().fill(CodaStyle.mint).frame(width: proxy.size.width * CGFloat(stepsDone) / 3)
+                }
+            }.frame(height: 1).accessibilityHidden(true)
+            checklistRow("Speech model", detail: "Download and prepare local recognition", done: modelReady)
+            Divider().opacity(0.5)
+            checklistRow("Microphone", detail: "Allow Coda to hear you while you hold the shortcut", done: readiness.microphoneAllowed)
+            Divider().opacity(0.5)
+            checklistRow("Shortcut", detail: "Choose the keys that start dictation", done: shortcutReady)
+        }
+        .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+        .clipShape(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
     }
-    private func workflow(icon: String, title: String, description: String, action: String, perform: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: icon).font(.system(size: 23, weight: .light)).foregroundStyle(CodaStyle.mint)
-                .frame(height: 28).accessibilityHidden(true)
-            Text(title).font(.system(size: 18, weight: .medium, design: .rounded))
-            Text(description).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
-                .lineSpacing(3).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44, alignment: .top)
-            Button(action, action: perform).buttonStyle(CodaSecondaryButtonStyle()).disabled(locked)
-        }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
-            .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+    private func checklistRow(_ title: String, detail: String, done: Bool) -> some View {
+        Button { controller.showOnboarding = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 14)).foregroundStyle(done ? CodaStyle.mint : CodaStyle.faint)
+                Text(title).font(CodaStyle.rowTitleFont).foregroundStyle(done ? CodaStyle.muted : CodaStyle.ink)
+                    .strikethrough(done, color: CodaStyle.faint)
+                Text(detail).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.faint).lineLimit(1)
+                Spacer(minLength: 8)
+                if !done { Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(CodaStyle.faint) }
+            }.padding(.horizontal, 18).frame(height: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(CodaTableRowStyle()).disabled(locked)
+        .accessibilityLabel(title + (done ? ", ready" : ", needs setup"))
+    }
+    private var insertionNotice: some View {
+        HStack(spacing: 12) {
+            CodaNotice(kind: .caution, text: "Coda can't paste into other apps yet. Results are still saved and copyable.")
+            Button("Enable insertion") { controller.showOnboarding = true }.buttonStyle(CodaSecondaryButtonStyle()).disabled(locked)
+        }
+    }
+    private var actions: some View {
+        HStack(spacing: 12) {
+            action(icon: "waveform", title: readiness.canDictate ? "Dictate" : "Set up dictation",
+                   detail: "Speak into any app") {
+                if readiness.canDictate { model.closeSettings(); controller.workspaceSection = "Dictation" }
+                else { controller.showOnboarding = true }
+            }
+            action(icon: "record.circle", title: "New meeting", detail: "Record, transcribe, summarize") {
+                model.closeSettings(); controller.workspaceSection = "Meetings"; model.requestMeetingRecording()
+            }
+            action(icon: "text.badge.star", title: "Writing style", detail: "Per-app tone and snippets") {
+                model.closeSettings(); controller.workspaceSection = "Personalize"
+            }
+        }
+    }
+    private func action(icon: String, title: String, detail: String, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            VStack(alignment: .leading, spacing: 14) {
+                Image(systemName: icon).font(.system(size: 13, weight: .medium)).foregroundStyle(CodaStyle.ink)
+                    .frame(width: 28, height: 28)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(CodaStyle.hairline))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(CodaStyle.rowTitleFont).foregroundStyle(CodaStyle.ink)
+                    Text(detail).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).lineLimit(1)
+                }
+            }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+            .contentShape(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+        }
+        .buttonStyle(CodaListRowStyle(selected: false)).disabled(locked)
     }
     private var recentWork: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Pick up where you left off").font(CodaStyle.sectionFont)
+                Text("Recent").font(CodaStyle.sectionFont)
                 Spacer()
-                Button("All history") { model.closeSettings(); controller.workspaceSection = "History" }.buttonStyle(CodaQuietButtonStyle())
+                Button("View all") { model.closeSettings(); controller.workspaceSection = "History" }.buttonStyle(CodaQuietButtonStyle())
             }
-            if let record = controller.records.first(where: { !$0.text.isEmpty }) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "text.bubble").foregroundStyle(CodaStyle.mint).frame(width: 24)
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(record.text).font(CodaStyle.bodyFont).lineLimit(2).lineSpacing(3).textSelection(.enabled)
-                        Text(record.target + " • " + record.created.formatted(date: .abbreviated, time: .shortened))
-                            .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
-                    }
-                    Spacer(minLength: 0)
-                    Button { controller.copyRecord(record) } label: { Image(systemName: "doc.on.doc") }
-                        .buttonStyle(CodaIconButtonStyle()).help("Copy dictation").accessibilityLabel("Copy most recent dictation")
-                }.codaCard(padding: 18)
+            let record = controller.records.first(where: { !$0.text.isEmpty })
+            let meeting = model.meetings.first
+            if record == nil && meeting == nil {
+                CodaEmptyState(icon: "text.bubble", title: "Nothing yet",
+                               message: "Your dictations and meetings will show up here.")
             } else {
-                HStack(spacing: 12) {
-                    Image(systemName: "text.bubble").foregroundStyle(CodaStyle.muted)
-                    Text("Your first dictation will be saved here.").font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
-                    Spacer()
-                }.padding(18).frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(CodaStyle.hairline))
-            }
-            if let meeting = model.meetings.first {
-                Button {
-                    model.closeSettings(); controller.workspaceSection = "Meetings"; model.openMeeting(meeting.id)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "person.2").foregroundStyle(CodaStyle.mint).frame(width: 24)
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(meeting.title).font(CodaStyle.bodyFont).lineLimit(1)
-                            Text(meeting.created.formatted(date: .abbreviated, time: .shortened)).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
-                        }
-                        Spacer(); Image(systemName: "arrow.up.right").font(.system(size: 12)).foregroundStyle(CodaStyle.muted)
-                    }.padding(18).contentShape(Rectangle())
-                }.buttonStyle(.plain).background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(CodaStyle.hairline))
+                VStack(spacing: 0) {
+                    if let record {
+                        HStack(spacing: 12) {
+                            Image(systemName: "waveform").font(.system(size: 12)).foregroundStyle(CodaStyle.muted).frame(width: 16)
+                            Text(record.text).font(CodaStyle.bodyFont).lineLimit(1).truncationMode(.tail)
+                            Spacer(minLength: 12)
+                            Text(record.target).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).lineLimit(1)
+                            Text(record.created.formatted(.relative(presentation: .named))).font(CodaStyle.secondaryFont)
+                                .foregroundStyle(CodaStyle.faint).lineLimit(1).frame(width: 84, alignment: .trailing)
+                            Button { controller.copyRecord(record) } label: { Image(systemName: "doc.on.doc") }
+                                .buttonStyle(CodaIconButtonStyle(size: 24)).help("Copy dictation").accessibilityLabel("Copy most recent dictation")
+                        }.padding(.horizontal, 14).frame(height: 44)
+                    }
+                    if record != nil && meeting != nil { Divider().opacity(0.5) }
+                    if let meeting {
+                        Button {
+                            model.closeSettings(); controller.workspaceSection = "Meetings"; model.openMeeting(meeting.id)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.2").font(.system(size: 11)).foregroundStyle(CodaStyle.muted).frame(width: 16)
+                                Text(meeting.title).font(CodaStyle.bodyFont).lineLimit(1)
+                                Spacer(minLength: 12)
+                                Text("Meeting").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
+                                Text(meeting.created.formatted(.relative(presentation: .named))).font(CodaStyle.secondaryFont)
+                                    .foregroundStyle(CodaStyle.faint).lineLimit(1).frame(width: 84, alignment: .trailing)
+                                Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(CodaStyle.faint).frame(width: 24)
+                            }.padding(.horizontal, 14).frame(height: 44).contentShape(Rectangle())
+                        }.buttonStyle(CodaTableRowStyle())
+                    }
+                }
+                .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+                .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+                .clipShape(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
             }
         }
-    }
-}
-
-/// A native, decorative voice-to-text illustration. It never implies active capture.
-struct VoiceIllustration: View {
-    private let heights: [CGFloat] = [13, 25, 17, 40, 65, 35, 78, 52, 31, 59, 28, 42, 18, 30, 12]
-    var body: some View {
-        VStack(spacing: 22) {
-            HStack(alignment: .center, spacing: 5) {
-                ForEach(Array(heights.enumerated()), id: \.offset) { i, height in
-                    Capsule().fill(CodaStyle.mint.opacity(i > 3 && i < 11 ? 0.85 : 0.25)).frame(width: 5, height: height)
-                }
-            }.frame(height: 80)
-            VStack(alignment: .leading, spacing: 9) {
-                RoundedRectangle(cornerRadius: 3).fill(CodaStyle.mint.opacity(0.38)).frame(width: 130, height: 5)
-                RoundedRectangle(cornerRadius: 3).fill(CodaStyle.mint.opacity(0.19)).frame(width: 156, height: 5)
-                RoundedRectangle(cornerRadius: 3).fill(CodaStyle.mint.opacity(0.12)).frame(width: 95, height: 5)
-            }.padding(18).background(CodaStyle.mint.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        }.rotationEffect(.degrees(-5))
     }
 }

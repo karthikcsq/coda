@@ -160,7 +160,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("Meeting title", text: Binding(get: { model.selected?.title ?? "" }, set: model.renameMeeting))
-                    .font(.system(size: 26, weight: .semibold, design: .rounded)).textFieldStyle(.plain)
+                    .font(.system(size: 26, weight: .semibold)).textFieldStyle(.plain)
                     .disabled(model.isOccupied).accessibilityLabel("Meeting title")
                 metaLine(meeting)
             }
@@ -601,7 +601,7 @@ struct ContentView: View {
                 CodaEmblem(symbol: model.busy ? "waveform.badge.magnifyingglass" : "waveform")
                 VStack(spacing: 8) {
                     Text(model.busy ? "Transcribing on this Mac" : "Your audio is ready")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.system(size: 18, weight: .semibold))
                     Text(model.busy ? model.status : "Transcribe and label up to four speakers locally. Nothing leaves this Mac.")
                         .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center).frame(maxWidth: 380)
@@ -629,7 +629,7 @@ struct ContentView: View {
             Spacer()
             CodaEmblem(symbol: "waveform.path")
             VStack(spacing: 8) {
-                Text("Be present. Keep the important parts.").font(.system(size: 24, weight: .semibold, design: .rounded))
+                Text("Be present. Keep the important parts.").font(.system(size: 24, weight: .semibold))
                 Text("Record a conversation or bring your own audio. Coda turns it into a speaker-labeled transcript and clear next steps.")
                     .font(.system(size: 14)).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     .lineSpacing(4).frame(maxWidth: 440)
@@ -693,7 +693,7 @@ struct RecordingFocusView: View {
                     .foregroundStyle(model.recording ? CodaStyle.recording : CodaStyle.muted)
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(timestamp(model.recording ? context.date.timeIntervalSince(model.recordingStarted ?? context.date) : 0))
-                        .font(.system(size: 48, weight: .light, design: .rounded)).monospacedDigit()
+                        .font(.system(size: 48, weight: .light)).monospacedDigit()
                         .foregroundStyle(model.recording ? CodaStyle.ink : CodaStyle.muted)
                 }
                 Label(model.includeSystem ? "Microphone + meeting audio" : "Microphone only",

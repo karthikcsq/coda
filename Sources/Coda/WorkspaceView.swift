@@ -51,41 +51,52 @@ struct WorkspaceView: View {
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 9) {
-                Image(systemName: "waveform.path").font(.system(size: 20, weight: .medium)).foregroundStyle(CodaStyle.mint)
-                Text("coda").font(.system(size: 23, weight: .semibold, design: .rounded))
-            }.padding(.horizontal, 22).frame(height: 76, alignment: .center).accessibilityAddTraits(.isHeader)
-            VStack(spacing: 3) {
+            HStack(spacing: 8) {
+                Image(systemName: "waveform").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
+                    .frame(width: 22, height: 22).background(CodaStyle.mint, in: RoundedRectangle(cornerRadius: 6))
+                Text("Coda").font(.system(size: 14, weight: .semibold)).tracking(-0.2)
+            }.padding(.horizontal, 20).frame(height: 56, alignment: .center).accessibilityAddTraits(.isHeader)
+            VStack(spacing: 1) {
                 navigation("Home", icon: "house", section: "Home", hint: "Setup status, quick actions and recent work")
                 navigation("Dictation", icon: "waveform", section: "Dictation", hint: "Start dictating and see recent results")
+                navigation("Meetings", icon: "person.2", section: "Meetings", hint: "Meeting recordings, transcripts and summaries")
+                navGroup("Library")
+                navigation("History", icon: "clock", section: "History", hint: "Every dictation Coda has saved")
+                navigation("Insights", icon: "chart.bar", section: "Insights", hint: "Counts from the dictations saved on this Mac")
+                navGroup("Customize")
                 navigation("Make it yours", icon: "slider.horizontal.3", section: "Personalize", hint: "Writing style, app preferences and voice snippets")
                 navigation("Dictionary", icon: "character.book.closed", section: "Dictionary", hint: "Custom words and suggestions to review")
-                navigation("Meetings", icon: "square.and.pencil", section: "Meetings", hint: "Meeting recordings, transcripts and summaries")
-                navigation("Insights", icon: "chart.bar", section: "Insights", hint: "Counts from the dictations saved on this Mac")
-                navigation("History", icon: "clock.arrow.circlepath", section: "History", hint: "Every dictation Coda has saved")
-            }.padding(.horizontal, 12)
-            if !setupComplete && controller.workspaceSection != "Home" { setupCard.padding(12).padding(.top, 18) }
+            }.padding(.horizontal, 10)
             Spacer(minLength: 12)
-            VStack(spacing: 3) {
-                Button { model.openSettings() } label: { navLabel("Settings", icon: "gearshape") }
+            if !setupComplete && controller.workspaceSection != "Home" { setupCard.padding(.horizontal, 10).padding(.bottom, 6) }
+            VStack(spacing: 1) {
+                Button { model.openSettings() } label: { navLabel("Settings", icon: "gearshape", selected: model.showSettings) }
                     .buttonStyle(CodaNavRowStyle(selected: model.showSettings))
                     .accessibilityLabel("Settings")
-                Button { controller.showOnboarding = true } label: { navLabel("Setup guide", icon: "questionmark.circle") }
+                Button { controller.showOnboarding = true } label: { navLabel("Setup guide", icon: "questionmark.circle", selected: false) }
                     .buttonStyle(CodaNavRowStyle(selected: false)).disabled(model.settingsChangesLocked)
                     .accessibilityLabel("Open setup guide")
-            }.padding(12)
+            }.padding(10)
         }
-        .frame(width: 216)
+        .frame(width: 208)
         .background(CodaStyle.chrome)
     }
     /// Only shown while a step is genuinely outstanding, and every row is a real control.
     private var setupCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            CodaEyebrow(text: "Finish setting up")
-            Text(controller.readiness(for: model).nextAction).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
-            Button("Continue setup") { controller.showOnboarding = true }.buttonStyle(CodaSecondaryButtonStyle()).disabled(model.settingsChangesLocked)
+        Button { controller.showOnboarding = true } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Circle().fill(CodaStyle.caution).frame(width: 6, height: 6)
+                    Text("Finish setup").font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.ink)
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(CodaStyle.muted)
+                }
+                Text(controller.readiness(for: model).nextAction).font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
         }
-        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain).disabled(model.settingsChangesLocked)
         .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
         .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(CodaStyle.hairline))
     }
@@ -105,24 +116,33 @@ struct WorkspaceView: View {
         .accessibilityLabel(done ? title + ", done" : title + ", open settings to finish")
     }
     private func navigation(_ title: String, icon: String, section: String, hint: String) -> some View {
-        Button { model.closeSettings(); controller.workspaceSection = section } label: { navLabel(title, icon: icon) }
+        Button { model.closeSettings(); controller.workspaceSection = section } label: {
+            navLabel(title, icon: icon, selected: !model.showSettings && controller.workspaceSection == section)
+        }
             .buttonStyle(CodaNavRowStyle(selected: !model.showSettings && controller.workspaceSection == section))
             .accessibilityIdentifier("coda.nav.\(section.lowercased())")
             .accessibilityLabel(title)
             .accessibilityHint(hint)
             .accessibilityAddTraits(!model.showSettings && controller.workspaceSection == section ? .isSelected : [])
     }
-    private func navLabel(_ title: String, icon: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 15)).frame(width: 16)
-            Text(title).font(CodaStyle.bodyFont)
+    private func navGroup(_ title: String) -> some View {
+        Text(title).font(.system(size: 11, weight: .medium)).foregroundStyle(CodaStyle.faint)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.top, 16).padding(.bottom, 4)
+            .accessibilityAddTraits(.isHeader)
+    }
+    private func navLabel(_ title: String, icon: String, selected: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 12.5)).frame(width: 16)
+                .foregroundStyle(selected ? CodaStyle.ink : CodaStyle.muted)
+            Text(title).font(.system(size: 13, weight: selected ? .medium : .regular))
+                .foregroundStyle(selected ? CodaStyle.ink : CodaStyle.ink.opacity(0.78))
             Spacer(minLength: 4)
             if title == "Dictionary", !controller.dictionary.possible.isEmpty {
                 CodaCountBadge(count: controller.dictionary.possible.count, tint: CodaStyle.mint)
                     .accessibilityLabel("\(controller.dictionary.possible.count) possible custom words")
             }
         }
-        .padding(.horizontal, 12).frame(height: CodaStyle.rowHeight).contentShape(Rectangle())
+        .padding(.horizontal, 10).frame(height: CodaStyle.rowHeight).contentShape(Rectangle())
     }
 }
 
@@ -176,7 +196,7 @@ private struct DictationPage: View {
                     }
                 }
                 Text("Local Voz transcription · Powered by Desert Ant Labs")
-                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.muted)
+                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.faint)
             }
             .codaPageInsets()
             .animation(CodaStyle.motion(reduceMotion, duration: 0.18), value: records.count)
@@ -188,29 +208,17 @@ private struct DictationPage: View {
         return day.formatted(.dateTime.weekday(.wide).month(.wide).day())
     }
     private var hero: some View {
-        HStack(alignment: .top, spacing: 22) {
-            VStack(alignment: .leading, spacing: 9) {
-                CodaEyebrow(text: "Dictation")
-                Text("A little less typing.").font(.system(size: 27, weight: .medium, design: .rounded))
-                Text("Focus a text field and use your shortcut. Your words are saved before insertion.")
-                    .font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.ink.opacity(0.78))
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    Button(controller.readiness(for: model).canDictate ? "Try a dictation" : "Set up dictation") { controller.showOnboarding = true }
-                        .buttonStyle(CodaPrimaryButtonStyle())
-                    if shortcutReady {
-                        CodaStatusChip(readiness: model.dictationModelReady ? .ready : .pending,
-                                       text: model.dictationModelReady ? controller.shortcutLabel : "Model needs preparing")
-                    }
-                }.padding(.top, 7)
+        CodaPageHeader(icon: "waveform", title: "Dictation",
+                       subtitle: "Focus any text field and use your shortcut. Every result is saved here first.") {
+            HStack(spacing: 10) {
+                if shortcutReady {
+                    if model.dictationModelReady { CodaKeycap(controller.shortcutLabel) }
+                    else { CodaStatusChip(readiness: .pending, text: "Model needs preparing") }
+                }
+                Button(controller.readiness(for: model).canDictate ? "Try a dictation" : "Set up dictation") { controller.showOnboarding = true }
+                    .buttonStyle(CodaPrimaryButtonStyle())
             }
-            Spacer(minLength: 0)
-            Image(systemName: "waveform").font(.system(size: 52, weight: .ultraLight))
-                .foregroundStyle(CodaStyle.mint.opacity(0.5)).accessibilityHidden(true)
         }
-        .padding(28).frame(maxWidth: .infinity, alignment: .leading)
-        .background(CodaStyle.heroGradient, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
-        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
     }
 }
 
@@ -232,9 +240,9 @@ struct RecordCard: View {
             HStack(alignment: .top, spacing: 16) {
                 Text(record.created.formatted(date: .omitted, time: .shortened))
                     .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
-                    .monospacedDigit().frame(width: 72, alignment: .leading).padding(.top, 2)
+                    .monospacedDigit().frame(width: 64, alignment: .leading).padding(.top, 1)
                 Text(record.text.isEmpty ? record.detail : record.text)
-                    .font(CodaStyle.bodyFont).lineSpacing(5).lineLimit(expanded ? nil : 4)
+                    .font(CodaStyle.bodyFont).lineSpacing(4).lineLimit(expanded ? nil : 4)
                     .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                 Button { controller.copyRecord(record) } label: { Image(systemName: "doc.on.doc") }
                     .buttonStyle(CodaIconButtonStyle()).help("Copy text").accessibilityLabel("Copy this dictation")
@@ -253,7 +261,7 @@ struct RecordCard: View {
                         .accessibilityLabel("Automatic cleanup was applied; the original is in the details")
                 }
                 Spacer(minLength: 0)
-            }.padding(.leading, 88)
+            }.padding(.leading, 80)
             if expanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Divider().opacity(0.4)
@@ -273,7 +281,7 @@ struct RecordCard: View {
                     Button("Insert into another app…") { controller.armInsertion(record) }
                         .buttonStyle(CodaSecondaryButtonStyle())
                 }
-                .padding(.leading, 88)
+                .padding(.leading, 80)
                 .transition(.opacity)
             }
         }
@@ -288,8 +296,8 @@ private struct MetricTile: View {
     let symbol: String
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: symbol).font(.system(size: 14)).foregroundStyle(CodaStyle.mint).accessibilityHidden(true)
-            Text(value).font(.system(size: 26, weight: .medium, design: .rounded)).monospacedDigit()
+            Image(systemName: symbol).font(.system(size: 12)).foregroundStyle(CodaStyle.muted).accessibilityHidden(true)
+            Text(value).font(.system(size: 24, weight: .semibold)).tracking(-0.5).monospacedDigit()
             Text(label).font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
         }
         .padding(18).frame(maxWidth: .infinity, alignment: .leading)

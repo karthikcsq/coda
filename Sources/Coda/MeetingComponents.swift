@@ -46,7 +46,7 @@ struct CodaSpeakerAvatar: View {
             Circle().fill(tint.opacity(0.18))
             Circle().strokeBorder(tint.opacity(0.32))
             Text(monogram)
-                .font(.system(size: size * 0.44, weight: .semibold, design: .rounded))
+                .font(.system(size: size * 0.44, weight: .semibold))
                 .foregroundStyle(tint)
         }
         .frame(width: size, height: size)

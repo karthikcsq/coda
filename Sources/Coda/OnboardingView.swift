@@ -32,7 +32,11 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("coda", systemImage: "waveform.path").font(.system(size: 21, weight: .medium, design: .rounded)).foregroundStyle(CodaStyle.mint)
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(white: 0.07))
+                        .frame(width: 22, height: 22).background(CodaStyle.mint, in: RoundedRectangle(cornerRadius: 6))
+                    Text("Coda").font(.system(size: 14, weight: .semibold)).tracking(-0.2)
+                }.accessibilityElement(children: .combine)
                 Spacer()
                 Text("\(step.rawValue + 1) of 4").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
                 Button { controller.finishOnboarding() } label: { Image(systemName: "xmark") }
@@ -41,7 +45,7 @@ struct OnboardingView: View {
             HStack(spacing: 8) {
                 ForEach(SetupStep.allCases, id: \.rawValue) { item in
                     VStack(alignment: .leading, spacing: 8) {
-                        Capsule().fill(item.rawValue <= step.rawValue ? CodaStyle.mint : CodaStyle.hairline).frame(height: 3)
+                        Capsule().fill(item.rawValue <= step.rawValue ? CodaStyle.ink : CodaStyle.hairline).frame(height: 2)
                         Text(item.title).font(.system(size: 11, weight: item == step ? .medium : .regular))
                             .foregroundStyle(item == step ? CodaStyle.ink : CodaStyle.muted)
                     }.frame(maxWidth: .infinity, alignment: .leading)
@@ -95,21 +99,14 @@ struct OnboardingView: View {
     }
     private func heading(_ title: String, _ description: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 29, weight: .medium, design: .rounded)).tracking(-0.6)
+            Text(title).font(.system(size: 24, weight: .semibold)).tracking(-0.6)
             Text(description).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
         }
     }
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 24) {
-            HStack(spacing: 30) {
-                VStack(alignment: .leading, spacing: 18) {
-                    heading("A little less typing.\nA lot more clarity.", "Speak naturally into your apps, or turn a conversation into notes you can use.")
-                    Label("You decide when the microphone starts.", systemImage: "mic.slash")
-                        .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.mint)
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                VoiceIllustration().frame(width: 180, height: 190).accessibilityHidden(true)
-            }
-            VStack(alignment: .leading, spacing: 16) {
+            heading("Welcome to Coda.", "Speak into any app, or turn a conversation into notes. You decide when the microphone starts.")
+            VStack(alignment: .leading, spacing: 18) {
                 feature("waveform", "Dictate into any app", "Use a shortcut to speak. Your text is saved before delivery.")
                 feature("person.2", "Keep the conversation", "Record meetings with speaker labels and timestamps.")
                 feature("lock.shield", "Stay in control", "Transcription runs locally. AI summaries and chat are optional hosted services.")
@@ -118,7 +115,7 @@ struct OnboardingView: View {
     }
     private func feature(_ icon: String, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon).foregroundStyle(CodaStyle.mint).font(.system(size: 17, weight: .light)).frame(width: 24)
+            Image(systemName: icon).foregroundStyle(CodaStyle.muted).font(.system(size: 13)).frame(width: 18).padding(.top, 1)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(CodaStyle.rowTitleFont)
                 Text(detail).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
@@ -171,7 +168,8 @@ struct OnboardingView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Your dictation shortcut").font(CodaStyle.rowTitleFont)
-                        Text(controller.shortcutLabel).font(.system(size: 20, weight: .medium, design: .rounded)).foregroundStyle(CodaStyle.mint)
+                        Text(controller.shortcutLabel).font(.system(size: 18, weight: .semibold)).tracking(-0.3)
+                            .foregroundStyle(controller.shortcutLabel == "Choose a shortcut" ? CodaStyle.muted : CodaStyle.ink)
                     }
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .codaDictation)
@@ -186,14 +184,17 @@ struct OnboardingView: View {
                 if controller.modifierShortcut {
                     Text(controller.modifierShortcutStatus).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
                 }
-                Picker("Behavior", selection: $controller.mode) {
-                    Text("Hold to talk").tag(DictationMode.hold)
-                    Text("Press to start / stop").tag(DictationMode.toggle)
-                }.pickerStyle(.segmented).disabled(locked || model.isVisualReview)
-                Divider().opacity(0.4)
+                HStack(spacing: 14) {
+                    Text("Behavior").font(CodaStyle.rowTitleFont)
+                    CodaSegmented(options: [.init(value: DictationMode.hold, label: "Hold to talk"),
+                                            .init(value: DictationMode.toggle, label: "Press to start / stop")],
+                                  selection: $controller.mode).frame(maxWidth: 340)
+                        .disabled(locked || model.isVisualReview).accessibilityLabel("Behavior")
+                }
+                Rectangle().fill(CodaStyle.hairline).frame(height: 1)
                 AccessibilitySetupView(controller: controller).disabled(locked || model.isVisualReview)
-                Text("Accessibility enables automatic insertion. A custom shortcut can work without it; copy the result yourself. Fn-only and Caps Lock-only bindings are unsupported.")
-                    .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
+                Text("A custom shortcut works without Accessibility; you copy the result yourself. Fn-only and Caps Lock-only bindings are unsupported.")
+                    .font(CodaStyle.captionFont).foregroundStyle(CodaStyle.faint).fixedSize(horizontal: false, vertical: true)
             }.codaCard()
         }
     }
@@ -213,12 +214,12 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         Label(controller.lifecycle.phase == .listening && controller.practiceSession ? "Listening" : "Practice dictation", systemImage: "mic")
-                            .font(CodaStyle.sectionFont).foregroundStyle(CodaStyle.mint)
+                            .font(CodaStyle.sectionFont).foregroundStyle(CodaStyle.ink)
                         Spacer()
                         if controller.lifecycle.phase == .processing || controller.lifecycle.phase == .arming { ProgressView().controlSize(.small) }
                     }
                     Text(controller.practiceText.isEmpty ? "Try saying: “Let's meet on Thursday at three.”" : controller.practiceText)
-                        .font(.system(size: 20, weight: .regular, design: .rounded)).lineSpacing(5)
+                        .font(.system(size: 20, weight: .regular)).lineSpacing(5)
                         .foregroundStyle(controller.practiceText.isEmpty ? CodaStyle.muted : CodaStyle.ink)
                         .textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
                     HStack(spacing: 12) {

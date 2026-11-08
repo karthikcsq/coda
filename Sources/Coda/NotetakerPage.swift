@@ -158,7 +158,7 @@ struct NotetakerPage: View {
         VStack(spacing: 20) {
             CodaEmblem(symbol: "waveform")
             VStack(spacing: 8) {
-                Text("No meetings yet").font(.system(size: 18, weight: .semibold, design: .rounded))
+                Text("No meetings yet").font(.system(size: 18, weight: .semibold))
                 Text("Start a recording or import audio. Coda saves the audio first, then transcribes and labels speakers on this Mac.")
                     .font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center).lineSpacing(3)

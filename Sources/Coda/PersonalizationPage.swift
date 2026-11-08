@@ -23,10 +23,9 @@ struct PersonalizationPage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 CodaPageHeader(icon: "slider.horizontal.3", title: "Make it yours", subtitle: "Writing preferences and reusable phrases, stored on this Mac.")
-                Picker("Personalization", selection: $tab) {
-                    Text("Writing style").tag("Writing style")
-                    Text("Voice snippets").tag("Voice snippets")
-                }.pickerStyle(.segmented).frame(maxWidth: 380)
+                CodaSegmented(options: [.init(value: "Writing style", label: "Writing style", icon: "textformat"),
+                                        .init(value: "Voice snippets", label: "Voice snippets", icon: "text.quote")],
+                              selection: $tab).frame(maxWidth: 320).accessibilityLabel("Personalization")
                 if let appError { CodaNotice(kind: .caution, text: appError) }
                 if let error = preferences.error {
                     CodaNotice(kind: .caution, text: error)
@@ -45,27 +44,32 @@ struct PersonalizationPage: View {
         }
     }
     private var styles: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Default writing style").font(CodaStyle.sectionFont)
-            Text("Only spacing, capitals and punctuation change. Your words stay in their original order. Choose an override below for apps that need a different style.")
-                .font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Default writing style").font(.system(size: 15, weight: .semibold)).tracking(-0.2)
+                Text("Only spacing, capitals and punctuation change. Your words stay in order.")
+                    .font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted).fixedSize(horizontal: false, vertical: true)
+            }
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(DictationWritingStyle.allCases) { style in
                     Button { preferences.setGlobalStyle(style) } label: {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text(style.title).font(CodaStyle.sectionFont)
+                        let chosen = preferences.globalStyle == style
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 8) {
+                                Text(style.title).font(CodaStyle.rowTitleFont)
                                 Spacer()
-                                Image(systemName: preferences.globalStyle == style ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(preferences.globalStyle == style ? CodaStyle.mint : CodaStyle.muted)
+                                ZStack {
+                                    Circle().strokeBorder(chosen ? CodaStyle.ink : CodaStyle.faint, lineWidth: chosen ? 4.5 : 1.2)
+                                }.frame(width: 14, height: 14)
                             }
                             Text(style.summary).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
-                                .fixedSize(horizontal: false, vertical: true).frame(minHeight: 34, alignment: .top)
-                            Text(example(style)).font(.system(size: 13, design: .monospaced)).foregroundStyle(CodaStyle.mint)
-                                .lineLimit(2).frame(minHeight: 34, alignment: .topLeading)
-                        }.padding(18).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-                            .background(preferences.globalStyle == style ? CodaStyle.mint.opacity(0.06) : CodaStyle.raised, in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(preferences.globalStyle == style ? CodaStyle.mint.opacity(0.45) : CodaStyle.hairline))
+                                .fixedSize(horizontal: false, vertical: true).frame(minHeight: 30, alignment: .top)
+                            Text(example(style)).font(.system(size: 12, design: .monospaced)).foregroundStyle(CodaStyle.ink.opacity(0.85))
+                                .lineLimit(1).padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+                                .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
+                        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                            .background(chosen ? CodaStyle.selected : CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+                            .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(chosen ? Color.white.opacity(0.28) : CodaStyle.hairline))
                     }.buttonStyle(.plain).disabled(locked).accessibilityAddTraits(preferences.globalStyle == style ? .isSelected : [])
                 }
             }
@@ -76,8 +80,11 @@ struct PersonalizationPage: View {
     }
     private var appRules: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Per-app preferences").font(CodaStyle.sectionFont)
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Per-app overrides").font(.system(size: 15, weight: .semibold)).tracking(-0.2)
+                    Text("Everything else follows your default.").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
+                }
                 Spacer()
                 Button { chooseApp() } label: { Label("Add app", systemImage: "plus") }
                     .buttonStyle(CodaSecondaryButtonStyle()).disabled(locked || model.isVisualReview)
@@ -98,11 +105,11 @@ struct PersonalizationPage: View {
                             }.labelsHidden().frame(width: 160).disabled(locked)
                             Button { preferences.removeRule(rule.id) } label: { Image(systemName: "minus.circle") }
                                 .buttonStyle(CodaIconButtonStyle()).disabled(locked).accessibilityLabel("Remove preference for " + (rule.appName ?? rule.bundleID))
-                        }.padding(14)
-                        if rule.id != preferences.appRules.last?.id { Divider().opacity(0.4) }
+                        }.padding(.horizontal, 16).padding(.vertical, 12)
+                        if rule.id != preferences.appRules.last?.id { Rectangle().fill(CodaStyle.hairline).frame(height: 1) }
                     }
-                }.background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(CodaStyle.hairline))
+                }.background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radiusLarge))
+                    .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
             }
         }
     }
@@ -119,8 +126,8 @@ struct PersonalizationPage: View {
                 .accessibilityLabel("Spoken snippet trigger")
             TextEditor(text: $expansion).font(.system(size: 14)).scrollContentBackground(.hidden)
                 .padding(10).frame(minHeight: 100, maxHeight: 160)
-                .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CodaStyle.strongEdge))
+                .background(Color.black.opacity(0.2), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(CodaStyle.hairline))
                 .accessibilityLabel("Text to insert for this snippet").disabled(locked)
             HStack {
                 Text("Inserted as plain text. Nothing is executed.").font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
@@ -142,7 +149,7 @@ struct PersonalizationPage: View {
                 ForEach(preferences.snippets) { snippet in
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("“" + snippet.trigger + "”").font(CodaStyle.sectionFont).foregroundStyle(CodaStyle.mint)
+                            Text("“" + snippet.trigger + "”").font(CodaStyle.rowTitleFont).foregroundStyle(CodaStyle.ink)
                             Spacer()
                             Button("Edit") { editingSnippet = snippet.id; trigger = snippet.trigger; expansion = snippet.expansion }
                                 .buttonStyle(CodaQuietButtonStyle()).disabled(locked)
@@ -150,7 +157,7 @@ struct PersonalizationPage: View {
                                 .buttonStyle(CodaIconButtonStyle()).disabled(locked).accessibilityLabel("Delete snippet " + snippet.trigger)
                         }
                         Text(snippet.expansion).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted).lineLimit(4).textSelection(.enabled)
-                    }.codaCard(padding: 18)
+                    }.codaCard(padding: 16)
                 }
             }
         }

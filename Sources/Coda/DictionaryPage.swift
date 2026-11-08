@@ -25,7 +25,7 @@ struct DictionaryPage: View {
                 }
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 13) {
-                        Image(systemName: "sparkles").foregroundStyle(mint).font(.system(size: 19))
+                        Image(systemName: "sparkles").foregroundStyle(CodaStyle.muted).font(.system(size: 14))
                         VStack(alignment: .leading, spacing: 5) {
                             Text("Learn from corrections").font(.system(size: 14, weight: .medium))
                             Text(controller.learnWords ? "New spellings appear in a pop-up for you to review." : "Learning is paused. Your custom words still apply.")
@@ -89,7 +89,7 @@ struct DictionaryPage: View {
                             if possible {
                                 Button { dictionary.approve(word.id) } label: {
                                     Text("Add").font(.system(size: 12, weight: .medium)).foregroundStyle(mint)
-                                        .padding(.horizontal, 14).frame(height: 30).background(mint.opacity(0.12), in: Capsule())
+                                        .padding(.horizontal, 14).frame(height: 30).background(mint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
                                 }.buttonStyle(.plain).accessibilityLabel("Add \(word.word) to custom words")
                                 Button("Edit") { editing = word }.accessibilityLabel("Edit suggested word \(word.word)")
                                 Button("Dismiss") { dictionary.dismiss(word.id) }.accessibilityLabel("Dismiss \(word.word)")

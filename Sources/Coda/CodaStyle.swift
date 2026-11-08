@@ -8,40 +8,42 @@ private typealias StyleState<Value> = SwiftUI.State<Value>
 /// app reads as one piece of software instead of five unrelated screens.
 enum CodaStyle {
     // Surfaces.
-    static let canvas = Color(red: 0.10, green: 0.10, blue: 0.10)
-    static let chrome = Color(white: 0.13)
-    static let raised = Color.white.opacity(0.04)
-    static let sunken = Color.white.opacity(0.02)
-    static let hover = Color.white.opacity(0.055)
-    static let selected = Color.white.opacity(0.08)
-    static let hairline = Color.white.opacity(0.08)
-    static let strongEdge = Color.white.opacity(0.14)
+    static let canvas = Color(red: 0.086, green: 0.086, blue: 0.094)
+    static let chrome = Color(red: 0.063, green: 0.063, blue: 0.071)
+    static let raised = Color.white.opacity(0.035)
+    static let sunken = Color.white.opacity(0.018)
+    static let hover = Color.white.opacity(0.05)
+    static let selected = Color.white.opacity(0.075)
+    static let hairline = Color.white.opacity(0.07)
+    static let strongEdge = Color.white.opacity(0.13)
 
-    // Ink.
-    static let ink = Color(white: 0.88)
-    static let muted = Color.white.opacity(0.57)
+    // Ink. Three steps: primary, secondary, tertiary.
+    static let ink = Color(white: 0.93)
+    static let muted = Color.white.opacity(0.52)
+    static let faint = Color.white.opacity(0.34)
 
     // Accents. `mint` leads; `caution` is the only warning colour.
     static let mint = Color(red: 0.62, green: 0.86, blue: 0.76)
     static let caution = Color(red: 0.96, green: 0.72, blue: 0.42)
 
     // One radius ramp instead of ten ad-hoc values.
-    static let radiusSmall: CGFloat = 8
-    static let radius: CGFloat = 12
-    static let radiusLarge: CGFloat = 16
-    static let radiusShell: CGFloat = 20
+    static let radiusSmall: CGFloat = 6
+    static let radius: CGFloat = 8
+    static let radiusLarge: CGFloat = 10
+    static let radiusShell: CGFloat = 12
 
     // Rhythm.
-    static let pageInset: CGFloat = 34
-    static let blockSpacing: CGFloat = 26
-    static let contentWidth: CGFloat = 940
-    static let rowHeight: CGFloat = 36
+    static let pageInset: CGFloat = 40
+    static let blockSpacing: CGFloat = 28
+    static let contentWidth: CGFloat = 900
+    static let rowHeight: CGFloat = 30
 
-    // Type ramp.
-    static let pageTitleFont = Font.system(size: 26, weight: .medium, design: .rounded)
-    static let sectionFont = Font.system(size: 15, weight: .semibold)
+    // Type ramp. Default SF with tight tracking on display sizes; no rounded faces.
+    static let pageTitleFont = Font.system(size: 22, weight: .semibold)
+    static let pageTitleTracking: CGFloat = -0.4
+    static let sectionFont = Font.system(size: 13, weight: .semibold)
     static let rowTitleFont = Font.system(size: 13, weight: .medium)
-    static let bodyFont = Font.system(size: 14)
+    static let bodyFont = Font.system(size: 13)
     static let secondaryFont = Font.system(size: 12)
     static let captionFont = Font.system(size: 11)
 
@@ -63,9 +65,6 @@ enum CodaStyle {
     ]
     static func speakerColor(_ index: Int) -> Color { speakerPalette[abs(index) % speakerPalette.count] }
 
-    static let heroGradient = LinearGradient(
-        colors: [Color(red: 0.10, green: 0.17, blue: 0.16), Color(red: 0.12, green: 0.13, blue: 0.13)],
-        startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
 extension View {
@@ -79,8 +78,8 @@ extension View {
     /// Page gutters, shared by every workspace page.
     func codaPageInsets() -> some View {
         self.padding(CodaStyle.pageInset)
-            .frame(maxWidth: CodaStyle.contentWidth, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: CodaStyle.contentWidth + CodaStyle.pageInset * 2, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
     /// A hairline rule that does not need negative padding to sit where it should.
     func codaDivider() -> some View {
@@ -110,18 +109,14 @@ struct CodaPageHeader<Trailing: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     private var titleBlock: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: icon).font(.system(size: 22, weight: .light)).foregroundStyle(tint)
-                .frame(width: 48, height: 48)
-                .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: CodaStyle.radius))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                // The title never wraps; the subtitle gets the remaining width.
-                Text(title).font(CodaStyle.pageTitleFont).fixedSize(horizontal: true, vertical: false)
-                Text(subtitle).font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            }.layoutPriority(1)
-        }
+        // `icon` stays in the API for call sites; the header is type-only.
+        VStack(alignment: .leading, spacing: 5) {
+            // The title never wraps; the subtitle gets the remaining width.
+            Text(title).font(CodaStyle.pageTitleFont).tracking(CodaStyle.pageTitleTracking)
+                .fixedSize(horizontal: true, vertical: false)
+            Text(subtitle).font(CodaStyle.bodyFont).foregroundStyle(CodaStyle.muted)
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+        }.layoutPriority(1)
     }
 }
 
@@ -131,12 +126,11 @@ extension CodaPageHeader where Trailing == EmptyView {
     }
 }
 
-/// Small uppercase label above a list or group.
+/// Small sentence-case label above a list or group.
 struct CodaEyebrow: View {
     let text: String
     var body: some View {
-        Text(text.uppercased()).font(.system(size: 11, weight: .medium)).tracking(1)
-            .foregroundStyle(CodaStyle.muted)
+        Text(text).font(.system(size: 12, weight: .medium)).foregroundStyle(CodaStyle.muted)
     }
 }
 
@@ -145,8 +139,8 @@ struct CodaCountBadge: View {
     var tint: Color = CodaStyle.muted
     var body: some View {
         Text("\(count)").font(.system(size: 11, weight: .medium)).foregroundStyle(tint)
-            .padding(.horizontal, 7).padding(.vertical, 3)
-            .background(tint.opacity(0.12), in: Capsule())
+            .monospacedDigit().padding(.horizontal, 6).padding(.vertical, 2)
+            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
     }
 }
 
@@ -165,7 +159,7 @@ struct CodaSearchField: View {
                     .buttonStyle(.plain).accessibilityLabel("Clear " + prompt.lowercased())
             }
         }
-        .padding(.horizontal, 12).frame(height: 36).frame(width: width)
+        .padding(.horizontal, 10).frame(height: 30).frame(width: width)
         .background(CodaStyle.sunken, in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
         .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusSmall).strokeBorder(CodaStyle.hairline))
     }
@@ -180,8 +174,11 @@ struct CodaEmptyState<Action: View>: View {
     @ViewBuilder var action: () -> Action
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: icon).font(.system(size: 23, weight: .light)).foregroundStyle(tint)
-                .frame(width: 28).accessibilityHidden(true)
+            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(CodaStyle.muted)
+                .frame(width: 32, height: 32)
+                .background(CodaStyle.raised, in: RoundedRectangle(cornerRadius: CodaStyle.radius))
+                .overlay(RoundedRectangle(cornerRadius: CodaStyle.radius).strokeBorder(CodaStyle.hairline))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(title).font(CodaStyle.rowTitleFont)
                 Text(message).font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
@@ -190,8 +187,9 @@ struct CodaEmptyState<Action: View>: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(22).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge).strokeBorder(CodaStyle.hairline))
+        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(RoundedRectangle(cornerRadius: CodaStyle.radiusLarge)
+            .strokeBorder(CodaStyle.hairline, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
     }
 }
 
@@ -237,8 +235,8 @@ struct CodaStatusChip: View {
             Image(systemName: icon).font(.system(size: 11)).accessibilityHidden(true)
             Text(text).font(.system(size: 11, weight: .medium))
         }
-        .foregroundStyle(tint).padding(.horizontal, 9).padding(.vertical, 4)
-        .background(tint.opacity(0.1), in: Capsule())
+        .foregroundStyle(tint).padding(.horizontal, 7).padding(.vertical, 3)
+        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
         .accessibilityElement(children: .combine)
     }
 }
@@ -250,38 +248,35 @@ struct CodaSection<Content: View>: View {
     let icon: String
     @ViewBuilder var content: () -> Content
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: icon).font(.system(size: 15)).foregroundStyle(CodaStyle.mint)
-                    .frame(width: 20).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 16, weight: .medium))
-                    Text(subtitle).font(CodaStyle.secondaryFont).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            Rectangle().fill(CodaStyle.hairline).frame(height: 1)
-            content()
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.system(size: 15, weight: .semibold)).tracking(-0.2)
+                Text(subtitle).font(CodaStyle.secondaryFont).foregroundStyle(CodaStyle.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }.padding(.horizontal, 2)
+            VStack(alignment: .leading, spacing: 18) { content() }
+                .codaCard(padding: 20)
         }
-        .codaCard(padding: 22, fill: CodaStyle.chrome)
     }
 }
 
 // MARK: - Control styles
 
+/// Solid light button: the one high-emphasis action on a surface.
 struct CodaPrimaryButtonStyle: ButtonStyle {
-    var tint: Color = CodaStyle.mint
-    var ink: Color = Color(white: 0.1)
+    var tint: Color = Color(white: 0.95)
+    var ink: Color = Color(white: 0.07)
     @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 13, weight: .medium))
             .foregroundStyle(ink)
             .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 16).frame(height: 34)
-            .background(tint.opacity(configuration.isPressed ? 0.78 : 1), in: Capsule())
-            .contentShape(Capsule())
-            .opacity(isEnabled ? 1 : 0.4)
+            .padding(.horizontal, 12).frame(height: 30)
+            .background(tint.opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 7))
+            .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+            .opacity(isEnabled ? 1 : 0.35)
     }
 }
 
@@ -292,11 +287,11 @@ struct CodaSecondaryButtonStyle: ButtonStyle {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(CodaStyle.ink)
             .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 15).frame(height: 34)
-            .background(configuration.isPressed ? CodaStyle.selected : CodaStyle.raised, in: Capsule())
-            .overlay(Capsule().strokeBorder(CodaStyle.hairline))
-            .contentShape(Capsule())
-            .opacity(isEnabled ? 1 : 0.4)
+            .padding(.horizontal, 12).frame(height: 30)
+            .background(configuration.isPressed ? CodaStyle.selected : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(CodaStyle.hairline))
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+            .opacity(isEnabled ? 1 : 0.35)
     }
 }
 
@@ -311,9 +306,9 @@ struct CodaQuietButtonStyle: ButtonStyle {
     }
 }
 
-/// Square hit target with hover feedback; 30pt everywhere, including the floating HUD.
+/// Square hit target with hover feedback; 28pt everywhere, including the floating HUD.
 struct CodaIconButtonStyle: ButtonStyle {
-    var size: CGFloat = 30
+    var size: CGFloat = 28
     func makeBody(configuration: Configuration) -> some View {
         StyleBody(configuration: configuration, size: size)
     }
@@ -324,8 +319,8 @@ struct CodaIconButtonStyle: ButtonStyle {
         @StyleState private var hovering = false
         var body: some View {
             configuration.label
-                .font(.system(size: 13))
-                .foregroundStyle(CodaStyle.ink)
+                .font(.system(size: 12))
+                .foregroundStyle(hovering ? CodaStyle.ink : CodaStyle.muted)
                 .frame(width: size, height: size)
                 .background(configuration.isPressed ? CodaStyle.selected : hovering && isEnabled ? CodaStyle.hover : .clear,
                             in: RoundedRectangle(cornerRadius: CodaStyle.radiusSmall))
@@ -433,11 +428,11 @@ struct CodaSegmented<Value: Hashable>: View {
                         Text(option.label).font(.system(size: 12, weight: selected ? .semibold : .medium)).lineLimit(1)
                     }
                     .foregroundStyle(selected ? CodaStyle.ink : CodaStyle.muted)
-                    .padding(.horizontal, 10).frame(maxWidth: .infinity).frame(height: 26)
+                    .padding(.horizontal, 10).frame(maxWidth: .infinity).frame(height: 24)
                     .background {
                         if selected {
-                            RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.11))
-                                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.white.opacity(0.07)))
+                            RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1))
+                                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.white.opacity(0.06)))
                                 .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
                                 .matchedGeometryEffect(id: "thumb", in: thumb)
                         }
@@ -450,8 +445,8 @@ struct CodaSegmented<Value: Hashable>: View {
             }
         }
         .padding(3)
-        .background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(CodaStyle.hairline))
+        .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(CodaStyle.hairline))
         .opacity(isEnabled ? 1 : 0.45)
     }
 }
@@ -491,7 +486,7 @@ struct CodaKeycap: View {
     var onAccent = false
     init(_ key: String, onAccent: Bool = false) { self.key = key; self.onAccent = onAccent }
     var body: some View {
-        Text(key).font(.system(size: 10.5, weight: .semibold, design: .rounded))
+        Text(key).font(.system(size: 10.5, weight: .semibold))
             .foregroundStyle(onAccent ? Color(white: 0.1).opacity(0.6) : CodaStyle.muted)
             .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 17)
             .background(onAccent ? Color.black.opacity(0.1) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 4))
